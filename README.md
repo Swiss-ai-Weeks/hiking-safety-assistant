@@ -1,29 +1,30 @@
-# Hiking safety assistant
+# Hiking Safety Assistant, hackathon slice
 
-### Original
+Decision-support prototype: swisstopo routes × MeteoSwiss forecasts → segment-level, time-aware hazards,
+rendered through reviewed templates. No factual sentence is LLM-generated (KAD-8). See `docs/ARCHITECTURE.md`.
 
-- **Description:** Leverage public swiss data on weather and hiking routes to create an assistant.
-- **Tools:** RAG, MCP, AIQ
-- **Difficulty:** Hard
-- **Data:** Open Data (OGD) - MeteoSwiss and https://www.swisstopo.admin.ch/en
-- **GitHub:** https://github.com/Swiss-ai-Weeks/hiking-safety-assistant
+## Run
+```bash
+python3.12 -m venv .venv && .venv/bin/pip install -e ".[dev,grib]"
+make test            # 87 unit + golden tests, live tests skipped
+make coverage-gate   # EN/DE template coverage + phrase-bank review
+make run             # http://127.0.0.1:8000  (demo mode: fixture route, spec-shaped weather)
+HSA_LIVE=1 make run  # live mode: api3.geo.admin.ch routes + MeteoSwiss ICON GRIB2 via STAC (downloads ~4 MB per variable-hour)
+LIVE=1 make live     # live adapter tests (swisstopo, MeteoSwiss STAC, Anthropic if a credential is set)
+```
 
----
+## Screens
+`/` plan · `/assess` assessment (add `&lang=de`) · `/assess?outcome=not_assessable` · `/map` Leaflet route map ·
+`/preflight` · `/field` · `/share`. All downstream screens carry `route`, `date`, `start`, `lang` query parameters
+and are fed by the same assessment.
 
-### Summary
+## Layout
+`src/hsa/{domain,geo,adapters,weather,rules,fusion,gate,planner,corpus,api,eval}`, `templates/{en,de}`, `phrasebank/`,
+`tests/{unit,fakes,fixtures,live,golden}`. Batch history with red/green results: `BATCH-LOG.md`.
 
-Can AI help people make better decisions in the mountains? Build an assistant that combines information about Swiss hiking routes, terrain, and weather to help users understand the conditions of a planned hike. The challenge is deliberately open: your assistant might answer questions before a hike, provide context during a route, identify potential risks, or suggest alternatives. The key is to combine different sources of information into useful, context-aware guidance.
-
----
-
-### Detailed
-
-Build an AI assistant that combines Swiss hiking-route and weather information to help users assess and understand hiking conditions. A user might ask about a planned route, current or forecast conditions, potential risks, or whether alternative routes could be more appropriate.
-
-Solutions should combine information from multiple sources and ideally be capable of adapting recommendations to the specific route and conditions rather than simply returning weather or map information. Relevant public data is available from MeteoSwiss Open Data and swisstopo.
-
-Participants can explore RAG, MCP, agentic workflows, geospatial reasoning, or combinations of these approaches.
-
-Suggested technologies include RAG, MCP, and AIQ.
-
-Resources available: 2xH100 NVL L40S or RTX Pro 6000 environment, s
+## What is real and what is fixture
+- Real: segmentation, traversal windows, rule catalogue and evaluation, fusion, post-conditions INV-1..3, outcome
+  classification, stage 1 and stage 2 gates, EN/DE rendering, mitigations and alternatives, planner boundary,
+  corpus excerpts, swisstopo profile/identify/find, MeteoSwiss STAC search and GRIB2 decoding.
+- Fixture (demo mode): the Oeschinensee route geometry and per-leg exposure, and the weather field shape.
+- Unavailable by design: official warnings feed (disclosed in every response; ARCHITECTURE R-6).
