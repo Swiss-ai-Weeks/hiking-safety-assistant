@@ -1,0 +1,88 @@
+# Hiking Safety Assistant — Architecture Notes
+
+> **Purpose:** Distilled build guidance derived from the behavioural analysis — what to build, why, ranked by impact. Written for a build happening elsewhere, so each item states the mechanism and the reason, not just the recommendation.
+>
+> **Companion to:** [Hiking Safety Assistant — Behavioural Analysis](hiking-safety-assistant-behavioural-analysis.md)
+
+---
+
+## 1. Core principle: plan-then-remind, not continuous reasoning
+
+**What:** The field-mode app does not re-run assessment logic live. All conditional decisions ("if not at col by 11:30 → valley path") are fully resolved during planning and cached. Field mode's job is to remind, prompt for one observation, and detect drift — never to reassess from scratch.
+
+**Why:** The field self is fatigued, hot-state, low-bandwidth, and usually offline (poor Alpine connectivity). A system that tries to reason live either has no data to reason with, or produces a fresh "verdict" that triggers automation bias / alarm fatigue. Resolving everything upstream, when the planning self has bandwidth to engage with reasoning, is the only point in the journey where nuanced reasoning is actually usable.
+
+**Build implication:** Field mode needs zero network dependency for core function. All logic it runs is lookup + threshold comparison against a pre-fetched package, not model inference.
+
+---
+
+## 2. Corridor & branch model, not a single-path plan
+
+**What:** Pre-commitment rules carry both a *time* condition and a *spatial/observation* condition, not time alone. Each route segment gets a pre-computed drift tolerance (tight on exposed/aspect-sensitive terrain, loose on open trail). Weather branches are pre-fetched as a small decision tree (e.g. "if wind observed >40km/h → escalate to rule B"), not a single scenario.
+
+**Why:** In mountains, a small lateral deviation (1–2km) can mean a different aspect, elevation band, or exposure class — the front-loaded forecast for the planned line no longer describes where the person is. A plan resolved for one line silently fails the moment someone drifts, with no way to detect it. Encoding tolerance and branches at planning time keeps this fully offline-resolvable — it's more precomputation, not new live computation.
+
+**Build implication:** The route model needs per-segment sensitivity, not just per-segment coordinates. The offline pack = route + time thresholds + spatial corridor + 2–3 pre-branched weather scenarios.
+
+---
+
+## 3. Human observation = the only live sensor (and a data feed)
+
+**What:** Field mode periodically asks one simple, low-effort observation question (cloud, wind, wet rock / "still on track?"). This is the sole live input the system gets in the field.
+
+**Why (decision-making):** It's the only way to detect that a corridor has been exceeded or a weather branch has triggered, since there's no connectivity to check the forecast directly. It also counters risk compensation — the act of looking up and reporting is itself a debiasing moment.
+
+**Why (system-improving):** Logged as `(timestamp, position, observation)` against the pre-committed plan, this is calibration data — not just a safety nudge. It lets the pace model and corridor tolerances be corrected against what actually happened, not just what was planned. Engagement here should be understood as training signal for the model, not only UX for the user in the moment. See §5.
+
+**Build implication:** Always log position + timestamp passively (no prompt needed); the observation tap is optional and cheap, but the telemetry underneath it is not.
+
+---
+
+## 4. Pre-flight check — concrete flow (3 taps max)
+
+**What:** One continuous scrollable screen. Everything the system can already compute is shown as passive content (crux point, conditions timeline, "what I can't see" line with data-age timestamp, marginal-day alternative if relevant). Only 3 things require an actual decision:
+
+| Tap | Prompt | Why it needs a human |
+|---|---|---|
+| 1 | Reference-class question, not self-rating — *"How long did your last similarly-sized hike actually take?"* (not "what's your experience level") | The one input the system can't infer, and the one place self-report bias must be minimized (see §5) |
+| 2 | Accept the pre-filled plan — turnaround time + corridor, framed as a gain ("keeps your 16:10 lift") | Risk tolerance / go-ahead is the user's call, not the system's |
+| 3 | Start hike | Triggers offline pack download + share card generation |
+
+**Why so few taps:** Every additional required decision is a point where a time-pressured or optimistic planning self either disengages or picks the easy/optimistic answer. Defaults pre-filled from the fused route+weather+pace model, confirmed rather than assembled, is what makes the pre-commitment likely to actually get set — the entire field-mode reminder mechanic depends on this step being completed with real numbers, not skipped.
+
+**Build implication:** An "adjust" expander can sit under tap 2 for power users, but must not be a required step — it should not count toward, or block, the 3-tap path.
+
+---
+
+## 5. Debias the one input that matters: reference-class forecasting
+
+**What:** Never ask the user to self-predict their own pace or difficulty ("what's your level?", "how fast are you?"). Ask about a documented past outcome instead ("how long did X actually take you?").
+
+**Why:** Self-predictions about a specific future task are the textbook planning-fallacy trap — people anchor on the best-case plan succeeding, not the distribution of how similar attempts actually went. A past, factual outcome is far harder to optimism-bias than a forecast, and it's a number the pace model can use directly (reference-class forecasting > inside-view self-report).
+
+**Build implication:** Tap 1 in §4 is this question. The pace model should treat it as the primary prior, refined over time by §3's logged splits — not overridden by a generic speed formula.
+
+---
+
+## 6. The calibration loop (why engagement should be treated as a training signal)
+
+**Plan → remind → observe → recalibrate.**
+
+- *Plan:* reference-class input + fused data → pre-filled corridor/branch package.
+- *Remind:* field mode surfaces the pre-committed rule, no live reasoning.
+- *Observe:* passive telemetry + optional one-tap observation, logged against the plan.
+- *Recalibrate:* delta between planned and actual (time, position, reported conditions) updates the user's personal pace prior and, pooled anonymously, the reference-class base rates and segment sensitivity tolerances used for future plans.
+
+**Why this matters for the build:** every interaction point already in the design (§3, §4 tap 1) does double duty — it informs *this* user's decision, and it's the mechanism that makes the system's own numbers less wrong over time. Design and log these interactions so the second job is possible; don't treat them as disposable UI state.
+
+---
+
+## 7. Minimum build set, ranked by impact
+
+1. **Offline corridor+branch package generation** (§1, §2) — the architecture's load-bearing piece; without it, field mode has nothing to remind from.
+2. **3-tap pre-flight flow with pre-filled defaults** (§4) — the only point where the pre-commitment actually gets created; if this doesn't get completed, nothing downstream works.
+3. **Reference-class question replacing self-rated experience** (§5) — same UI slot as an ordinary onboarding question, but the single highest-leverage debiasing change.
+4. **Passive split/position logging + one-tap field observation** (§3) — cheapest possible field-mode surface, doubles as the calibration dataset.
+5. **Recalibration of pace prior / corridor tolerance from logged deltas** (§6) — can ship after the above four are proven; not needed for a first working version, but is what turns this from a static tool into one that improves with use.
+
+Items 1–4 are the buildable MVP. Item 5 is the differentiator to schedule next, not a launch blocker.
