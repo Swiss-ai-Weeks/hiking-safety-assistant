@@ -1,0 +1,135 @@
+/** Minutes since local midnight (07:30 → 450). */
+export type Minutes = number
+
+export type Lang = 'en' | 'fr'
+export type Grade = 'T1' | 'T2' | 'T3' | 'T4' | 'T5' | 'T6'
+export type LatLng = [lat: number, lng: number]
+
+/** Severity scale: grey, amber, red. There is deliberately no "green". */
+export type Severity = 'none' | 'mod' | 'high'
+/** A stop or leg whose data could not be evaluated. */
+export type StopSeverity = Severity | 'unknown'
+
+export type PaceAnswer = 'under5' | '5to6' | 'over7'
+export type CloudAnswer = 'above' | 'touching' | 'below'
+
+export type Outcome = 'assessed' | 'partial' | 'not_assessable'
+export type Scenario = 'assessed' | 'partial' | 'not_assessable' | 'stale'
+
+export interface Waypoint {
+  id: string
+  /** Official place name, never translated. */
+  name: string
+  latLng: LatLng
+  elevationM: number
+}
+
+export type StopLabel = { place: string } | { key: 'stop.lake' | 'stop.moraine' | 'stop.descent' }
+
+/** A point on the day's timeline, in walking order (out and back). */
+export interface Stop {
+  id: string
+  waypointId: string
+  label: StopLabel
+  /** Moving time from the previous stop at the reference pace (5–6 h hiker). */
+  legMinutes: Minutes
+  /** Break taken after arriving (not scaled by pace). */
+  breakMinutes?: Minutes
+}
+
+/** A mapped section of the official route. */
+export interface Leg {
+  id: string
+  fromStop: string
+  toStop: string
+  /** Every timeline stop that crosses this section, outbound and return. */
+  stopIds: string[]
+  grade: Grade
+  cables?: boolean
+}
+
+export interface Route {
+  id: string
+  fromName: string
+  toName: string
+  grade: Grade
+  distanceKm: number
+  ascentM: number
+  waypoints: Waypoint[]
+  stops: Stop[]
+  legs: Leg[]
+  cruxStopId: string
+  bailoutName: string
+  lastBoat: Minutes
+  turnaroundDefault: Minutes
+  /** Mock position used by field mode. */
+  field: {
+    elapsed: Minutes
+    remainingToCrux: Minutes
+    nextKm: number
+    nextAscentM: number
+  }
+}
+
+export type HazardKind = 'gusts' | 'showers'
+
+export interface HazardDef {
+  id: string
+  kind: HazardKind
+  /** Forecast window in which the hazard applies at full severity. */
+  window: { from: Minutes; to: Minutes }
+  /** Before the window, exposed stops read as moderate. */
+  buildUpFrom?: Minutes
+  /** Severity per exposed stop while inside the window. */
+  stops: Record<string, Severity>
+  place?: string
+  hasLiftsIf: boolean
+  /** Rule and source identifiers, shown only as a footnote. */
+  provenance: string
+}
+
+export type GapKind = 'warnings' | 'snowline' | 'pace'
+
+export type Alternative =
+  | { id: string; kind: 'startEarlier'; start: Minutes; dependsOn: string }
+  | { id: string; kind: 'altRoute'; duration: string }
+
+export interface NotEvaluated {
+  legIds: string[]
+}
+
+export interface Forecast {
+  model: string
+  issuedAt: Minutes
+  unavailableSince: Minutes
+  checkedAt: Minutes
+  staleHours: number
+  feelsLikeC: number
+}
+
+export interface AssessmentData {
+  outcome: Outcome
+  stale: boolean
+  forecast: Forecast
+  hazards: HazardDef[]
+  gaps: GapKind[]
+  alternatives: Alternative[]
+  notEvaluated: NotEvaluated[]
+}
+
+export interface RecentRoute {
+  id: string
+  name: string
+  grade: Grade
+  checkedOn: string
+}
+
+export interface SavedPlan {
+  id: string
+  routeId: string
+  routeName: string
+  grade: Grade
+  date: string
+  start: Minutes
+  savedAt: number
+}
