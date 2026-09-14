@@ -1,0 +1,103 @@
+# Hiking Safety Assistant — Behavioural Analysis
+
+> **Purpose:** A behavioural perspective on the Hiking Safety Assistant: who the user is, the heuristics and biases they bring to the moment of use, where competitors fail, and how the build can be designed to change decisions rather than just surface data.
+>
+> **Companion to:** Hiking Safety Assistant — High-Level Requirements
+
+---
+
+## 1. Who the user is, and when they show up
+
+The expert alpinist doesn't need this app; they already read the SLF bulletin and the MeteoSwiss radar. The person who needs it is the **intermediate**: comfortable at T2–T3, aspiring to T4, often a visitor with no feel for how fast Alpine weather turns, frequently in a group, and usually with something already sunk into the day (a hut booking, a train ticket, a holiday that ends Friday).
+
+They meet the tool in three different cognitive states, and these are effectively three different people:
+
+| State | When | Characteristics |
+|---|---|---|
+| **Planning self** | Evening before | Optimistic, high bandwidth, low stakes, willing to read reasoning |
+| **Morning self** | Day of, before departure | Time-pressured, commitment already high, wants a green light |
+| **Field self** | On the route | Fatigued, hot-state, low bandwidth, poor connectivity, already invested in the summit |
+
+Design that treats these as one user is the first failure mode.
+
+---
+
+## 2. The biases that actually cause accidents
+
+- **Plan continuation / summit fever.** Once moving, people keep moving despite deteriorating cues. McCammon's FACETS study of avalanche accidents (Familiarity, Acceptance, Commitment, Expert halo, Tracks/scarcity, Social facilitation) applies almost unchanged to summer hiking.
+- **Sunk cost and scarcity.** "We came all this way" and "the hut is booked" override a marginal forecast.
+- **Single-point anchoring.** The user checks the weather for Interlaken (24°C, sun) and mentally applies it to the ridge at 2,800 m at 3 pm. Every weather app encourages this.
+- **Optimism bias on time.** Pace estimates assume a fit person on a good day, so the exposed section is reached exactly in the afternoon storm window.
+- **Overconfidence on grade.** Self-assessment of the T3/T4 boundary is unreliable; people judge difficulty by distance and ascent, not exposure.
+- **Social proof.** Sunny photos and "done by 2,300 people" on route apps read as safety evidence.
+- **Hot–cold empathy gap.** The planning self cannot imagine how the tired self will decide at the bail-out point.
+- **Automation bias.** Whatever you disclaim, the user hears a verdict. Conversely, uniform caution produces **alarm fatigue** and gets ignored — this is the tension buried in NFR-1.
+- **Group diffusion.** Nobody wants to be the one who calls it.
+
+---
+
+## 3. Where competitors fail
+
+| Category | Examples | Typical failure mode |
+|---|---|---|
+| Weather apps | MeteoSwiss, Meteoblue, yr | Precise-looking point forecasts with no route or elevation context; the fusion is left to the user |
+| Route platforms | Komoot, AllTrails, Outdooractive, SchweizMobil | Built on social proof; difficulty labels detached from the T-scale; good-weather imagery; weather as a bolted-on widget at best |
+| Generic LLMs | ChatGPT-style chat | Confident, ungrounded answers; invented conditions |
+| Everyone | — | The safety layer is a legal disclaimer that nobody reads and that changes no behaviour |
+
+---
+
+## 4. Design guidance
+
+### 4.1 Make pre-commitment the core mechanic, not a feature
+During planning, get the user to set turnaround times and if-then rules at specific bail-out points (FR-2): *"If not at the col by 11:30, or cloud base below the ridge, take the valley path."* The field version of the app then does one thing: remind the field self what the planning self decided, at the right place and time. This is the single most effective counter to plan continuation, and it maps directly onto FR-6 and the offline/pre-fetch model in NFR-4.
+
+### 4.2 Anchor on the crux, not the trailhead
+Lead every assessment with conditions at the most exposed point at the hour the user will be there. Show weather as a timeline along the hike, not a daily icon. This reframes FR-4 from a data requirement into a framing requirement.
+
+### 4.3 Resolve NFR-1 through specificity, not volume
+Over-warning that is generic trains people to ignore you. A warning that names a place, a time, a reason, and what would lift it (*"this clears if the 14:00 nowcast shows the cell tracking north"*) stays credible and gives the user something to check. Quiet must also mean something: *"nothing flagged on this segment given data as of 06:40"* with provenance — never "safe."
+
+### 4.4 Frame alternatives as gains, and offer them before investment
+Sunk cost is easiest to counter before the boots are on. On marginal days, present the lower route or the next-day option first and concretely, with the same view or the same hut. Loss aversion also works for you: state what continuing costs (*"you lose the 16:10 last lift and the descent option"*).
+
+### 4.5 Calibrate self-assessment with reference points, not labels
+Don't ask "what's your level?" Ask about recognisable experiences and fixed cables, and illustrate T4 with a specific named route. Plan for the weakest member of the group, and ask who that is.
+
+### 4.6 Give the group a neutral third party
+A shareable one-screen decision card lets someone say "the plan says we turn here" without owning the call. This is the healthy version of automation bias.
+
+### 4.7 Replace the disclaimer with "what I can't see"
+Specific, honest gaps (*"no snow-line data; forecast is 6 h old; models disagree on timing"*) build better-calibrated trust than boilerplate, and they satisfy DR-3 and SR-3 in a way users actually absorb.
+
+### 4.8 Keep the human in the loop deliberately
+Periodically ask the field self for an observation (cloud, wind, wet rock) and fold it into the assessment. This both improves the model and counters risk compensation: the act of looking up is itself a debiasing practice.
+
+### 4.9 Plan the descent
+Most falls happen on the way down, tired. Pace models should include fatigue, daylight, and lift times, and the descent should be a first-class part of the timeline.
+
+### 4.10 Evaluate behaviour, not just groundedness
+Beyond AIQ's correctness and latency, test on curated marginal days — including past-incident days — and measure false-reassurance rate. Ask testers "would you go?" after reading an output, because that reveals whether the conditions-not-verdicts framing (SR-4) is actually landing.
+
+---
+
+## 5. Mapping to requirements
+
+| Guidance | Requirements addressed |
+|---|---|
+| Pre-commitment mechanic | FR-2, FR-6, FR-10, NFR-4 |
+| Crux-anchored conditions | FR-4, FR-6, FR-7 |
+| Specific, liftable warnings | FR-8, NFR-1, DR-4 |
+| Gain-framed alternatives | FR-10, FR-11 |
+| Reference-based self-assessment | FR-3, FR-9 |
+| Group decision card | FR-8, SR-4 |
+| "What I can't see" | DR-3, NFR-2, SR-3 |
+| Human-in-the-loop observations | FR-9, AR-4 |
+| Descent planning | FR-6, FR-10 |
+| Behavioural evaluation | AR-3, NFR-1, SR-4 |
+
+---
+
+## 6. Recommended hackathon scoping cut
+
+Build the **planning-to-field handoff** end to end — pre-commitment rules plus crux-time-anchored conditions — rather than breadth across all three moments. It's the slice competitors don't have and the one that changes decisions.
