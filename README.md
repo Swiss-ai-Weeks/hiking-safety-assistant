@@ -1,5 +1,31 @@
 # Hiking safety assistant
 
+**Live demo:** <https://hiking-safety-assistant.vercel.app>
+
+A mobile-first React web app (Vite, TypeScript, Tailwind v4) built from the UI spec in [docs/design/](docs/design/hiking-safety-assistant-spec.html). It currently runs on mock data for the Oeschinensee → Blüemlisalphütte route, in English and French.
+
+### Run locally
+
+```bash
+pnpm install
+pnpm dev      # http://localhost:5173
+pnpm test     # unit tests
+pnpm build    # production build in dist/
+```
+
+Switch between demo states (assessed, partially assessed, not assessable, stale forecast) in Settings, or with `?outcome=partial`, `?outcome=not_assessable` or `?stale=1` on `/assessment`.
+
+### Deploy
+
+The project is hosted on Vercel and deployed manually with the Vercel CLI (pushes to GitHub do not deploy):
+
+```bash
+vercel deploy          # preview URL
+vercel deploy --prod   # updates the live demo
+```
+
+---
+
 ### Original
 - **Description:** Leverage public swiss data on weather and hiking routes to create an assistant.
 - **Tools:** RAG, MCP, AIQ
