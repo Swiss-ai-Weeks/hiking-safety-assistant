@@ -1,0 +1,20 @@
+# Install: sudo cp deploy/hiking-safety-assistant.service /etc/systemd/system/
+#          sudo systemctl daemon-reload && sudo systemctl enable --now hiking-safety-assistant
+# Edit User and the /opt/hiking-safety-assistant paths if the repo lives elsewhere.
+
+[Unit]
+Description=Hiking safety assistant (FastAPI API + built frontend)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=hiker
+WorkingDirectory=/opt/hiking-safety-assistant/backend
+Environment=PYTHONUNBUFFERED=1
+ExecStart=/opt/hiking-safety-assistant/backend/.venv/bin/uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers 2
+Restart=on-failure
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target

@@ -10,6 +10,12 @@ dist-ssr
 *.local
 coverage
 
+# Python
+.venv
+__pycache__
+.pytest_cache
+.ruff_cache
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
