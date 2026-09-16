@@ -10,7 +10,15 @@ export function nextSaturdayISO(from: Date = new Date()): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 }
 
-const DEFAULT_ROUTE_ID = 'oeschinensee-bluemlisalphuette'
+/**
+ * The demo route, and what the app falls back to.
+ *
+ * A computed route's id is a digest of the search that made it, and the backend holds that route
+ * in its disk cache for thirty days. An id saved for longer than that resolves to a 404 — and
+ * since the route is read with `useSuspenseQuery`, that throws on every screen. `LoadBoundary`
+ * recognises the 404 and offers this route, which cannot expire, as the way back.
+ */
+export const DEFAULT_ROUTE_ID = 'oeschinensee-bluemlisalphuette'
 const DEFAULT_START: Minutes = 7 * 60 + 30
 
 interface PlanData {
@@ -35,6 +43,7 @@ interface PlanData {
 
 interface PlanActions {
   setLang: (lang: Lang) => void
+  setRouteId: (routeId: string) => void
   setScenario: (scenario: Scenario) => void
   setDate: (date: string) => void
   setPlannedStart: (start: Minutes) => void
@@ -82,6 +91,7 @@ export const usePlan = create<PlanState>()(
       return {
         ...initialData(),
         setLang: (lang) => set({ lang }),
+        setRouteId: (routeId) => edit({ routeId, planAccepted: false, turnaround: null }),
         setScenario: (scenario) => set({ scenario }),
         setDate: (date) => edit({ date }),
         setPlannedStart: (start) => edit({ start, originalStart: start }),

@@ -7,20 +7,23 @@ import { ChevronRight } from '../components/icons'
 import { ScreenHeader } from '../components/ScreenHeader'
 import { SeverityDot, SeverityLegend } from '../components/Severity'
 import { formatArrival, formatClock } from '../domain/timing'
-import type { LatLng } from '../domain/types'
+import type { LatLng, Leg, Route } from '../domain/types'
 import { useAssessmentView } from '../hooks/useAssessmentView'
 import { useT } from '../i18n'
 import { formatInt, formatKm } from '../lib/format'
-import { routeName, stopWaypoint } from '../lib/route'
+import { routeName, stopWaypoint, waypointById } from '../lib/route'
 import { SEVERITY_STROKE } from '../lib/ui'
 import { useTurnaround } from '../store/plan'
 
-/** Label offsets relative to each waypoint, as in the spec's map prototype. */
-const LABEL_POSITION: Record<string, string> = {
-  lake: 'left:-6px;bottom:12px',
-  ober: 'right:10px;bottom:10px',
-  hohturli: 'right:-6px;top:14px',
-  hutte: 'right:-4px;bottom:12px',
+/**
+ * Where a label sits relative to its dot. The spec's prototype hard-coded one offset per
+ * Oeschinensee waypoint, which no computed route has. Instead the label is pushed *away* from the
+ * middle of the route, so it leans out over empty map rather than back across the line.
+ */
+function labelOffset(point: LatLng, centre: LatLng): string {
+  const vertical = point[0] >= centre[0] ? 'bottom:12px' : 'top:14px'
+  const horizontal = point[1] >= centre[1] ? 'left:-6px' : 'right:-6px'
+  return `${horizontal};${vertical}`
 }
 
 const dotIcon = L.divIcon({ className: '', html: '<div class="map-dot"></div>', iconSize: [12, 12], iconAnchor: [6, 6] })
@@ -37,6 +40,18 @@ function labelIcon(text: string, variant: '' | 'crux' | 'turn', position: string
   el.setAttribute('style', position)
   el.textContent = text
   return L.divIcon({ className: '', html: el, iconSize: [0, 0], iconAnchor: [0, 0] })
+}
+
+/**
+ * The line to draw for a leg. A computed route carries its real geometry and each leg indexes
+ * into it; the demo route has waypoints only, so it falls back to a chord between the two stops.
+ */
+function legPositions(route: Route, leg: Leg): LatLng[] {
+  const { geometry } = route
+  if (geometry && leg.fromIndex !== undefined && leg.toIndex !== undefined) {
+    return geometry.slice(leg.fromIndex, leg.toIndex + 1)
+  }
+  return [stopWaypoint(route, leg.fromStop).latLng, stopWaypoint(route, leg.toStop).latLng]
 }
 
 function PanTo({ target }: { target: LatLng | null }) {
@@ -57,29 +72,57 @@ export function RouteMapScreen() {
   const [me, setMe] = useState<LatLng | null>(null)
   const [locate, setLocate] = useState<LocateState>('idle')
 
-  const bounds = useMemo(() => L.latLngBounds(route.waypoints.map((w) => w.latLng)), [route])
+  // Fit the real line where there is one: a computed route wanders well outside the box its
+  // five waypoints describe.
+  const bounds = useMemo(
+    () => L.latLngBounds(route.geometry?.length ? route.geometry : route.waypoints.map((w) => w.latLng)),
+    [route],
+  )
   const forecastTime = formatClock(data.forecast.issuedAt)
   const backTo = params.get('from') === 'field' ? '/field' : { pathname: '/assessment', search }
 
+  /**
+   * The four points worth naming on the map, derived from the route rather than listed by id:
+   * where you start, where you can still turn back, the crux, and where you are going.
+   */
   const labels = useMemo(() => {
-    const crux = stopWaypoint(route, route.cruxStopId)
-    return [
-      { id: 'lake', icon: labelIcon(`${route.fromName} · ${formatArrival(arrivals['lake-start'])}`, '', LABEL_POSITION.lake) },
-      {
-        id: 'ober',
-        icon: labelIcon(`${route.bailoutName} · ${formatArrival(arrivals.ober)} · ${t('map.bailout')}`, 'turn', LABEL_POSITION.ober),
-      },
-      {
-        id: crux.id,
-        icon: labelIcon(
-          `${crux.name} ${formatInt(crux.elevationM)} m · ${formatArrival(arrivals[route.cruxStopId])} · ${t('map.turnBy', { time: formatClock(turnaround) })}`,
-          'crux',
-          LABEL_POSITION.hohturli,
-        ),
-      },
-      { id: 'hutte', icon: labelIcon(route.toName, '', LABEL_POSITION.hutte) },
+    const centre = bounds.getCenter()
+    const middle: LatLng = [centre.lat, centre.lng]
+    const start = route.stops[0]
+    // The turnaround is where the break is taken; failing that, the midpoint of an out-and-back.
+    const turnaroundStop =
+      route.stops.find((stop) => stop.breakMinutes) ?? route.stops[Math.floor((route.stops.length - 1) / 2)]
+    // A computed route names the bail-out stop outright. The demo route gives only a name, so it
+    // is matched back to the waypoint that carries it.
+    const bailoutStopId =
+      route.bailoutStopId ??
+      route.stops.find((stop) => waypointById(route, stop.waypointId).name === route.bailoutName)?.id
+
+    const entries: { stopId: string; text: string; variant: '' | 'crux' | 'turn' }[] = [
+      { stopId: start.id, text: `${route.fromName} · ${formatArrival(arrivals[start.id])}`, variant: '' },
     ]
-  }, [route, arrivals, turnaround, t])
+    if (bailoutStopId && bailoutStopId !== route.cruxStopId) {
+      entries.push({
+        stopId: bailoutStopId,
+        text: `${route.bailoutName} · ${formatArrival(arrivals[bailoutStopId])} · ${t('map.bailout')}`,
+        variant: 'turn',
+      })
+    }
+    const crux = stopWaypoint(route, route.cruxStopId)
+    entries.push({
+      stopId: route.cruxStopId,
+      text: `${crux.name} ${formatInt(crux.elevationM)} m · ${formatArrival(arrivals[route.cruxStopId])} · ${t('map.turnBy', { time: formatClock(turnaround) })}`,
+      variant: 'crux',
+    })
+    if (turnaroundStop.id !== route.cruxStopId) {
+      entries.push({ stopId: turnaroundStop.id, text: route.toName, variant: '' })
+    }
+
+    return entries.map((entry) => {
+      const position = stopWaypoint(route, entry.stopId).latLng
+      return { stopId: entry.stopId, position, icon: labelIcon(entry.text, entry.variant, labelOffset(position, middle)) }
+    })
+  }, [route, arrivals, turnaround, t, bounds])
 
   const locateMe = () => {
     if (!('geolocation' in navigator)) {
@@ -125,7 +168,7 @@ export function RouteMapScreen() {
             maxZoom={17}
           />
           {route.legs.map((leg) => {
-            const positions = [stopWaypoint(route, leg.fromStop).latLng, stopWaypoint(route, leg.toStop).latLng]
+            const positions = legPositions(route, leg)
             const severity = evaluation.legSeverity[leg.id]
             return (
               <Fragment key={leg.id}>
@@ -146,8 +189,8 @@ export function RouteMapScreen() {
           ))}
           {labels.map((label) => (
             <Marker
-              key={`${label.id}-label`}
-              position={route.waypoints.find((w) => w.id === label.id)!.latLng}
+              key={`${label.stopId}-label`}
+              position={label.position}
               icon={label.icon}
               interactive={false}
               keyboard={false}

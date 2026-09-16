@@ -28,6 +28,14 @@ class Settings(BaseSettings):
     stac_base_url: str = "https://data.geo.admin.ch/api/stac/v1"
     # The fallback weather source: same ICON fields over JSON, no GRIB toolchain.
     open_meteo_base_url: str = "https://api.open-meteo.com/v1"
+    # OSM, for the SAC grades swissTLM3D does not carry.
+    overpass_url: str = "https://overpass-api.de/api/interpreter"
+
+    # The routable trail graph, built once by `scripts/import_trails.py`.
+    trails_db: Path = BACKEND_DIR / "data" / "trails.sqlite"
+    # What that import keeps, as LV95 easting/northing (min_e, min_n, max_e, max_n). The default
+    # covers the Bernese Oberland; widen it to route elsewhere, at the cost of import time.
+    trails_bbox: tuple[float, float, float, float] = (2_580_000, 1_120_000, 2_680_000, 1_190_000)
 
     cache_dir: Path = BACKEND_DIR / ".cache"
     cache_ttl_forecast_s: int = 30 * 60

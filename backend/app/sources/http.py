@@ -5,6 +5,7 @@ forecast value — model run, coordinate and hour — rather than by URL. The sa
 hour from the same run is fetched once.
 """
 
+import asyncio
 import hashlib
 import json
 import logging
@@ -25,6 +26,8 @@ log = logging.getLogger(__name__)
 # ~11 m. Coordinates are rounded before they enter a cache key so that floating-point noise in
 # an interpolated route point cannot miss an otherwise identical entry.
 COORD_DP = 4
+
+USER_AGENT = "hiking-safety-assistant/0.1 (+https://github.com/Swiss-ai-Weeks/hiking-safety-assistant)"
 
 
 class _Retryable(Exception):
@@ -99,14 +102,34 @@ class CachedHttpClient:
     def __init__(self, settings: Settings, transport: httpx.BaseTransport | None = None) -> None:
         self.settings = settings
         self.cache = DiskCache(settings.cache_dir)
-        self._client = httpx.AsyncClient(
-            timeout=settings.http_timeout_s,
-            transport=transport,
-            headers={"Accept": "application/json"},
-        )
+        self._transport = transport
+        self._client: httpx.AsyncClient | None = None
+        self._loop: asyncio.AbstractEventLoop | None = None
+
+    def _connection(self) -> httpx.AsyncClient:
+        """The client, created on first use and rebuilt if the event loop underneath it changed.
+
+        `get_sources` is cached for the process, so one `CachedHttpClient` outlives any single
+        loop. An `AsyncClient` holds connections bound to the loop that opened them, and reusing
+        one across loops fails with "Event loop is closed" — which is exactly what a `TestClient`
+        does, a request per loop. Under uvicorn there is one loop and this builds one client.
+        """
+        loop = asyncio.get_running_loop()
+        if self._client is None or self._loop is not loop:
+            self._client = httpx.AsyncClient(
+                timeout=self.settings.http_timeout_s,
+                transport=self._transport,
+                # Overpass answers 406 to a request without a User-Agent, and it is good manners
+                # to say who is calling a free public API in any case.
+                headers={"Accept": "application/json", "User-Agent": USER_AGENT},
+            )
+            self._loop = loop
+        return self._client
 
     async def aclose(self) -> None:
-        await self._client.aclose()
+        if self._client is not None:
+            await self._client.aclose()
+            self._client = None
 
     async def __aenter__(self) -> "CachedHttpClient":
         return self
@@ -122,7 +145,23 @@ class CachedHttpClient:
         self.cache.write(key, body)
         return body
 
-    async def _fetch(self, url: str, source: str, params: dict[str, Any] | None) -> Any:
+    async def post_json(self, url: str, *, key: CacheKey, ttl_s: float, data: dict[str, Any]) -> Any:
+        """Same cache and retry as `get_json`, for the requests too large to be a URL.
+
+        A routed polyline has hundreds of vertices; as a query parameter it overruns what
+        swisstopo's profile endpoint accepts. The cache key still describes the *request*, not
+        the method, so a cached profile is a cached profile either way.
+        """
+        cached = self.cache.read(key, ttl_s)
+        if cached is not None:
+            return cached
+        body = await self._fetch(url, key.source, None, form=data)
+        self.cache.write(key, body)
+        return body
+
+    async def _fetch(
+        self, url: str, source: str, params: dict[str, Any] | None, form: dict[str, Any] | None = None
+    ) -> Any:
         retrying = AsyncRetrying(
             stop=stop_after_attempt(self.settings.http_attempts),
             wait=wait_exponential_jitter(
@@ -133,14 +172,18 @@ class CachedHttpClient:
             reraise=True,
         )
         try:
-            return await retrying(self._get_once, url, source, params)
+            return await retrying(self._once, url, source, params, form)
         except _Retryable as exc:
             attempts = self.settings.http_attempts
             raise SourceUnavailable(source, f"{url} failed after {attempts} attempts: {exc}") from exc
 
-    async def _get_once(self, url: str, source: str, params: dict[str, Any] | None) -> Any:
+    async def _once(self, url: str, source: str, params: dict[str, Any] | None, form: dict[str, Any] | None) -> Any:
         try:
-            response = await self._client.get(url, params=params)
+            connection = self._connection()
+            if form is None:
+                response = await connection.get(url, params=params)
+            else:
+                response = await connection.post(url, data=form)
         except httpx.TransportError as exc:
             raise _Retryable(str(exc)) from exc
         if response.status_code >= 500:

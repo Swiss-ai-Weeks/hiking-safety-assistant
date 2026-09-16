@@ -6,7 +6,8 @@ it means `SOURCE_MODE=demo` provably serves the same bytes as before this seam e
 
 from ..domain import ElevationProfile, GeoPoint, PlaceHit, PointForecast, Warning
 from ..mock_data import FORECAST, RECENT_ROUTES, ROUTES, get_assessment
-from ..models import AssessmentData, RecentRoute, Route, Scenario
+from ..models import AssessmentData, RecentRoute, Route, RouteRequest, Scenario
+from .base import SourceUnavailable
 
 # `mock_data.FORECAST` records the run as a model name and an issue time in minutes.
 DEMO_MODEL_RUN = f"{FORECAST.model} {FORECAST.issued_at // 60:02d}:{FORECAST.issued_at % 60:02d}"
@@ -27,6 +28,11 @@ class DemoRouteSource:
 
     async def get_route(self, route_id: str) -> Route | None:
         return ROUTES.get(route_id)
+
+    async def create_route(self, request: RouteRequest) -> Route:
+        # Demo mode has no trail network to route over, and inventing a line between two arbitrary
+        # points is exactly the kind of made-up data this mode exists to keep honest.
+        raise SourceUnavailable("demo", "routing needs SOURCE_MODE=live and an imported trail graph")
 
     async def recent_routes(self) -> list[RecentRoute]:
         return RECENT_ROUTES

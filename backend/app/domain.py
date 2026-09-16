@@ -30,6 +30,20 @@ class PlaceHit:
 
 
 @dataclass(frozen=True, slots=True)
+class NamedPlace:
+    """A named feature near the route: a pass, a hut, a lake, a summit.
+
+    `weight` is how much that kind of place deserves to be a stop on the timeline; see
+    `sources/names.py`, which decides it while parsing.
+    """
+
+    name: str
+    point: GeoPoint
+    kind: str
+    weight: int
+
+
+@dataclass(frozen=True, slots=True)
 class ElevationProfile:
     """Elevation sampled along a geometry, in walking order."""
 

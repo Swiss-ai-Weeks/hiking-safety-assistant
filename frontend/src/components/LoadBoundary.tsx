@@ -1,6 +1,8 @@
 import { QueryErrorResetBoundary } from '@tanstack/react-query'
 import { Component, Suspense, type ReactNode } from 'react'
+import { ApiError } from '../api/client'
 import { useT } from '../i18n'
+import { DEFAULT_ROUTE_ID, usePlan } from '../store/plan'
 import { Button } from './Button'
 import { Skeleton } from './Card'
 
@@ -11,29 +13,51 @@ interface ErrorBoundaryProps {
   children: ReactNode
 }
 
-class ErrorBoundary extends Component<ErrorBoundaryProps, { failed: boolean }> {
-  state = { failed: false }
+class ErrorBoundary extends Component<ErrorBoundaryProps, { error: unknown }> {
+  state: { error: unknown } = { error: null }
 
-  static getDerivedStateFromError() {
-    return { failed: true }
+  static getDerivedStateFromError(error: unknown) {
+    return { error }
   }
 
   componentDidUpdate(prev: ErrorBoundaryProps) {
-    if (this.state.failed && prev.resetKey !== this.props.resetKey) this.reset()
+    if (this.state.error && prev.resetKey !== this.props.resetKey) this.reset()
   }
 
   reset = () => {
     this.props.onReset()
-    this.setState({ failed: false })
+    this.setState({ error: null })
   }
 
   render() {
-    return this.state.failed ? <LoadError onRetry={this.reset} /> : this.props.children
+    return this.state.error ? <LoadError error={this.state.error} onRetry={this.reset} /> : this.props.children
   }
 }
 
-function LoadError({ onRetry }: { onRetry: () => void }) {
+function LoadError({ error, onRetry }: { error: unknown; onRetry: () => void }) {
   const { t } = useT()
+  const setRouteId = usePlan((s) => s.setRouteId)
+
+  // A 404 means the route itself is gone — a computed route that has aged out of the backend's
+  // cache. Retrying can only 404 again, so the way out is a route that cannot expire.
+  if (error instanceof ApiError && error.status === 404) {
+    return (
+      <main role="alert" className="flex flex-1 flex-col justify-center gap-4 px-[22px] py-10">
+        <p className="text-[15px] leading-normal">{t('common.routeGone')}</p>
+        <Button
+          variant="accent"
+          size="md"
+          onClick={() => {
+            setRouteId(DEFAULT_ROUTE_ID)
+            onRetry()
+          }}
+        >
+          {t('common.routeGoneAction')}
+        </Button>
+      </main>
+    )
+  }
+
   return (
     <main role="alert" className="flex flex-1 flex-col justify-center gap-4 px-[22px] py-10">
       <p className="text-[15px] leading-normal">{t('common.loadError')}</p>

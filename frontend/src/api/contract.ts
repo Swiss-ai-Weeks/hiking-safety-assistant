@@ -16,8 +16,11 @@ import type {
   HazardDef,
   Leg,
   NotEvaluated,
+  PlaceRef,
+  PlaceResult,
   RecentRoute,
   Route,
+  RouteRequest,
   Scenario,
   Stop,
   Waypoint,
@@ -49,6 +52,13 @@ type Wire<K extends keyof Schemas> = NoNulls<Schemas[K]>
 
 type Json<T> = T extends { content: { 'application/json': infer B } } ? NoNulls<B> : never
 
+/**
+ * The *request* body of a path, which `Json` cannot reach: a response is keyed by status code,
+ * a body is not. Nulls are kept here — this is what we send, and pydantic accepts the optional
+ * fields as absent either way.
+ */
+type Body<T> = T extends { requestBody: { content: { 'application/json': infer B } } } ? B : never
+
 // Field names, exactly. This is the assertion a rename in models.py breaks.
 export type _WaypointKeys = Expect<Exact<keyof Waypoint, keyof Schemas['Waypoint']>>
 export type _StopKeys = Expect<Exact<keyof Stop, keyof Schemas['Stop']>>
@@ -59,6 +69,8 @@ export type _ForecastKeys = Expect<Exact<keyof Forecast, keyof Schemas['Forecast
 export type _AssessmentKeys = Expect<Exact<keyof AssessmentData, keyof Schemas['AssessmentData']>>
 export type _NotEvaluatedKeys = Expect<Exact<keyof NotEvaluated, keyof Schemas['NotEvaluated']>>
 export type _RecentRouteKeys = Expect<Exact<keyof RecentRoute, keyof Schemas['RecentRoute']>>
+export type _PlaceResultKeys = Expect<Exact<keyof PlaceResult, keyof Schemas['PlaceResult']>>
+export type _PlaceRefKeys = Expect<Exact<keyof PlaceRef, keyof Schemas['PlaceRef']>>
 
 // Field types. This is the assertion a retype breaks (Minutes -> string, a widened enum, a
 // tuple becoming a list).
@@ -89,6 +101,15 @@ export type _RetryEndpoint = Expect<
     { available: boolean; checkedAt: number }
   >
 >
+export type _SearchEndpoint = Expect<
+  Assignable<Json<paths['/api/routes/search']['get']['responses'][200]>, PlaceResult[]>
+>
+export type _CreateRouteEndpoint = Expect<
+  Assignable<Json<paths['/api/routes']['post']['responses'][200]>, Route>
+>
+// The other direction: what we send has to be what the backend accepts. `from` is a reserved
+// word in Python, so this is also what checks that the alias survived.
+export type _CreateRouteBody = Expect<Assignable<RouteRequest, Body<paths['/api/routes']['post']>>>
 
 // `?scenario=` accepts exactly the four demo states the UI can ask for. The parameter is
 // optional (it defaults to `assessed`), so `undefined` is dropped before comparing.

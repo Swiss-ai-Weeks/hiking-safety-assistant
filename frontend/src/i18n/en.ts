@@ -6,6 +6,8 @@ export const en = {
   'common.decrease': 'Fewer',
   'common.increase': 'More',
   'common.loadError': "Couldn't load data from the server.",
+  'common.routeGone': 'That route is no longer available. It was worked out from a search, and those expire after a while.',
+  'common.routeGoneAction': 'Back to the demo route',
   'common.retry': 'Try again',
 
   'plan.eyebrow': 'Plan a hike',

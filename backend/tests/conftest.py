@@ -51,6 +51,25 @@ def replay(name: str, *, status: int = 200) -> httpx.MockTransport:
     return httpx.MockTransport(lambda _request: httpx.Response(status, json=body))
 
 
+def replay_by_url(routes: dict[str, str]) -> httpx.MockTransport:
+    """Replay several recorded services at once, chosen by what is in the URL.
+
+    A route request fans out to swissALTI3D, Overpass and swissnames3d, and `replay` answers every
+    request with the same body. Keys are matched against the full URL, so "profile.json" and
+    "overpass" are enough to tell the three apart.
+    """
+    bodies = {fragment: load_fixture(name) for fragment, name in routes.items()}
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        url = str(request.url)
+        for fragment, body in bodies.items():
+            if fragment in url:
+                return httpx.Response(200, json=body)
+        raise AssertionError(f"no fixture for {url}; add one to `replay_by_url`")
+
+    return httpx.MockTransport(handler)
+
+
 def responses(*staged: httpx.Response) -> tuple[httpx.MockTransport, list[httpx.Request]]:
     """A transport that returns `staged` in order, then repeats the last. Records what it saw."""
     seen: list[httpx.Request] = []

@@ -58,6 +58,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/routes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create Route
+         * @description Route between two searched places over the official trail network.
+         */
+        post: operations["create_route_api_routes_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/routes/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Search Places
+         * @description Place-name search, for picking the ends of a route.
+         */
+        get: operations["search_places_api_routes_search_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/routes/{route_id}": {
         parameters: {
             query?: never;
@@ -194,8 +234,14 @@ export interface components {
          * @description A mapped section of the official route.
          */
         Leg: {
+            /** Ascentm */
+            ascentM?: number | null;
             /** Cables */
             cables?: boolean | null;
+            /** Distancekm */
+            distanceKm?: number | null;
+            /** Fromindex */
+            fromIndex?: number | null;
             /** Fromstop */
             fromStop: string;
             /**
@@ -203,10 +249,14 @@ export interface components {
              * @enum {string}
              */
             grade: "T1" | "T2" | "T3" | "T4" | "T5" | "T6";
+            /** Gradeestimated */
+            gradeEstimated?: boolean | null;
             /** Id */
             id: string;
             /** Stopids */
             stopIds: string[];
+            /** Toindex */
+            toIndex?: number | null;
             /** Tostop */
             toStop: string;
         };
@@ -219,6 +269,37 @@ export interface components {
         PlaceLabel: {
             /** Place */
             place: string;
+        };
+        /**
+         * PlaceRef
+         * @description A place the hiker picked out of search, as it comes back in.
+         */
+        PlaceRef: {
+            /** Latlng */
+            latLng: [
+                number,
+                number
+            ];
+            /** Name */
+            name: string;
+        };
+        /**
+         * PlaceResult
+         * @description One search result. `rank` is swisstopo's own ordering; lower sorts first.
+         *
+         *     Named apart from `domain.PlaceHit` on purpose: that one is the parsed source object and must
+         *     never reach the wire, and `test_openapi_contract` checks by name that it does not.
+         */
+        PlaceResult: {
+            /** Latlng */
+            latLng: [
+                number,
+                number
+            ];
+            /** Name */
+            name: string;
+            /** Rank */
+            rank: number;
         };
         /** RecentRoute */
         RecentRoute: {
@@ -247,13 +328,24 @@ export interface components {
             ascentM: number;
             /** Bailoutname */
             bailoutName: string;
+            /** Bailoutstopid */
+            bailoutStopId?: string | null;
             /** Cruxstopid */
             cruxStopId: string;
+            /** Descentm */
+            descentM?: number | null;
             /** Distancekm */
             distanceKm: number;
+            /** Elevations */
+            elevations?: number[] | null;
             field: components["schemas"]["FieldPosition"];
             /** Fromname */
             fromName: string;
+            /** Geometry */
+            geometry?: [
+                number,
+                number
+            ][] | null;
             /**
              * Grade
              * @enum {string}
@@ -273,6 +365,13 @@ export interface components {
             turnaroundDefault: number;
             /** Waypoints */
             waypoints: components["schemas"]["Waypoint"][];
+        };
+        /** RouteRequest */
+        RouteRequest: {
+            from: components["schemas"]["PlaceRef"];
+            to: components["schemas"]["PlaceRef"];
+            /** Via */
+            via?: components["schemas"]["PlaceRef"][];
         };
         /** StartEarlier */
         StartEarlier: {
@@ -405,6 +504,70 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["RecentRoute"][];
+                };
+            };
+        };
+    };
+    create_route_api_routes_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RouteRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Route"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    search_places_api_routes_search_get: {
+        parameters: {
+            query: {
+                q: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlaceResult"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };

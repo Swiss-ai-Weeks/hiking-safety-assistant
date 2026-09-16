@@ -64,6 +64,15 @@ class Leg(Schema):
     stop_ids: list[str]
     grade: Grade
     cables: bool | None = None
+    # True when `grade` is swissTLM3D's official class with nothing finer to confirm it. The UI
+    # says so rather than implying a precision the sources do not have.
+    grade_estimated: bool | None = None
+    distance_km: float | None = None
+    ascent_m: int | None = None
+    # Half-open range into `Route.geometry`, so the map can draw this leg along the real line
+    # instead of a straight chord between its two stops.
+    from_index: int | None = None
+    to_index: int | None = None
 
 
 class FieldPosition(Schema):
@@ -87,8 +96,42 @@ class Route(Schema):
     bailout_name: str
     last_boat: Minutes
     turnaround_default: Minutes
-    # Mock position used by field mode.
+    # Where field mode starts from: at the trailhead, not yet moving. Phase 4 replaces it with a
+    # live position, which is why it stays a plain part of the route for now.
     field: FieldPosition
+    descent_m: int | None = None
+    # Which stop the bail-out is, so the map can place its label. `bailout_name` alone cannot be
+    # located on the route.
+    bailout_stop_id: str | None = None
+    # The real walked line, [(lat, lng), ...]. Legs index into it; without it the map can only
+    # draw straight lines between stops.
+    geometry: list[tuple[float, float]] | None = None
+    # Metres above sea level at each point of `geometry`, same length and order.
+    elevations: list[int] | None = None
+
+
+class PlaceRef(Schema):
+    """A place the hiker picked out of search, as it comes back in."""
+
+    name: str
+    lat_lng: tuple[float, float]
+
+
+class PlaceResult(PlaceRef):
+    """One search result. `rank` is swisstopo's own ordering; lower sorts first.
+
+    Named apart from `domain.PlaceHit` on purpose: that one is the parsed source object and must
+    never reach the wire, and `test_openapi_contract` checks by name that it does not.
+    """
+
+    rank: int
+
+
+class RouteRequest(Schema):
+    # `from` is a Python keyword, so the field is aliased, as `Window.from_` is.
+    from_: PlaceRef = Field(alias="from")
+    to: PlaceRef
+    via: list[PlaceRef] = Field(default_factory=list)
 
 
 class Window(Schema):

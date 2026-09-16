@@ -5,6 +5,7 @@ import pytest
 from app.config import Settings
 from app.domain import GeoPoint
 from app.mock_data import OESCHINEN_ROUTE, get_assessment
+from app.models import RouteRequest
 from app.sources import build_sources
 from app.sources.base import (
     Assessor,
@@ -14,7 +15,8 @@ from app.sources.base import (
     WarningSource,
     WeatherSource,
 )
-from app.sources.geoadmin import GeoAdminRouteSource
+from app.sources.swissalti import SwissAltiElevationSource
+from app.sources.tlm import TlmRouteSource
 
 pytestmark = pytest.mark.anyio
 
@@ -73,17 +75,30 @@ async def test_demo_has_no_warnings_which_is_why_it_is_a_gap():
     assert "warnings" in (await DEMO.assessor.assess(OESCHINEN_ROUTE, "assessed")).gaps
 
 
-def test_live_mode_wires_the_real_search():
+async def test_demo_mode_refuses_to_invent_a_route():
+    # Demo has no trail network. Routing two arbitrary points would mean drawing a line, which is
+    # the one thing this mode exists to avoid.
+    with pytest.raises(SourceUnavailable, match="SOURCE_MODE=live"):
+        await DEMO.routes.create_route(
+            RouteRequest.model_validate(
+                {"from": {"name": "a", "latLng": [46.5, 7.7]}, "to": {"name": "b", "latLng": [46.6, 7.8]}}
+            )
+        )
+
+
+def test_live_mode_wires_routing_and_elevation():
     live = build_sources(Settings(source_mode="live"))
 
     assert live.mode == "live"
-    assert isinstance(live.routes, GeoAdminRouteSource)
+    assert isinstance(live.routes, TlmRouteSource)
+    assert isinstance(live.elevation, SwissAltiElevationSource)
+    assert isinstance(live.routes, RouteSource)
+    assert isinstance(live.elevation, ElevationSource)
 
 
 @pytest.mark.parametrize(
     ("attribute", "call", "phase"),
     [
-        ("elevation", lambda s: s.elevation.profile([]), "Phase 1"),
         ("weather", lambda s: s.weather.forecast_at(GeoPoint(46.5, 7.7), 600), "Phase 2"),
         ("warnings", lambda s: s.warnings.warnings_for([]), "Phase 2"),
         ("assessor", lambda s: s.assessor.assess(OESCHINEN_ROUTE, "assessed"), "Phase 3"),
@@ -96,8 +111,19 @@ async def test_unimplemented_live_sources_fail_loudly(attribute, call, phase):
         await call(live)
 
 
-async def test_live_routing_is_not_implemented_yet():
-    live = build_sources(Settings(source_mode="live"))
+async def test_live_routing_without_an_imported_graph_says_how_to_build_it(tmp_path):
+    # `cache_dir` is isolated deliberately: a computed route is cached by id, so pointing at the
+    # real cache would answer from it and never reach the missing graph this test is about.
+    live = build_sources(
+        Settings(source_mode="live", trails_db=tmp_path / "absent.sqlite", cache_dir=tmp_path / "cache")
+    )
 
-    with pytest.raises(SourceUnavailable, match="Phase 1"):
-        await live.routes.get_route(OESCHINEN_ROUTE.id)
+    with pytest.raises(SourceUnavailable, match="import_trails"):
+        await live.routes.create_route(
+            RouteRequest.model_validate(
+                {
+                    "from": {"name": "Oeschinensee", "latLng": [46.49836, 7.72667]},
+                    "to": {"name": "Blüemlisalphütte", "latLng": [46.51019, 7.77162]},
+                }
+            )
+        )

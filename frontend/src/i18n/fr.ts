@@ -8,6 +8,8 @@ export const fr: Messages = {
   'common.decrease': 'Moins',
   'common.increase': 'Plus',
   'common.loadError': 'Impossible de charger les données du serveur.',
+  'common.routeGone': "Cet itinéraire n'est plus disponible. Il provenait d'une recherche, et celles-ci expirent au bout d'un moment.",
+  'common.routeGoneAction': "Revenir à l'itinéraire de démonstration",
   'common.retry': 'Réessayer',
 
   'plan.eyebrow': 'Planifier une randonnée',

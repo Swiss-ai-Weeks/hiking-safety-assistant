@@ -31,3 +31,7 @@ __pycache__
 
 # Recorded source responses (see SOURCE_MODE)
 backend/.cache
+
+# The swissTLM3D download and the graph built from it: ~190 MB, rebuilt by scripts/, never committed.
+# The small clipped extract the tests run against lives in backend/tests/fixtures/ and *is* committed.
+backend/data

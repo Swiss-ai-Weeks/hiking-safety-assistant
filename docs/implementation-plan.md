@@ -73,7 +73,7 @@ Internal domain objects live in `backend/app/domain.py` as plain dataclasses, no
 pydantic models, so they cannot reach a response and leak into the generated schema;
 a test asserts that.
 
-## Phase 1 - Real routes (~14 h)
+## Phase 1 - Real routes (~14 h) - done
 
 swissTLM3D Wanderwege (`ch.swisstopo.swisstlm3d-wanderwege`) downloaded once into
 GeoPackage/SQLite, loaded into a `networkx` graph, routed with Dijkstra.
@@ -98,6 +98,52 @@ TLM3D carries no SAC scale, so grade and the `cables` flag are cross-referenced
 against OSM tags (`sac_scale`, `assisted_trail`, `trail_visibility`) matched onto the
 TLM3D geometry. Where no match exists the leg is graded conservatively and reported
 as a gap rather than guessed.
+
+### What landed
+
+`POST /api/routes` and `GET /api/routes/search` are live; the computed Oeschinensee route
+comes out at 10.2 km and 1 200 m against the hand-authored 11.2 km and 1 220 m, picks
+Hohtürli as its crux and Berghaus Oberbärgli as its bail-out — the same choices
+`mock_data.py` made by hand, arrived at from the data. Six deviations from the plan above,
+all of them things the sources turned out to say:
+
+- **TLM3D does carry a hiking classification.** The plan assumed it did not, and swisstopo's
+  published API layer agrees — `hikingtype` is null at every point probed. The GeoPackage is
+  a different story: `wanderwege` is populated on all 409,276 rows as `Wanderweg` /
+  `Bergwanderweg` / `Alpinwanderweg`, the official signposting scheme. So OSM is no longer the
+  grade source but a *refinement*: TLM3D sets a floor that is complete and authoritative, OSM
+  can raise it within a class, and no leg is ever ungraded. OSM's `sac_scale` covers about a
+  third of the ways around the demo route, which would have left the rest guessed.
+- **`assisted_trail` is not the cables tag.** It has zero coverage in the Bernese Oberland.
+  `safety_rope`, `ladder` and `via_ferrata_scale` are what is actually used.
+- **A grade needs corroboration.** Matching one point per segment let a 13 m connector read T5
+  off a stray via ferrata crossing it. A promotion now has to be carried by at least two
+  samples, a quarter of them, and spread over at least 100 m of trail.
+- **Snapping is to the nearest line, not the nearest node.** TLM3D lines run up to 4.7 km, so
+  nodes are far apart; snapping to them put the Oeschinensee start 145 m above the lake.
+- **The crux is a sliding 500 m window,** not the steepest segment — per segment, the winner
+  was a 24 m connector rising 11 m.
+- **swisstopo's services reject WGS84.** `profile.json` answers HTTP 400 ("valid number for the
+  spatial reference system model: 21781, 2056") and `MapServer/identify` silently returns an
+  empty result set. Everything goes out in LV95; `app/projection.py` holds the transformers.
+
+Two things the plan did not ask for but Phase 1 needed. The elevation profile and place-name
+lookups are POSTs and Overpass rejects a request with no `User-Agent`, so `CachedHttpClient`
+grew `post_json` and a `User-Agent`; and its `AsyncClient` is now built lazily per event loop,
+because `get_sources` is cached for the process while a `TestClient` uses a loop per request.
+
+Layering is now checked by the import graph rather than by intention: `routing/` imports nothing
+from `sources/`. Getting there moved `SourceUnavailable` to `app/errors.py`, `NamedPlace` to
+`domain.py` and the OSM geometry matching to `routing/grades.py`, leaving `sources/osm.py`
+responsible only for fetching and parsing.
+
+Frontend work was held to what a computed route needs in order to render: the new fields and
+their contract assertions, automatic map labels replacing `LABEL_POSITION`, legs drawn along the
+real geometry, and `?routeId=`. The picker screen stays in Phase 4.
+
+Tests run offline. `tests/fixtures/trails_oeschinensee.sqlite` is the real import clipped to 90
+edges (256 KB), so the graph, timing, stop selection and assembly are all exercised against real
+swisstopo geometry with no network; the three live sources replay recorded responses.
 
 ## Phase 2 - Real weather (~8 h)
 

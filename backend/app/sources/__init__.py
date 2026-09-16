@@ -14,14 +14,16 @@ from .base import (
     WeatherSource,
 )
 from .demo import DemoAssessor, DemoElevationSource, DemoRouteSource, DemoWarningSource, DemoWeatherSource
-from .geoadmin import GeoAdminRouteSource
 from .http import CachedHttpClient
 from .live import (
     NotImplementedAssessor,
-    NotImplementedElevationSource,
     NotImplementedWarningSource,
     NotImplementedWeatherSource,
 )
+from .names import SwissNamesSource
+from .osm import OverpassGradeSource
+from .swissalti import SwissAltiElevationSource
+from .tlm import TlmRouteSource
 
 log = logging.getLogger(__name__)
 
@@ -50,20 +52,27 @@ def build_sources(settings: Settings) -> Sources:
         )
 
     client = CachedHttpClient(settings)
+    elevation = SwissAltiElevationSource(settings, client)
     sources = Sources(
         mode="live",
-        routes=GeoAdminRouteSource(settings, client),
-        elevation=NotImplementedElevationSource(),
+        routes=TlmRouteSource(
+            settings,
+            client,
+            elevation=elevation,
+            grades=OverpassGradeSource(settings, client),
+            names=SwissNamesSource(settings, client),
+        ),
+        elevation=elevation,
         weather=NotImplementedWeatherSource(),
         warnings=NotImplementedWarningSource(),
         assessor=NotImplementedAssessor(),
     )
     log.warning(
-        "SOURCE_MODE=live: place search is live, but %s are not implemented yet and will fail when called",
+        "SOURCE_MODE=live: routes and elevation are live, but %s are not implemented yet "
+        "and will fail when called",
         ", ".join(
             f"{name} ({getattr(source, 'phase', '?')})"
             for name, source in (
-                ("elevation", sources.elevation),
                 ("weather", sources.weather),
                 ("warnings", sources.warnings),
                 ("assessor", sources.assessor),

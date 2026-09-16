@@ -8,20 +8,18 @@ from dataclasses import dataclass
 from typing import Protocol, runtime_checkable
 
 from ..domain import ElevationProfile, GeoPoint, PlaceHit, PointForecast, Warning
-from ..models import AssessmentData, RecentRoute, Route, Scenario
+from ..errors import SourceUnavailable
+from ..models import AssessmentData, RecentRoute, Route, RouteRequest, Scenario
 
-
-class SourceUnavailable(Exception):
-    """A source could not answer: unreachable, unparseable, or not implemented yet.
-
-    The single failure type the API maps onto `not_assessable` or a specific gap, so degradation
-    is honest rather than silent.
-    """
-
-    def __init__(self, source: str, reason: str) -> None:
-        super().__init__(f"{source}: {reason}")
-        self.source = source
-        self.reason = reason
+__all__ = [
+    "Assessor",
+    "ElevationSource",
+    "RouteSource",
+    "SourceUnavailable",
+    "Sources",
+    "WarningSource",
+    "WeatherSource",
+]
 
 
 @runtime_checkable
@@ -31,6 +29,8 @@ class RouteSource(Protocol):
     async def search(self, query: str) -> list[PlaceHit]: ...
 
     async def get_route(self, route_id: str) -> Route | None: ...
+
+    async def create_route(self, request: RouteRequest) -> Route: ...
 
     async def recent_routes(self) -> list[RecentRoute]: ...
 

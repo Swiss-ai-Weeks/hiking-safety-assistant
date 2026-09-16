@@ -46,6 +46,16 @@ export interface Leg {
   stopIds: string[]
   grade: Grade
   cables?: boolean
+  /**
+   * True when `grade` is swisstopo's official trail class with nothing finer behind it. Say so
+   * rather than implying a precision the sources do not have.
+   */
+  gradeEstimated?: boolean
+  distanceKm?: number
+  ascentM?: number
+  /** Range into `Route.geometry`, inclusive, so the map draws this leg along the real line. */
+  fromIndex?: number
+  toIndex?: number
 }
 
 export interface Route {
@@ -62,13 +72,37 @@ export interface Route {
   bailoutName: string
   lastBoat: Minutes
   turnaroundDefault: Minutes
-  /** Mock position used by field mode. */
+  /** Where field mode starts: at the trailhead, not yet moving. Phase 4 makes it live. */
   field: {
     elapsed: Minutes
     remainingToCrux: Minutes
     nextKm: number
     nextAscentM: number
   }
+  descentM?: number
+  /** Which stop the bail-out is. `bailoutName` alone cannot be placed on the map. */
+  bailoutStopId?: string
+  /** The walked line. Absent on the demo route, which has waypoints but no geometry. */
+  geometry?: LatLng[]
+  /** Metres above sea level per `geometry` point, same length and order. */
+  elevations?: number[]
+}
+
+/** A place from `/api/routes/search`, and what a route request is built from. */
+export interface PlaceRef {
+  name: string
+  latLng: LatLng
+}
+
+export interface PlaceResult extends PlaceRef {
+  /** swisstopo's own ordering; lower sorts first. */
+  rank: number
+}
+
+export interface RouteRequest {
+  from: PlaceRef
+  to: PlaceRef
+  via?: PlaceRef[]
 }
 
 export type HazardKind = 'gusts' | 'showers'

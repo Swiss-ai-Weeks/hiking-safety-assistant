@@ -5,16 +5,9 @@ at startup is what lets Phases 1 and 2 land separately: a real `RouteSource` is 
 `WeatherSource` is still missing.
 """
 
-from ..domain import ElevationProfile, GeoPoint, PointForecast, Warning
+from ..domain import GeoPoint, PointForecast, Warning
 from ..models import AssessmentData, Route, Scenario
 from .base import SourceUnavailable
-
-
-class NotImplementedElevationSource:
-    phase = "Phase 1"
-
-    async def profile(self, points: list[GeoPoint]) -> ElevationProfile:
-        raise SourceUnavailable("swissalti3d", f"the elevation profile is not implemented yet ({self.phase})")
 
 
 class NotImplementedWeatherSource:

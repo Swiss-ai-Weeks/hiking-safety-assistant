@@ -274,6 +274,17 @@
       "Leg": {
         "description": "A mapped section of the official route.",
         "properties": {
+          "ascentM": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ascentm"
+          },
           "cables": {
             "anyOf": [
               {
@@ -284,6 +295,28 @@
               }
             ],
             "title": "Cables"
+          },
+          "distanceKm": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Distancekm"
+          },
+          "fromIndex": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fromindex"
           },
           "fromStop": {
             "title": "Fromstop",
@@ -301,6 +334,17 @@
             "title": "Grade",
             "type": "string"
           },
+          "gradeEstimated": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Gradeestimated"
+          },
           "id": {
             "title": "Id",
             "type": "string"
@@ -311,6 +355,17 @@
             },
             "title": "Stopids",
             "type": "array"
+          },
+          "toIndex": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Toindex"
           },
           "toStop": {
             "title": "Tostop",
@@ -354,6 +409,69 @@
           "place"
         ],
         "title": "PlaceLabel",
+        "type": "object"
+      },
+      "PlaceRef": {
+        "description": "A place the hiker picked out of search, as it comes back in.",
+        "properties": {
+          "latLng": {
+            "maxItems": 2,
+            "minItems": 2,
+            "prefixItems": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "number"
+              }
+            ],
+            "title": "Latlng",
+            "type": "array"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "latLng"
+        ],
+        "title": "PlaceRef",
+        "type": "object"
+      },
+      "PlaceResult": {
+        "description": "One search result. `rank` is swisstopo's own ordering; lower sorts first.\n\nNamed apart from `domain.PlaceHit` on purpose: that one is the parsed source object and must\nnever reach the wire, and `test_openapi_contract` checks by name that it does not.",
+        "properties": {
+          "latLng": {
+            "maxItems": 2,
+            "minItems": 2,
+            "prefixItems": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "number"
+              }
+            ],
+            "title": "Latlng",
+            "type": "array"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "rank": {
+            "title": "Rank",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "name",
+          "latLng",
+          "rank"
+        ],
+        "title": "PlaceResult",
         "type": "object"
       },
       "RecentRoute": {
@@ -420,13 +538,49 @@
             "title": "Bailoutname",
             "type": "string"
           },
+          "bailoutStopId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bailoutstopid"
+          },
           "cruxStopId": {
             "title": "Cruxstopid",
             "type": "string"
           },
+          "descentM": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Descentm"
+          },
           "distanceKm": {
             "title": "Distancekm",
             "type": "number"
+          },
+          "elevations": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "integer"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Elevations"
           },
           "field": {
             "$ref": "#/components/schemas/FieldPosition"
@@ -434,6 +588,30 @@
           "fromName": {
             "title": "Fromname",
             "type": "string"
+          },
+          "geometry": {
+            "anyOf": [
+              {
+                "items": {
+                  "maxItems": 2,
+                  "minItems": 2,
+                  "prefixItems": [
+                    {
+                      "type": "number"
+                    },
+                    {
+                      "type": "number"
+                    }
+                  ],
+                  "type": "array"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Geometry"
           },
           "grade": {
             "enum": [
@@ -502,6 +680,29 @@
           "field"
         ],
         "title": "Route",
+        "type": "object"
+      },
+      "RouteRequest": {
+        "properties": {
+          "from": {
+            "$ref": "#/components/schemas/PlaceRef"
+          },
+          "to": {
+            "$ref": "#/components/schemas/PlaceRef"
+          },
+          "via": {
+            "items": {
+              "$ref": "#/components/schemas/PlaceRef"
+            },
+            "title": "Via",
+            "type": "array"
+          }
+        },
+        "required": [
+          "from",
+          "to"
+        ],
+        "title": "RouteRequest",
         "type": "object"
       },
       "StartEarlier": {
@@ -745,6 +946,89 @@
           }
         },
         "summary": "Get Recent Routes"
+      }
+    },
+    "/api/routes": {
+      "post": {
+        "description": "Route between two searched places over the official trail network.",
+        "operationId": "create_route_api_routes_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RouteRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Route"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Create Route"
+      }
+    },
+    "/api/routes/search": {
+      "get": {
+        "description": "Place-name search, for picking the ends of a route.",
+        "operationId": "search_places_api_routes_search_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "q",
+            "required": true,
+            "schema": {
+              "title": "Q",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/PlaceResult"
+                  },
+                  "title": "Response Search Places Api Routes Search Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Search Places"
       }
     },
     "/api/routes/{route_id}": {
