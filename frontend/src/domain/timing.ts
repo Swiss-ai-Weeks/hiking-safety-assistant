@@ -66,9 +66,3 @@ export type TurnaroundStatus = 'ahead' | 'behind'
 export function turnaroundStatus(eta: Minutes, turnaround: Minutes): TurnaroundStatus {
   return eta <= turnaround ? 'ahead' : 'behind'
 }
-
-/** Mock field-mode position: time now and estimated arrival at the crux. */
-export function fieldEstimate(route: Route, start: Minutes) {
-  const now = start + route.field.elapsed
-  return { now, eta: now + route.field.remainingToCrux }
-}

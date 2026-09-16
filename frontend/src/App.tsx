@@ -5,6 +5,7 @@ import { AssessmentScreen } from './screens/AssessmentScreen'
 import { FieldScreen } from './screens/FieldScreen'
 import { PlanScreen } from './screens/PlanScreen'
 import { PreflightScreen } from './screens/PreflightScreen'
+import { RoutePickerScreen } from './screens/RoutePickerScreen'
 import { SettingsScreen } from './screens/SettingsScreen'
 import { ShareScreen } from './screens/ShareScreen'
 
@@ -17,6 +18,7 @@ const router = createBrowserRouter([
     element: <AppShell />,
     children: [
       { index: true, element: <PlanScreen /> },
+      { path: 'routes/new', element: <RoutePickerScreen /> },
       { path: 'assessment', element: <AssessmentScreen /> },
       {
         path: 'assessment/map',

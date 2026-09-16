@@ -5,16 +5,18 @@ for exactly this: the whole request path runs — routing, timing, stop selectio
 against real recorded data and no network.
 """
 
+from datetime import UTC, date, datetime
+
 import pytest
-from conftest import FIXTURES, replay, replay_by_url
+from conftest import FIXTURES, load_fixture, replay, replay_by_url
 from fastapi.testclient import TestClient
 
 from app.config import Settings
 from app.main import create_app
 from app.sources import get_sources
+from app.sources.assessor import EngineAssessor
 from app.sources.base import Sources
 from app.sources.http import CachedHttpClient
-from app.sources.live import NotImplementedAssessor
 from app.sources.names import SwissNamesSource
 from app.sources.openmeteo import OpenMeteoIconSource
 from app.sources.osm import OverpassGradeSource
@@ -32,7 +34,42 @@ LIVE_FIXTURES = {
     "overpass": "overpass_sac_oeschinensee",
     "MapServer/identify": "swissnames3d_oeschinensee",
     "SearchServer": "geoadmin_search_oeschinensee",
+    # The recorded Hohtürli forecast answers for every waypoint: a replay cannot tell them apart.
+    "meta.json": "openmeteo_meta_ch1",
+    "ensemble-api": "openmeteo_ensemble_ch1_hohturli",
+    "/forecast": "openmeteo_ch1_hohturli",
 }
+
+
+def fixture_day() -> date:
+    """The day the forecast fixture was recorded for, so the assessment asks for a day it covers."""
+    return date.fromisoformat(load_fixture("openmeteo_ch1_hohturli")["hourly"]["time"][0][:10])
+
+
+def recorded_now() -> datetime:
+    """The evening before the fixture day, when it was recorded: the run is fresh, the day in reach."""
+    run = load_fixture("openmeteo_meta_ch1")["last_run_initialisation_time"]
+    return datetime.fromtimestamp(run + 6 * 3600, UTC)
+
+
+def live_sources(settings: Settings, client: CachedHttpClient) -> Sources:
+    elevation = SwissAltiElevationSource(settings, client)
+    weather = OpenMeteoIconSource(settings, client)
+    warnings = AppWarningSource(settings, client)
+    return Sources(
+        mode="live",
+        routes=TlmRouteSource(
+            settings,
+            client,
+            elevation=elevation,
+            grades=OverpassGradeSource(settings, client),
+            names=SwissNamesSource(settings, client),
+        ),
+        elevation=elevation,
+        weather=weather,
+        warnings=warnings,
+        assessor=EngineAssessor(settings, client, weather, warnings, now=recorded_now),
+    )
 
 
 @pytest.fixture
@@ -44,21 +81,7 @@ def live_client(tmp_path):
         http_backoff_s=0.0,
     )
     client = CachedHttpClient(settings, transport=replay_by_url(LIVE_FIXTURES))
-    elevation = SwissAltiElevationSource(settings, client)
-    sources = Sources(
-        mode="live",
-        routes=TlmRouteSource(
-            settings,
-            client,
-            elevation=elevation,
-            grades=OverpassGradeSource(settings, client),
-            names=SwissNamesSource(settings, client),
-        ),
-        elevation=elevation,
-        weather=OpenMeteoIconSource(settings, client),
-        warnings=AppWarningSource(settings, client),
-        assessor=NotImplementedAssessor(),
-    )
+    sources = live_sources(settings, client)
 
     app = create_app(frontend_dist=tmp_path)
     app.dependency_overrides[get_sources] = lambda: sources
@@ -152,13 +175,40 @@ def test_a_route_id_that_was_never_computed_is_404(live_client):
     assert "search for it again" in response.json()["detail"]
 
 
-def test_phase_two_sources_still_fail_loudly(live_client):
+def test_a_computed_route_is_assessed_from_the_recorded_forecast(live_client):
     route = live_client.post("/api/routes", json=BODY).json()
 
-    response = live_client.get(f"/api/routes/{route['id']}/assessment")
+    response = live_client.get(f"/api/routes/{route['id']}/assessment", params={"date": str(fixture_day())})
 
-    assert response.status_code == 503
-    assert "Phase 3" in response.json()["detail"]
+    assert response.status_code == 200
+    data = response.json()
+    assert data["outcome"] == "assessed"
+    assert data["forecast"]["model"] == "ICON-CH1"
+    stop_ids = {stop["id"] for stop in route["stops"]}
+    # Every hazard is keyed by the route's own stops, and every stop has its hour-by-hour figures.
+    assert all(set(hazard["stops"]) <= stop_ids for hazard in data["hazards"])
+    assert set(data["conditions"]) == stop_ids
+    assert all(len(rows) == 16 for rows in data["conditions"].values())
+    # Provenance names the rule and the run, never a hand-typed time.
+    assert all("ICON-CH1 2026-" in h["provenance"] or "DAYLIGHT" in h["provenance"] for h in data["hazards"])
+    # The app warning feed is off by default: a gap, not an all-clear.
+    assert "warnings" in data["gaps"]
+
+
+def test_a_day_beyond_every_model_is_not_assessable_and_says_why(live_client):
+    route = live_client.post("/api/routes", json=BODY).json()
+
+    data = live_client.get(f"/api/routes/{route['id']}/assessment", params={"date": "2027-01-01"}).json()
+
+    assert data["outcome"] == "not_assessable"
+    assert data["forecast"]["unavailableReason"] == "beyond_horizon"
+    assert data["hazards"] == [] and data["alternatives"] == []
+
+
+def test_retry_really_asks_the_forecast_source(live_client):
+    result = live_client.post("/api/forecast/retry", params={"date": str(fixture_day())}).json()
+
+    assert result["available"] is True
 
 
 def test_a_failing_grade_lookup_costs_detail_not_the_route(tmp_path):
@@ -172,21 +222,7 @@ def test_a_failing_grade_lookup_costs_detail_not_the_route(tmp_path):
     # Every request replays the elevation profile, so Overpass and swissnames3d get a body they
     # cannot parse and raise `SourceUnavailable`.
     client = CachedHttpClient(settings, transport=replay("swissalti_profile_oeschinensee"))
-    elevation = SwissAltiElevationSource(settings, client)
-    sources = Sources(
-        mode="live",
-        routes=TlmRouteSource(
-            settings,
-            client,
-            elevation=elevation,
-            grades=OverpassGradeSource(settings, client),
-            names=SwissNamesSource(settings, client),
-        ),
-        elevation=elevation,
-        weather=OpenMeteoIconSource(settings, client),
-        warnings=AppWarningSource(settings, client),
-        assessor=NotImplementedAssessor(),
-    )
+    sources = live_sources(settings, client)
     app = create_app(frontend_dist=tmp_path)
     app.dependency_overrides[get_sources] = lambda: sources
 

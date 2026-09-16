@@ -19,10 +19,30 @@ export const en = {
   'plan.sourceNote':
     "Routes are resolved on the official swisstopo network. Forecasts come from MeteoSwiss. Every segment is checked for the hour you'll be there.",
   'plan.recent': 'Recent',
-  'plan.recentMeta': '{grade} · checked {date}',
+  'plan.recentMeta': '{grade} · picked {date}',
   'plan.savedMeta': '{grade} · {date} · start {start}',
-  'plan.demoOnly': 'Demo data covers the Oeschinensee route only.',
+  'plan.changeRoute': 'Change',
   'plan.cta': 'Check conditions',
+
+  'picker.title': 'Choose a route',
+  'picker.from': 'From',
+  'picker.to': 'To',
+  'picker.via': 'Via (optional)',
+  'picker.addVia': 'Add a stop on the way',
+  'picker.removeVia': 'Remove',
+  'picker.placeholder': 'Village, hut, pass, lake…',
+  'picker.searching': 'Searching…',
+  'picker.noResults': 'No places match "{query}".',
+  'picker.searchFailed': "Place search didn't answer. Try again in a moment.",
+  'picker.change': 'Change',
+  'picker.note':
+    'The route follows the official swisstopo hiking network between the places you pick, out and back.',
+  'picker.build': 'Find route',
+  'picker.building': 'Finding the route…',
+  'picker.noTrail':
+    'No marked trail connects these places, or one of them is too far from the network. Try a nearby village, hut or pass.',
+  'picker.demoOnly': 'Demo mode only routes between places on the Oeschinensee route.',
+  'picker.unavailable': "Routing isn't available right now. Try again in a moment.",
 
   'outcome.assessed': 'Assessed',
   'outcome.assessedDetail': '· all segments · forecast from {time} today',
@@ -62,18 +82,64 @@ export const en = {
   'flagged.notEvaluatedBody':
     'No gust data above 2 600 m for this section. Suggestions that depend on it are hidden.',
 
-  'hazard.gusts.title': 'Strong gusts on the {place} ridge, {from}–{to}',
+  'hazard.gusts.title': 'Strong gusts at {place}, {from}–{to}',
   'hazard.gusts.body':
-    'Gusts of 50–60 km/h on an exposed T3 section with fixed cables. Reaching the col before {from} keeps you below 40 km/h.',
-  'hazard.gusts.liftsIf': 'the 09:00 forecast update shows gusts under 40 km/h at 2 800 m.',
-  'hazard.gusts.short': 'gusts 50–60 km/h from {from}',
-  'hazard.gusts.watch': 'Gusts on the ridge after {from}.',
-  'hazard.showers.title': 'Showers on the descent from {from}',
+    'Gusts up to {gust} km/h at {place}, {elevation} m. On exposed ground they cost balance from {threshold} km/h.',
+  'hazard.gusts.bodyGeneric': 'Strong gusts on exposed ground cost balance, on cables and ridges most of all.',
+  'hazard.gusts.liftsIf': 'a later forecast shows gusts under {threshold} km/h at {place}.',
+  'hazard.gusts.short': 'gusts to {gust} km/h from {from}',
+  'hazard.gusts.shortGeneric': 'strong gusts from {from}',
+  'hazard.gusts.watch': 'Gusts on the exposed sections after {from}.',
+  'hazard.showers.title': 'Showers and wet rock from {from}',
   'hazard.showers.body':
-    'Wet rock on the steep moraine path between Hütte and Oberbärgli, taken tired. Freezing level 2 900 m, so rain, not snow.',
-  'hazard.showers.liftsIf': '',
-  'hazard.showers.short': 'wet rock on return from {from}',
-  'hazard.showers.watch': 'Wet rock on the moraine descent from {from}.',
+    'Up to {precip} mm an hour on steep ground, where rock turns slippery from {thresholdMm} mm. Freezing level {freezingLevel} m.',
+  'hazard.showers.bodyGeneric': 'Wet rock on steep ground, often taken tired on the way down.',
+  'hazard.showers.liftsIf': 'a later forecast shows under {thresholdMm} mm an hour.',
+  'hazard.showers.short': 'wet rock from {from}',
+  'hazard.showers.watch': 'Wet rock on the steep sections from {from}.',
+  'hazard.thunder.title': 'Thunderstorm potential around {place}, {from}–{to}',
+  'hazard.thunder.body':
+    '{thunder} % of forecast runs show storm energy around {place}. Storms build quickly over high, open ground, and a ridge offers no shelter.',
+  'hazard.thunder.bodyGeneric':
+    'Storms can build quickly over high, open ground, and a ridge offers no shelter. Plan to be off the exposed sections before {from}.',
+  'hazard.thunder.liftsIf': '',
+  'hazard.thunder.short': 'thunderstorm potential from {from}',
+  'hazard.thunder.watch': 'Building clouds and thunder after {from}.',
+  'hazard.cold.title': 'Wind chill below freezing at {place}, {from}–{to}',
+  'hazard.cold.body':
+    'Feels like {feelsLike} at {place} with the wind. Cold hands make cables and rock harder to hold: bring gloves and a warm layer.',
+  'hazard.cold.bodyGeneric':
+    'With the wind it feels colder than the air. Cold hands make cables and rock harder to hold: bring gloves and a warm layer.',
+  'hazard.cold.liftsIf': 'a later forecast has the wind chill at {place} above freezing.',
+  'hazard.cold.short': 'feels like {feelsLike}, {from}–{to}',
+  'hazard.cold.shortGeneric': 'wind chill below freezing {from}–{to}',
+  'hazard.cold.watch': 'Wind chill below freezing {from}–{to}.',
+  'hazard.snow.title': 'Snow or ice possible at {place}, {from}–{to}',
+  'hazard.snow.body':
+    'Freezing level down to {freezingLevel} m, with {place} at {elevation} m. Expect icy or snow-covered rock higher up.',
+  'hazard.snow.bodyGeneric':
+    'The freezing level or the snowline reaches this part of the route. Expect icy or snow-covered rock higher up.',
+  'hazard.snow.liftsIf': 'a later forecast has the freezing level above {elevation} m.',
+  'hazard.snow.short': 'freezing level {freezingLevel} m from {from}',
+  'hazard.snow.shortGeneric': 'snow or ice possible from {from}',
+  'hazard.snow.watch': 'Snow or ice on the high sections after {from}.',
+  'hazard.visibility.title': 'In cloud at {place}, {from}–{to}',
+  'hazard.visibility.body':
+    'Cloud base down to {cloudBase} m, with {place} at {elevation} m. Markings get hard to follow and finding the line takes longer.',
+  'hazard.visibility.bodyGeneric':
+    'The cloud base sits below this part of the route. Markings get hard to follow and finding the line takes longer.',
+  'hazard.visibility.liftsIf': 'a later forecast has the cloud base above {elevation} m.',
+  'hazard.visibility.short': 'cloud base {cloudBase} m from {from}',
+  'hazard.visibility.shortGeneric': 'in cloud from {from}',
+  'hazard.visibility.watch': 'Low cloud on the route after {from}.',
+  'hazard.daylight.title': 'Dark from {from}',
+  'hazard.daylight.body':
+    'Sunset is at {sunset}. After that the way down is walked by headlamp, and in a valley the light goes earlier still.',
+  'hazard.daylight.bodyGeneric':
+    'After sunset the way down is walked by headlamp, and in a valley the light goes earlier still. Plan to be down before {from}.',
+  'hazard.daylight.liftsIf': '',
+  'hazard.daylight.short': 'dark from {from}',
+  'hazard.daylight.watch': 'Darkness from {from}.',
 
   'gaps.title': "What we can't see",
   'gap.warnings': 'Official weather warnings could not be checked. Check {link} yourself.',
@@ -86,8 +152,9 @@ export const en = {
   'alt.startEarlier.title': 'Start at {start} instead',
   'alt.startEarlier.body':
     'Puts you on {place} at {time}, before the gusts build. You keep the hut lunch and the {boat} last boat.',
-  'alt.loop.title': 'Or: Oeschinensee high loop, T2',
-  'alt.loop.body': 'Same lake, same view, no ridge. Nothing flagged for {day} on this route as of {time}.',
+  'alt.bailout.title': 'Or: turn back at {place}, {grade}',
+  'alt.bailout.body':
+    'Come back down the way you went up, before the exposed section. Nothing rated high on this shorter day for {day}, data as of {time}.',
 
   disclaimer:
     'Decision support, not a go/no-go. Conditions change; check MeteoSwiss and the SLF bulletin before you leave. Emergency: 1414 (Rega) · 112.',
@@ -95,6 +162,8 @@ export const en = {
   'na.title': "We can't assess this hike right now.",
   'na.reason':
     "The MeteoSwiss forecast for this area has been unavailable since {time}. Without it we won't show hazards or recommendations, because an empty list could read as reassurance.",
+  'na.reasonBeyondHorizon':
+    "MeteoSwiss forecasts don't reach {date} yet: they cover about the next five days. Without a forecast we won't show hazards or recommendations, because an empty list could read as reassurance.",
   'na.checkDirectly': 'Check directly:',
   'na.meteoswiss': 'MeteoSwiss forecast',
   'na.slf': 'SLF avalanche bulletin',
@@ -153,11 +222,16 @@ export const en = {
   'pre.cta': 'Start hike',
   'pre.toField': 'Back to the trail',
 
-  'field.offline': 'Offline · plan from {time}',
+  'field.started': 'Started {time}',
   'field.next': 'Next: {place} · {km} km · ↑{ascent} m',
   'field.ahead': "You're ahead of your turnaround.",
   'field.behind': "You're past your turnaround.",
-  'field.eta': 'At this pace you reach the col around {eta}. Your rule: {rule}.',
+  'field.eta': 'At this pace you reach {place} around {eta}. Your rule: {rule}.',
+  'field.etaEnd': 'At this pace you are back at {place} around {eta}.',
+  'field.pastCrux': "You're past {place}.",
+  'field.searching': 'Finding your position. Until then, times follow your plan.',
+  'field.noPosition': 'No position. Times follow your plan from when you started.',
+  'field.offRoute': 'You seem to be off the route. Times hold from where you left it.',
   'field.turnBy': 'turn by {time}',
   'field.decided': 'What you decided last night',
   'field.rule': 'If not at {place} by {time}, or cloud base below the ridge → descend via {bailout}.',

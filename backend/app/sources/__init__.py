@@ -5,6 +5,7 @@ import logging
 from functools import lru_cache
 
 from ..config import Settings, get_settings
+from .assessor import EngineAssessor
 from .base import (
     Assessor,
     ElevationSource,
@@ -17,7 +18,6 @@ from .base import (
 from .demo import DemoAssessor, DemoElevationSource, DemoRouteSource, DemoWarningSource, DemoWeatherSource
 from .http import CachedHttpClient
 from .icon_grib import IconGribSource
-from .live import NotImplementedAssessor
 from .names import SwissNamesSource
 from .openmeteo import OpenMeteoIconSource
 from .osm import OverpassGradeSource
@@ -58,6 +58,7 @@ def build_sources(settings: Settings) -> Sources:
     weather: WeatherSource = (
         IconGribSource(settings, client, spread=open_meteo) if settings.weather_source == "grib" else open_meteo
     )
+    warnings = AppWarningSource(settings, client)
     sources = Sources(
         mode="live",
         routes=TlmRouteSource(
@@ -69,14 +70,12 @@ def build_sources(settings: Settings) -> Sources:
         ),
         elevation=elevation,
         weather=weather,
-        warnings=AppWarningSource(settings, client),
-        assessor=NotImplementedAssessor(),
+        warnings=warnings,
+        assessor=EngineAssessor(settings, client, weather, warnings),
     )
     log.warning(
-        "SOURCE_MODE=live: routes, elevation and weather (%s) are live; the hazard engine is not "
-        "implemented yet (%s) and fails when called. App warnings are %s.",
+        "SOURCE_MODE=live: routes, elevation, weather (%s) and the hazard engine are live. App warnings are %s.",
         settings.weather_source,
-        NotImplementedAssessor.phase,
         "on" if settings.meteoswiss_app_warnings else "off",
     )
     if settings.weather_source == "grib" and importlib.util.find_spec("eccodes") is None:

@@ -1,5 +1,5 @@
 import { queryOptions } from '@tanstack/react-query'
-import type { AssessmentData, Minutes, PlaceResult, RecentRoute, Route, RouteRequest, Scenario } from '../domain/types'
+import type { AssessmentData, Minutes, PlaceResult, Route, RouteRequest, Scenario } from '../domain/types'
 import { api } from './client'
 
 export const routeQuery = (routeId: string) =>
@@ -8,20 +8,21 @@ export const routeQuery = (routeId: string) =>
     queryFn: () => api<Route>(`/routes/${encodeURIComponent(routeId)}`),
   })
 
-export const recentRoutesQuery = queryOptions({
-  queryKey: ['recent-routes'],
-  queryFn: () => api<RecentRoute[]>('/recent-routes'),
-})
-
-export const assessmentQuery = (routeId: string, scenario: Scenario) =>
+/** Hazards for the hike on `date` (YYYY-MM-DD). Severity is resolved client-side at arrival. */
+export const assessmentQuery = (routeId: string, scenario: Scenario, date: string) =>
   queryOptions({
-    queryKey: ['assessment', routeId, scenario],
-    queryFn: () => api<AssessmentData>(`/routes/${encodeURIComponent(routeId)}/assessment?scenario=${scenario}`),
+    queryKey: ['assessment', routeId, scenario, date],
+    queryFn: () =>
+      api<AssessmentData>(
+        `/routes/${encodeURIComponent(routeId)}/assessment?scenario=${scenario}&date=${encodeURIComponent(date)}`,
+      ),
   })
 
-/** "Try again" on the not-assessable screen. */
-export function retryForecast() {
-  return api<{ available: boolean; checkedAt: Minutes }>('/forecast/retry', { method: 'POST' })
+/** "Try again" on the not-assessable screen: asks the forecast source whether it answers now. */
+export function retryForecast(date: string) {
+  return api<{ available: boolean; checkedAt: Minutes }>(`/forecast/retry?date=${encodeURIComponent(date)}`, {
+    method: 'POST',
+  })
 }
 
 /** Place-name search for the ends of a route. Disabled until there is something to search for. */

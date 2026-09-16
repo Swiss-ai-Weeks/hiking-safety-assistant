@@ -38,7 +38,6 @@ export const oeschinenRoute: Route = {
   bailoutName: 'Oberbärgli',
   lastBoat: 16 * 60 + 10,
   turnaroundDefault: 11 * 60 + 30,
-  field: { elapsed: 262, remainingToCrux: 23, nextKm: 1.1, nextAscentM: 310 },
 }
 
 export const routes: Record<string, Route> = {

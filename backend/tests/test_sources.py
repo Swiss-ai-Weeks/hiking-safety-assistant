@@ -1,12 +1,17 @@
 """The seams themselves: demo satisfies them, live is selectable and fails loudly."""
 
+import ast
+from pathlib import Path
+
 import pytest
 
+import app
 from app.config import Settings
 from app.domain import GeoPoint
 from app.mock_data import OESCHINEN_ROUTE, get_assessment
 from app.models import RouteRequest
 from app.sources import build_sources
+from app.sources.assessor import EngineAssessor
 from app.sources.base import (
     Assessor,
     ElevationSource,
@@ -39,7 +44,6 @@ def test_demo_sources_satisfy_the_protocols():
 async def test_demo_route_source_serves_the_showcase_route():
     assert await DEMO.routes.get_route(OESCHINEN_ROUTE.id) is OESCHINEN_ROUTE
     assert await DEMO.routes.get_route("nope") is None
-    assert [r.id for r in await DEMO.routes.recent_routes()] == ["schynige-platte-faulhorn", "gemmipass"]
 
 
 @pytest.mark.parametrize("scenario", SCENARIOS)
@@ -77,6 +81,19 @@ async def test_demo_has_no_warnings_which_is_why_it_is_a_gap():
     assert await DEMO.warnings.warnings_for([]) == []
     # The empty list is honest rather than reassuring: the authored gaps say `warnings` is missing.
     assert "warnings" in (await DEMO.assessor.assess(OESCHINEN_ROUTE, "assessed")).gaps
+
+
+async def test_demo_mode_routes_between_places_on_the_showcase_route():
+    # Search only offers the showcase route's waypoints, so the picker can be walked offline.
+    route = await DEMO.routes.create_route(
+        RouteRequest.model_validate(
+            {
+                "from": {"name": "Oeschinensee", "latLng": [46.4985, 7.728]},
+                "to": {"name": "Hohtürli", "latLng": [46.4888, 7.7717]},
+            }
+        )
+    )
+    assert route is OESCHINEN_ROUTE
 
 
 async def test_demo_mode_refuses_to_invent_a_route():
@@ -123,11 +140,29 @@ async def test_live_warnings_are_a_gap_unless_the_app_feed_is_enabled():
         await live.warnings.warnings_for([GeoPoint(46.5, 7.7)])
 
 
-async def test_the_hazard_engine_still_fails_loudly():
-    live = build_sources(Settings(source_mode="live"))
+def test_live_mode_runs_the_hazard_engine_over_the_configured_weather():
+    live = build_sources(Settings(source_mode="live", weather_source="open-meteo"))
 
-    with pytest.raises(SourceUnavailable, match="Phase 3"):
-        await live.assessor.assess(OESCHINEN_ROUTE, "assessed")
+    assert isinstance(live.assessor, EngineAssessor)
+    assert isinstance(live.assessor, Assessor)
+    assert live.assessor.weather is live.weather
+    assert live.assessor.warnings is live.warnings
+
+
+async def test_the_demo_source_stays_down_when_asked_again():
+    assert await DEMO.assessor.recheck() is False
+
+
+@pytest.mark.parametrize("package", ["routing", "hazards"])
+def test_pure_layers_import_nothing_from_sources(package):
+    """`routing/` and `hazards/` decide; `sources/` fetches. The import graph keeps it that way."""
+    root = Path(app.__file__).parent / package
+    offending = []
+    for path in root.glob("*.py"):
+        for node in ast.walk(ast.parse(path.read_text(encoding="utf-8"))):
+            if isinstance(node, ast.ImportFrom) and node.module and "sources" in node.module.split("."):
+                offending.append(f"{path.name}: from {'.' * node.level}{node.module}")
+    assert offending == []
 
 
 async def test_demo_weather_run_is_the_authored_issue_time():

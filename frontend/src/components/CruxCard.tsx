@@ -8,7 +8,7 @@ interface Props {
   elevationM: number
   arrival: Minutes
   gust: { kmh: number; severity: Severity } | null
-  feelsLikeC: number
+  feelsLikeC: number | null
   showersFrom: Minutes | null
   stale: boolean
 }
@@ -21,7 +21,7 @@ export function CruxCard({ place, elevationM, arrival, gust, feelsLikeC, showers
       value: gust ? `${gust.kmh} km/h` : t('crux.noData'),
       warn: gust !== null && gust.severity !== 'none',
     },
-    { label: t('crux.feelsLike'), value: formatTemp(feelsLikeC), warn: false },
+    { label: t('crux.feelsLike'), value: feelsLikeC === null ? t('crux.noData') : formatTemp(feelsLikeC), warn: false },
     { label: t('crux.showers'), value: showersFrom === null ? '—' : formatClock(showersFrom), warn: false },
   ]
 

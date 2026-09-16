@@ -10,7 +10,7 @@ from typing import Protocol, runtime_checkable
 
 from ..domain import ElevationProfile, GeoPoint, ModelRun, PlaceHit, PointForecast, Warning
 from ..errors import SourceUnavailable
-from ..models import AssessmentData, RecentRoute, Route, RouteRequest, Scenario
+from ..models import AssessmentData, Route, RouteRequest, Scenario
 
 __all__ = [
     "Assessor",
@@ -32,8 +32,6 @@ class RouteSource(Protocol):
     async def get_route(self, route_id: str) -> Route | None: ...
 
     async def create_route(self, request: RouteRequest) -> Route: ...
-
-    async def recent_routes(self) -> list[RecentRoute]: ...
 
 
 @runtime_checkable
@@ -64,13 +62,18 @@ class WarningSource(Protocol):
 
 @runtime_checkable
 class Assessor(Protocol):
-    """Terrain x forecast x arrival hour -> hazards. Phase 3's engine replaces the demo one.
+    """Terrain x forecast x arrival hour -> hazards: the authored demo, or the hazard engine.
 
     `scenario` only means anything under `SOURCE_MODE=demo`, where it picks one of the four
-    demo states; a real assessor derives the outcome and ignores it.
+    demo states; the engine derives the outcome and ignores it. `day` defaults to today in
+    Switzerland.
     """
 
-    async def assess(self, route: Route, scenario: Scenario) -> AssessmentData: ...
+    async def assess(self, route: Route, scenario: Scenario, day: date | None = None) -> AssessmentData: ...
+
+    async def recheck(self, day: date | None = None) -> bool:
+        """Whether the forecast source answers again: "Try again" on the not-assessable screen."""
+        ...
 
 
 @dataclass(frozen=True, slots=True)

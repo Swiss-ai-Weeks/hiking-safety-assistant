@@ -11,7 +11,7 @@ import logging
 import unicodedata
 
 from ..domain import NamedPlace
-from ..models import FieldPosition, Grade, Leg, PlaceLabel, Route, RouteRequest, Stop, Waypoint
+from ..models import Grade, Leg, PlaceLabel, Route, RouteRequest, Stop, Waypoint
 from .grades import GradeIndex
 from .graph import Segment
 from .stops import TURNAROUND_BREAK_MIN, Vertex, pick_outbound
@@ -160,16 +160,6 @@ def build_route(
     crux_stop = next((s for s in stops if s.waypoint_id == waypoint_of[crux_vertex]), stops[-1])
     bailout = _bailout(outbound, stops, waypoint_of)
 
-    # Field mode's starting position: standing at the trailhead. Every value is measured off the
-    # route rather than invented — nothing here claims to know where the hiker actually is.
-    first_leg = legs[0] if legs else None
-    field = FieldPosition(
-        elapsed=0,
-        remaining_to_crux=round(_leg_minutes(vertices, segments, 0, crux_vertex)),
-        next_km=first_leg.distance_km if first_leg and first_leg.distance_km else round(one_way_km, 2),
-        next_ascent_m=first_leg.ascent_m if first_leg and first_leg.ascent_m else round(profile_ascent),
-    )
-
     return Route(
         id=route_id_for(request),
         from_name=request.from_.name,
@@ -187,7 +177,6 @@ def build_route(
         bailout_stop_id=bailout[0].id if bailout else None,
         last_boat=DEFAULT_LAST_SERVICE_MIN,
         turnaround_default=DEFAULT_TURNAROUND_MIN,
-        field=field,
         geometry=[(round(v.point.lat, 6), round(v.point.lng, 6)) for v in vertices],
         elevations=[round(v.point.elevation_m or 0) for v in vertices],
     )

@@ -5,6 +5,7 @@ import type {
   Minutes,
   Route,
   Severity,
+  StopConditions,
   StopSeverity,
 } from './types'
 
@@ -14,15 +15,10 @@ export function maxSeverity(list: Severity[]): Severity {
   return list.reduce<Severity>((acc, s) => (RANK[s] > RANK[acc] ? s : acc), 'none')
 }
 
-/** Severity of one hazard at one stop, for the hour the hiker is there. */
+/** Severity of one hazard at one stop, for the time the hiker is there. */
 export function hazardSeverityAt(hazard: HazardDef, stopId: string, minute: Minutes): Severity {
-  const atWindow = hazard.stops[stopId]
-  if (!atWindow) return 'none'
-  if (minute >= hazard.window.from && minute <= hazard.window.to) return atWindow
-  if (hazard.buildUpFrom !== undefined && minute >= hazard.buildUpFrom && minute < hazard.window.from) {
-    return 'mod'
-  }
-  return 'none'
+  const interval = hazard.stops[stopId]?.find((i) => minute >= i.from && minute < i.to)
+  return interval?.severity ?? 'none'
 }
 
 export interface FlaggedHazard {
@@ -109,14 +105,19 @@ export function nothingFlaggedRange(
   return { from: route.stops[0].id, to: route.stops[end].id }
 }
 
-/** Forecast gust speed at a stop for the crux card. */
+/** The forecast numbers at a stop for the time the hiker is there, or null without data. */
+export function conditionsAt(data: AssessmentData, stopId: string, minute: Minutes): StopConditions | null {
+  return data.conditions[stopId]?.find((c) => minute >= c.from && minute < c.to) ?? null
+}
+
+/** Forecast gust speed at a stop for the crux card, with the severity the gust rule gave it. */
 export function gustAt(
-  hazards: HazardDef[],
+  data: AssessmentData,
   stopId: string,
   minute: Minutes,
-): { kmh: number; severity: Severity } {
-  const gusts = hazards.find((h) => h.kind === 'gusts')
-  const severity = gusts ? hazardSeverityAt(gusts, stopId, minute) : 'none'
-  const kmh = severity === 'high' ? 55 : severity === 'mod' ? 40 : 25
-  return { kmh, severity }
+): { kmh: number; severity: Severity } | null {
+  const kmh = conditionsAt(data, stopId, minute)?.gustKmh
+  if (kmh === undefined) return null
+  const gusts = data.hazards.find((h) => h.kind === 'gusts')
+  return { kmh, severity: gusts ? hazardSeverityAt(gusts, stopId, minute) : 'none' }
 }

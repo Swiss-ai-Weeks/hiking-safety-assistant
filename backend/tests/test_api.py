@@ -1,7 +1,6 @@
 import pytest
 from fastapi.testclient import TestClient
 
-from app import api
 from app.main import create_app
 
 ROUTE_ID = "oeschinensee-bluemlisalphuette"
@@ -36,10 +35,29 @@ def test_unknown_route_is_404(client):
     assert client.get("/api/routes/nope/assessment").status_code == 404
 
 
-def test_recent_routes(client):
-    recent = client.get("/api/recent-routes").json()
-    assert [r["id"] for r in recent] == ["schynige-platte-faulhorn", "gemmipass"]
-    assert recent[0]["checkedOn"] == "2026-09-06"
+def test_recent_routes_are_kept_on_the_device_not_served(client):
+    # There is no user on the server, so there is nobody's history to serve.
+    assert client.get("/api/recent-routes").status_code == 404
+
+
+def test_demo_route_picker_builds_the_showcase_route(client):
+    ends = {
+        "from": {"name": "Oeschinensee", "latLng": [46.4985, 7.728]},
+        "to": {"name": "Blüemlisalphütte", "latLng": [46.489, 7.7738]},
+    }
+    assert client.post("/api/routes", json=ends).json()["id"] == ROUTE_ID
+
+    elsewhere = {
+        "from": {"name": "Gemmipass", "latLng": [46.4, 7.6]},
+        "to": {"name": "Leukerbad", "latLng": [46.38, 7.63]},
+    }
+    assert client.post("/api/routes", json=elsewhere).status_code == 503
+
+
+def test_hazards_carry_their_figures_as_facts(client):
+    gusts, showers = assessment(client, "assessed")["hazards"]
+    assert gusts["facts"] == {"gustKmh": 60, "thresholdKmh": 40, "elevationM": 2778}
+    assert showers["facts"] == {"precipMm": 1.2, "thresholdMm": 0.5, "freezingLevelM": 2900}
 
 
 def test_assessed_scenario(client):
@@ -48,6 +66,24 @@ def test_assessed_scenario(client):
     assert data["stale"] is False
     assert [h["id"] for h in data["hazards"]] == ["gusts-hohturli", "showers-descent"]
     assert data["hazards"][0]["window"] == {"from": 660, "to": 840}
+    # The authored build-up is now an explicit interval rather than a separate field.
+    assert data["hazards"][0]["stops"]["hohturli"] == [
+        {"from": 630, "to": 660, "severity": "mod"},
+        {"from": 660, "to": 840, "severity": "high"},
+    ]
+    assert "buildUpFrom" not in data["hazards"][0]
+
+
+def test_conditions_carry_the_authored_crux_figures(client):
+    conditions = assessment(client, "assessed")["conditions"]["hohturli"]
+    at_noon = next(row for row in conditions if row["from"] <= 720 < row["to"])
+    assert at_noon == {"from": 660, "to": 840, "gustKmh": 55, "feelsLikeC": -2}
+
+
+def test_the_assessment_accepts_a_date(client):
+    response = client.get(f"/api/routes/{ROUTE_ID}/assessment", params={"date": "2026-09-19"})
+    assert response.status_code == 200
+    assert client.get(f"/api/routes/{ROUTE_ID}/assessment", params={"date": "Saturday"}).status_code == 422
 
 
 def test_partial_scenario_drops_gust_data(client):
@@ -63,6 +99,8 @@ def test_not_assessable_has_no_hazards_or_recommendations(client):
     assert data["outcome"] == "not_assessable"
     assert data["hazards"] == []
     assert data["alternatives"] == []
+    assert data["conditions"] == {}
+    assert data["forecast"]["unavailableReason"] == "source"
 
 
 def test_stale_keeps_outcome(client):
@@ -76,8 +114,7 @@ def test_invalid_scenario_is_rejected(client):
     assert response.status_code == 422
 
 
-def test_retry_reports_source_still_down(client, monkeypatch):
-    monkeypatch.setattr(api, "RETRY_DELAY_S", 0)
+def test_retry_reports_source_still_down(client):
     result = client.post("/api/forecast/retry").json()
     assert result["available"] is False
     assert 0 <= result["checkedAt"] < 24 * 60

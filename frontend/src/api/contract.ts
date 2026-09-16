@@ -14,15 +14,17 @@ import type {
   AssessmentData,
   Forecast,
   HazardDef,
+  HazardFacts,
   Leg,
   NotEvaluated,
   PlaceRef,
   PlaceResult,
-  RecentRoute,
   Route,
   RouteRequest,
   Scenario,
+  SeverityInterval,
   Stop,
+  StopConditions,
   Waypoint,
 } from '../domain/types'
 import type { components, paths } from './schema'
@@ -68,7 +70,9 @@ export type _HazardKeys = Expect<Exact<keyof HazardDef, keyof Schemas['HazardDef
 export type _ForecastKeys = Expect<Exact<keyof Forecast, keyof Schemas['Forecast']>>
 export type _AssessmentKeys = Expect<Exact<keyof AssessmentData, keyof Schemas['AssessmentData']>>
 export type _NotEvaluatedKeys = Expect<Exact<keyof NotEvaluated, keyof Schemas['NotEvaluated']>>
-export type _RecentRouteKeys = Expect<Exact<keyof RecentRoute, keyof Schemas['RecentRoute']>>
+export type _SeverityIntervalKeys = Expect<Exact<keyof SeverityInterval, keyof Schemas['SeverityInterval']>>
+export type _HazardFactsKeys = Expect<Exact<keyof HazardFacts, keyof Schemas['HazardFacts']>>
+export type _StopConditionsKeys = Expect<Exact<keyof StopConditions, keyof Schemas['StopConditions']>>
 export type _PlaceResultKeys = Expect<Exact<keyof PlaceResult, keyof Schemas['PlaceResult']>>
 export type _PlaceRefKeys = Expect<Exact<keyof PlaceRef, keyof Schemas['PlaceRef']>>
 
@@ -79,9 +83,11 @@ export type _Stop = Expect<Assignable<Wire<'Stop'>, Stop>>
 export type _Leg = Expect<Assignable<Wire<'Leg'>, Leg>>
 export type _Route = Expect<Assignable<Wire<'Route'>, Route>>
 export type _Hazard = Expect<Assignable<Wire<'HazardDef'>, HazardDef>>
+export type _SeverityInterval = Expect<Assignable<Wire<'SeverityInterval'>, SeverityInterval>>
+export type _StopConditions = Expect<Assignable<Wire<'StopConditions'>, StopConditions>>
 export type _Forecast = Expect<Assignable<Wire<'Forecast'>, Forecast>>
 export type _Assessment = Expect<Assignable<Wire<'AssessmentData'>, AssessmentData>>
-export type _RecentRoute = Expect<Assignable<Wire<'RecentRoute'>, RecentRoute>>
+export type _HazardFacts = Expect<Assignable<Wire<'HazardFacts'>, HazardFacts>>
 export type _Alternative = Expect<Assignable<Wire<'StartEarlier'> | Wire<'AltRoute'>, Alternative>>
 
 // The endpoints as `api/queries.ts` actually calls them: the cast in each `queryFn` is checked
@@ -91,9 +97,6 @@ export type _RouteEndpoint = Expect<
 >
 export type _AssessmentEndpoint = Expect<
   Assignable<Json<paths['/api/routes/{route_id}/assessment']['get']['responses'][200]>, AssessmentData>
->
-export type _RecentRoutesEndpoint = Expect<
-  Assignable<Json<paths['/api/recent-routes']['get']['responses'][200]>, RecentRoute[]>
 >
 export type _RetryEndpoint = Expect<
   Assignable<

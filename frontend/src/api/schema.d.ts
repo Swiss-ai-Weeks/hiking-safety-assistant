@@ -15,7 +15,7 @@ export interface paths {
         put?: never;
         /**
          * Retry Forecast
-         * @description "Try again" on the not-assessable screen: the source is still down.
+         * @description "Try again" on the not-assessable screen: asks the forecast source whether it answers now.
          */
         post: operations["retry_forecast_api_forecast_retry_post"];
         delete?: never;
@@ -33,23 +33,6 @@ export interface paths {
         };
         /** Health */
         get: operations["health_api_health_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/recent-routes": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get Recent Routes */
-        get: operations["get_recent_routes_api_recent_routes_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -122,7 +105,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Get Route Assessment */
+        /**
+         * Get Route Assessment
+         * @description Hazards for the hike on `date` (default: today in Switzerland), evaluated client-side at arrival.
+         */
         get: operations["get_route_assessment_api_routes__route_id__assessment_get"];
         put?: never;
         post?: never;
@@ -136,10 +122,18 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
-        /** AltRoute */
+        /**
+         * AltRoute
+         * @description The same route cut short: turn back at `stop_id` instead of going on over the crux.
+         */
         AltRoute: {
             /** Duration */
             duration: string;
+            /**
+             * Grade
+             * @enum {string}
+             */
+            grade: "T1" | "T2" | "T3" | "T4" | "T5" | "T6";
             /** Id */
             id: string;
             /**
@@ -147,11 +141,19 @@ export interface components {
              * @enum {string}
              */
             kind: "altRoute";
+            /** Place */
+            place: string;
+            /** Stopid */
+            stopId: string;
         };
         /** AssessmentData */
         AssessmentData: {
             /** Alternatives */
             alternatives: (components["schemas"]["StartEarlier"] | components["schemas"]["AltRoute"])[];
+            /** Conditions */
+            conditions: {
+                [key: string]: components["schemas"]["StopConditions"][];
+            };
             forecast: components["schemas"]["Forecast"];
             /** Gaps */
             gaps: ("warnings" | "snowline" | "pace")[];
@@ -167,29 +169,18 @@ export interface components {
             /** Stale */
             stale: boolean;
         };
-        /** FieldPosition */
-        FieldPosition: {
-            /** Elapsed */
-            elapsed: number;
-            /** Nextascentm */
-            nextAscentM: number;
-            /** Nextkm */
-            nextKm: number;
-            /** Remainingtocrux */
-            remainingToCrux: number;
-        };
         /** Forecast */
         Forecast: {
             /** Checkedat */
             checkedAt: number;
-            /** Feelslikec */
-            feelsLikeC: number;
             /** Issuedat */
             issuedAt: number;
             /** Model */
             model: string;
             /** Stalehours */
             staleHours: number;
+            /** Unavailablereason */
+            unavailableReason?: ("source" | "beyond_horizon") | null;
             /** Unavailablesince */
             unavailableSince: number;
         };
@@ -200,8 +191,7 @@ export interface components {
         };
         /** HazardDef */
         HazardDef: {
-            /** Buildupfrom */
-            buildUpFrom?: number | null;
+            facts?: components["schemas"]["HazardFacts"] | null;
             /** Hasliftsif */
             hasLiftsIf: boolean;
             /** Id */
@@ -210,16 +200,48 @@ export interface components {
              * Kind
              * @enum {string}
              */
-            kind: "gusts" | "showers";
+            kind: "gusts" | "showers" | "thunder" | "cold" | "snow" | "visibility" | "daylight";
             /** Place */
             place?: string | null;
             /** Provenance */
             provenance: string;
             /** Stops */
             stops: {
-                [key: string]: "none" | "mod" | "high";
+                [key: string]: components["schemas"]["SeverityInterval"][];
             };
             window: components["schemas"]["Window"];
+        };
+        /**
+         * HazardFacts
+         * @description The figures behind a hazard, at the stop where it is worst, for the copy to quote.
+         *
+         *     Numbers reach the hazard text only through here: the strings carry placeholders, never figures.
+         *     Every field is optional. A hazard raised by a warning alone has no facts at all, and the copy
+         *     then falls back to a sentence that needs none.
+         */
+        HazardFacts: {
+            /** Cloudbasem */
+            cloudBaseM?: number | null;
+            /** Elevationm */
+            elevationM?: number | null;
+            /** Feelslikec */
+            feelsLikeC?: number | null;
+            /** Freezinglevelm */
+            freezingLevelM?: number | null;
+            /** Gustkmh */
+            gustKmh?: number | null;
+            /** Precipmm */
+            precipMm?: number | null;
+            /** Snowlinem */
+            snowlineM?: number | null;
+            /** Sunset */
+            sunset?: number | null;
+            /** Thresholdkmh */
+            thresholdKmh?: number | null;
+            /** Thresholdmm */
+            thresholdMm?: number | null;
+            /** Thunderpct */
+            thunderPct?: number | null;
         };
         /** KeyLabel */
         KeyLabel: {
@@ -301,20 +323,6 @@ export interface components {
             /** Rank */
             rank: number;
         };
-        /** RecentRoute */
-        RecentRoute: {
-            /** Checkedon */
-            checkedOn: string;
-            /**
-             * Grade
-             * @enum {string}
-             */
-            grade: "T1" | "T2" | "T3" | "T4" | "T5" | "T6";
-            /** Id */
-            id: string;
-            /** Name */
-            name: string;
-        };
         /** RetryResult */
         RetryResult: {
             /** Available */
@@ -338,7 +346,6 @@ export interface components {
             distanceKm: number;
             /** Elevations */
             elevations?: number[] | null;
-            field: components["schemas"]["FieldPosition"];
             /** Fromname */
             fromName: string;
             /** Geometry */
@@ -373,6 +380,21 @@ export interface components {
             /** Via */
             via?: components["schemas"]["PlaceRef"][];
         };
+        /**
+         * SeverityInterval
+         * @description A severity that holds from `from` up to, but not including, `to`.
+         */
+        SeverityInterval: {
+            /** From */
+            from: number;
+            /**
+             * Severity
+             * @enum {string}
+             */
+            severity: "none" | "mod" | "high";
+            /** To */
+            to: number;
+        };
         /** StartEarlier */
         StartEarlier: {
             /** Dependson */
@@ -402,6 +424,22 @@ export interface components {
             legMinutes: number;
             /** Waypointid */
             waypointId: string;
+        };
+        /**
+         * StopConditions
+         * @description What the forecast says at a stop over `[from, to)`: the numbers the crux card shows.
+         */
+        StopConditions: {
+            /** Feelslikec */
+            feelsLikeC?: number | null;
+            /** From */
+            from: number;
+            /** Gustkmh */
+            gustKmh?: number | null;
+            /** Precipmm */
+            precipMm?: number | null;
+            /** To */
+            to: number;
         };
         /** ValidationError */
         ValidationError: {
@@ -448,7 +486,9 @@ export type $defs = Record<string, never>;
 export interface operations {
     retry_forecast_api_forecast_retry_post: {
         parameters: {
-            query?: never;
+            query?: {
+                date?: string | null;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -462,6 +502,15 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["RetryResult"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -484,26 +533,6 @@ export interface operations {
                     "application/json": {
                         [key: string]: string;
                     };
-                };
-            };
-        };
-    };
-    get_recent_routes_api_recent_routes_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["RecentRoute"][];
                 };
             };
         };
@@ -607,6 +636,7 @@ export interface operations {
         parameters: {
             query?: {
                 scenario?: "assessed" | "partial" | "not_assessable" | "stale";
+                date?: string | null;
             };
             header?: never;
             path: {

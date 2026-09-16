@@ -3,11 +3,9 @@ import { oeschinenRoute as route } from '../test/fixtures/route-oeschinensee'
 import type { PaceAnswer } from './types'
 import {
   computeArrivals,
-  fieldEstimate,
   formatArrival,
   formatClock,
   parseClock,
-  turnaroundStatus,
 } from './timing'
 
 const arrival = (start: number, pace: PaceAnswer | null, stopId: string) =>
@@ -55,19 +53,5 @@ describe('clock helpers', () => {
   it('wraps around midnight', () => {
     expect(formatClock(-10)).toBe('23:50')
     expect(formatClock(1450)).toBe('00:10')
-  })
-})
-
-describe('field mode', () => {
-  it('is ahead of the 11:30 turnaround with a 06:30 start (spec 04)', () => {
-    const { now, eta } = fieldEstimate(route, 390)
-    expect(formatClock(now)).toBe('10:52')
-    expect(formatClock(eta)).toBe('11:15')
-    expect(turnaroundStatus(eta, route.turnaroundDefault)).toBe('ahead')
-  })
-
-  it('is past the turnaround with a 07:30 start', () => {
-    const { eta } = fieldEstimate(route, 450)
-    expect(turnaroundStatus(eta, route.turnaroundDefault)).toBe('behind')
   })
 })

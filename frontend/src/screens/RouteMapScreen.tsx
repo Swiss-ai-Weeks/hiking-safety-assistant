@@ -10,6 +10,7 @@ import { formatArrival, formatClock } from '../domain/timing'
 import type { LatLng, Leg, Route } from '../domain/types'
 import { useAssessmentView } from '../hooks/useAssessmentView'
 import { useT } from '../i18n'
+import { hazardText } from '../i18n/hazardCopy'
 import { formatInt, formatKm } from '../lib/format'
 import { routeName, stopWaypoint, waypointById } from '../lib/route'
 import { SEVERITY_STROKE } from '../lib/ui'
@@ -162,10 +163,11 @@ export function RouteMapScreen() {
           zoomControl={false}
           className="route-map absolute inset-0 h-full w-full"
         >
+          {/* swisstopo's national map: contours, rock and marked trails, which OSM tiles draw thinly. */}
           <TileLayer
-            url="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
-            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-            maxZoom={17}
+            url="https://wmts.geo.admin.ch/1.0.0/ch.swisstopo.pixelkarte-farbe/default/current/3857/{z}/{x}/{y}.jpeg"
+            attribution='&copy; <a href="https://www.swisstopo.admin.ch/">swisstopo</a>'
+            maxZoom={18}
           />
           {route.legs.map((leg) => {
             const positions = legPositions(route, leg)
@@ -220,7 +222,7 @@ export function RouteMapScreen() {
               severity === 'unknown'
                 ? t('map.notEvaluated')
                 : cause
-                  ? t(`hazard.${cause.kind}.short` as const, { from: formatClock(cause.window.from) })
+                  ? hazardText(lang, cause, 'short')
                   : t('map.nothingAsOf', { time: forecastTime })
             const grade = leg.cables ? `${leg.grade}, ${t('map.cables')}` : leg.grade
             return (

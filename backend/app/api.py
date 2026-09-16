@@ -1,18 +1,15 @@
-import asyncio
-from datetime import datetime
+from datetime import date, datetime
 from typing import Annotated
 from zoneinfo import ZoneInfo
 
 from fastapi import APIRouter, Depends, HTTPException
 
-from .models import AssessmentData, PlaceResult, RecentRoute, RetryResult, Route, RouteRequest, Scenario
+from .models import AssessmentData, PlaceResult, RetryResult, Route, RouteRequest, Scenario
 from .sources import Sources, get_sources
 
 router = APIRouter(prefix="/api")
 
 SWISS_TIME = ZoneInfo("Europe/Zurich")
-# Simulated latency of re-checking the forecast source.
-RETRY_DELAY_S = 1.2
 
 # Where the data comes from is configuration (`SOURCE_MODE`), not something the API layer knows.
 SourcesDep = Annotated[Sources, Depends(get_sources)]
@@ -55,22 +52,18 @@ async def get_route(route_id: str, sources: SourcesDep) -> Route:
     return await find_route(route_id, sources)
 
 
-@router.get("/recent-routes")
-async def get_recent_routes(sources: SourcesDep) -> list[RecentRoute]:
-    return await sources.routes.recent_routes()
-
-
 @router.get("/routes/{route_id}/assessment", response_model_exclude_none=True)
 async def get_route_assessment(
-    route_id: str, sources: SourcesDep, scenario: Scenario = "assessed"
+    route_id: str, sources: SourcesDep, scenario: Scenario = "assessed", date: date | None = None
 ) -> AssessmentData:
+    """Hazards for the hike on `date` (default: today in Switzerland), evaluated client-side at arrival."""
     route = await find_route(route_id, sources)
-    return await sources.assessor.assess(route, scenario)
+    return await sources.assessor.assess(route, scenario, date)
 
 
 @router.post("/forecast/retry")
-async def retry_forecast() -> RetryResult:
-    """"Try again" on the not-assessable screen: the source is still down."""
-    await asyncio.sleep(RETRY_DELAY_S)
+async def retry_forecast(sources: SourcesDep, date: date | None = None) -> RetryResult:
+    """ "Try again" on the not-assessable screen: asks the forecast source whether it answers now."""
+    available = await sources.assessor.recheck(date)
     now = datetime.now(SWISS_TIME)
-    return RetryResult(available=False, checked_at=now.hour * 60 + now.minute)
+    return RetryResult(available=available, checked_at=now.hour * 60 + now.minute)

@@ -2,9 +2,22 @@
   "components": {
     "schemas": {
       "AltRoute": {
+        "description": "The same route cut short: turn back at `stop_id` instead of going on over the crux.",
         "properties": {
           "duration": {
             "title": "Duration",
+            "type": "string"
+          },
+          "grade": {
+            "enum": [
+              "T1",
+              "T2",
+              "T3",
+              "T4",
+              "T5",
+              "T6"
+            ],
+            "title": "Grade",
             "type": "string"
           },
           "id": {
@@ -15,12 +28,23 @@
             "const": "altRoute",
             "title": "Kind",
             "type": "string"
+          },
+          "place": {
+            "title": "Place",
+            "type": "string"
+          },
+          "stopId": {
+            "title": "Stopid",
+            "type": "string"
           }
         },
         "required": [
           "id",
           "kind",
-          "duration"
+          "duration",
+          "stopId",
+          "place",
+          "grade"
         ],
         "title": "AltRoute",
         "type": "object"
@@ -47,6 +71,16 @@
             },
             "title": "Alternatives",
             "type": "array"
+          },
+          "conditions": {
+            "additionalProperties": {
+              "items": {
+                "$ref": "#/components/schemas/StopConditions"
+              },
+              "type": "array"
+            },
+            "title": "Conditions",
+            "type": "object"
           },
           "forecast": {
             "$ref": "#/components/schemas/Forecast"
@@ -98,47 +132,16 @@
           "hazards",
           "gaps",
           "alternatives",
-          "notEvaluated"
+          "notEvaluated",
+          "conditions"
         ],
         "title": "AssessmentData",
-        "type": "object"
-      },
-      "FieldPosition": {
-        "properties": {
-          "elapsed": {
-            "title": "Elapsed",
-            "type": "integer"
-          },
-          "nextAscentM": {
-            "title": "Nextascentm",
-            "type": "integer"
-          },
-          "nextKm": {
-            "title": "Nextkm",
-            "type": "number"
-          },
-          "remainingToCrux": {
-            "title": "Remainingtocrux",
-            "type": "integer"
-          }
-        },
-        "required": [
-          "elapsed",
-          "remainingToCrux",
-          "nextKm",
-          "nextAscentM"
-        ],
-        "title": "FieldPosition",
         "type": "object"
       },
       "Forecast": {
         "properties": {
           "checkedAt": {
             "title": "Checkedat",
-            "type": "integer"
-          },
-          "feelsLikeC": {
-            "title": "Feelslikec",
             "type": "integer"
           },
           "issuedAt": {
@@ -153,6 +156,21 @@
             "title": "Stalehours",
             "type": "integer"
           },
+          "unavailableReason": {
+            "anyOf": [
+              {
+                "enum": [
+                  "source",
+                  "beyond_horizon"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Unavailablereason"
+          },
           "unavailableSince": {
             "title": "Unavailablesince",
             "type": "integer"
@@ -163,8 +181,7 @@
           "issuedAt",
           "unavailableSince",
           "checkedAt",
-          "staleHours",
-          "feelsLikeC"
+          "staleHours"
         ],
         "title": "Forecast",
         "type": "object"
@@ -184,16 +201,15 @@
       },
       "HazardDef": {
         "properties": {
-          "buildUpFrom": {
+          "facts": {
             "anyOf": [
               {
-                "type": "integer"
+                "$ref": "#/components/schemas/HazardFacts"
               },
               {
                 "type": "null"
               }
-            ],
-            "title": "Buildupfrom"
+            ]
           },
           "hasLiftsIf": {
             "title": "Hasliftsif",
@@ -206,7 +222,12 @@
           "kind": {
             "enum": [
               "gusts",
-              "showers"
+              "showers",
+              "thunder",
+              "cold",
+              "snow",
+              "visibility",
+              "daylight"
             ],
             "title": "Kind",
             "type": "string"
@@ -228,12 +249,10 @@
           },
           "stops": {
             "additionalProperties": {
-              "enum": [
-                "none",
-                "mod",
-                "high"
-              ],
-              "type": "string"
+              "items": {
+                "$ref": "#/components/schemas/SeverityInterval"
+              },
+              "type": "array"
             },
             "title": "Stops",
             "type": "object"
@@ -251,6 +270,134 @@
           "provenance"
         ],
         "title": "HazardDef",
+        "type": "object"
+      },
+      "HazardFacts": {
+        "description": "The figures behind a hazard, at the stop where it is worst, for the copy to quote.\n\nNumbers reach the hazard text only through here: the strings carry placeholders, never figures.\nEvery field is optional. A hazard raised by a warning alone has no facts at all, and the copy\nthen falls back to a sentence that needs none.",
+        "properties": {
+          "cloudBaseM": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cloudbasem"
+          },
+          "elevationM": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Elevationm"
+          },
+          "feelsLikeC": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Feelslikec"
+          },
+          "freezingLevelM": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Freezinglevelm"
+          },
+          "gustKmh": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Gustkmh"
+          },
+          "precipMm": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Precipmm"
+          },
+          "snowlineM": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Snowlinem"
+          },
+          "sunset": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sunset"
+          },
+          "thresholdKmh": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Thresholdkmh"
+          },
+          "thresholdMm": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Thresholdmm"
+          },
+          "thunderPct": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Thunderpct"
+          }
+        },
+        "title": "HazardFacts",
         "type": "object"
       },
       "KeyLabel": {
@@ -474,42 +621,6 @@
         "title": "PlaceResult",
         "type": "object"
       },
-      "RecentRoute": {
-        "properties": {
-          "checkedOn": {
-            "title": "Checkedon",
-            "type": "string"
-          },
-          "grade": {
-            "enum": [
-              "T1",
-              "T2",
-              "T3",
-              "T4",
-              "T5",
-              "T6"
-            ],
-            "title": "Grade",
-            "type": "string"
-          },
-          "id": {
-            "title": "Id",
-            "type": "string"
-          },
-          "name": {
-            "title": "Name",
-            "type": "string"
-          }
-        },
-        "required": [
-          "id",
-          "name",
-          "grade",
-          "checkedOn"
-        ],
-        "title": "RecentRoute",
-        "type": "object"
-      },
       "RetryResult": {
         "properties": {
           "available": {
@@ -581,9 +692,6 @@
               }
             ],
             "title": "Elevations"
-          },
-          "field": {
-            "$ref": "#/components/schemas/FieldPosition"
           },
           "fromName": {
             "title": "Fromname",
@@ -676,8 +784,7 @@
           "cruxStopId",
           "bailoutName",
           "lastBoat",
-          "turnaroundDefault",
-          "field"
+          "turnaroundDefault"
         ],
         "title": "Route",
         "type": "object"
@@ -703,6 +810,35 @@
           "to"
         ],
         "title": "RouteRequest",
+        "type": "object"
+      },
+      "SeverityInterval": {
+        "description": "A severity that holds from `from` up to, but not including, `to`.",
+        "properties": {
+          "from": {
+            "title": "From",
+            "type": "integer"
+          },
+          "severity": {
+            "enum": [
+              "none",
+              "mod",
+              "high"
+            ],
+            "title": "Severity",
+            "type": "string"
+          },
+          "to": {
+            "title": "To",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "from",
+          "to",
+          "severity"
+        ],
+        "title": "SeverityInterval",
         "type": "object"
       },
       "StartEarlier": {
@@ -779,6 +915,58 @@
           "legMinutes"
         ],
         "title": "Stop",
+        "type": "object"
+      },
+      "StopConditions": {
+        "description": "What the forecast says at a stop over `[from, to)`: the numbers the crux card shows.",
+        "properties": {
+          "feelsLikeC": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Feelslikec"
+          },
+          "from": {
+            "title": "From",
+            "type": "integer"
+          },
+          "gustKmh": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Gustkmh"
+          },
+          "precipMm": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Precipmm"
+          },
+          "to": {
+            "title": "To",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "from",
+          "to"
+        ],
+        "title": "StopConditions",
         "type": "object"
       },
       "ValidationError": {
@@ -887,8 +1075,27 @@
   "paths": {
     "/api/forecast/retry": {
       "post": {
-        "description": "\"Try again\" on the not-assessable screen: the source is still down.",
+        "description": "\"Try again\" on the not-assessable screen: asks the forecast source whether it answers now.",
         "operationId": "retry_forecast_api_forecast_retry_post",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "date",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Date"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "content": {
@@ -899,6 +1106,16 @@
               }
             },
             "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
           }
         },
         "summary": "Retry Forecast"
@@ -924,28 +1141,6 @@
           }
         },
         "summary": "Health"
-      }
-    },
-    "/api/recent-routes": {
-      "get": {
-        "operationId": "get_recent_routes_api_recent_routes_get",
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "items": {
-                    "$ref": "#/components/schemas/RecentRoute"
-                  },
-                  "title": "Response Get Recent Routes Api Recent Routes Get",
-                  "type": "array"
-                }
-              }
-            },
-            "description": "Successful Response"
-          }
-        },
-        "summary": "Get Recent Routes"
       }
     },
     "/api/routes": {
@@ -1072,6 +1267,7 @@
     },
     "/api/routes/{route_id}/assessment": {
       "get": {
+        "description": "Hazards for the hike on `date` (default: today in Switzerland), evaluated client-side at arrival.",
         "operationId": "get_route_assessment_api_routes__route_id__assessment_get",
         "parameters": [
           {
@@ -1097,6 +1293,23 @@
               ],
               "title": "Scenario",
               "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "date",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Date"
             }
           }
         ],

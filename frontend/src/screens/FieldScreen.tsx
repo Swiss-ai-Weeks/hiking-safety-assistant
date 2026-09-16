@@ -1,25 +1,38 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router'
 import { BottomAction } from '../components/BottomAction'
 import { Button, ButtonLink } from '../components/Button'
 import { ChevronRight } from '../components/icons'
-import { clockOf, fieldEstimate, formatClock, turnaroundStatus } from '../domain/timing'
+import { fieldProgress, plannedSnap, trackOf } from '../domain/field'
+import { clockOf, computeArrivals, formatClock, turnaroundStatus } from '../domain/timing'
 import type { CloudAnswer } from '../domain/types'
 import { useT } from '../i18n'
-import { formatKm } from '../lib/format'
-import { stopWaypoint } from '../lib/route'
+import { useFieldPosition } from '../hooks/useFieldPosition'
+import { formatInt, formatKm } from '../lib/format'
+import { stopById, stopLabel, stopWaypoint } from '../lib/route'
 import { buttonClass } from '../lib/ui'
 import { usePlan, useRoute, useTurnaround } from '../store/plan'
 
 const CLOUD_ANSWERS: CloudAnswer[] = ['above', 'touching', 'below']
 const PROMPT_TIMEOUT_MS = 2 * 60 * 1000
+const CLOCK_TICK_MS = 30 * 1000
 
-/** 04: dark, large type, one glance. Lookup and threshold only, no live reasoning. */
+/** The wall clock in minutes since midnight, re-read every tick. */
+function useClock(): number {
+  const [now, setNow] = useState(() => clockOf(new Date()))
+  useEffect(() => {
+    const id = setInterval(() => setNow(clockOf(new Date())), CLOCK_TICK_MS)
+    return () => clearInterval(id)
+  }, [])
+  return now
+}
+
+/** 04: dark, large type, one glance. Where you are on the route, against the rule you set last night. */
 export function FieldScreen() {
   const { t, tr, lang } = useT()
   const navigate = useNavigate()
   const route = useRoute()
-  const start = usePlan((s) => s.start)
+  const paceAnswer = usePlan((s) => s.paceAnswer)
   const turnaround = useTurnaround()
   const hikeStarted = usePlan((s) => s.hikeStarted)
   const hikeStartedAt = usePlan((s) => s.hikeStartedAt)
@@ -28,6 +41,9 @@ export function FieldScreen() {
   const endHike = usePlan((s) => s.endHike)
   const [promptOpen, setPromptOpen] = useState(cloudObservation === null)
   const [confirmEnd, setConfirmEnd] = useState(false)
+  const now = useClock()
+  const track = useMemo(() => trackOf(route), [route])
+  const position = useFieldPosition(track, hikeStarted)
 
   // Prompts dismiss themselves; nothing blocks the screen.
   useEffect(() => {
@@ -49,16 +65,30 @@ export function FieldScreen() {
   }
 
   const crux = stopWaypoint(route, route.cruxStopId)
-  const { now, eta } = fieldEstimate(route, start)
-  const status = turnaroundStatus(eta, turnaround)
-  const ruleSaysTurn = status === 'behind' || cloudObservation?.answer === 'below'
+  // Without a fix, where the plan says you'd be by now, timed from when you actually set off.
+  const startedAt = hikeStartedAt ? clockOf(new Date(hikeStartedAt)) : now
+  const snap = position.snap ?? plannedSnap(track, computeArrivals(route, startedAt, paceAnswer), route, now)
+  const progress = fieldProgress(route, track, snap, paceAnswer, now)
+  const target = stopById(route, progress.targetStopId)
+  const status = progress.passedCrux ? 'ahead' : turnaroundStatus(progress.eta, turnaround)
+  const ruleSaysTurn = (!progress.passedCrux && status === 'behind') || cloudObservation?.answer === 'below'
+  const positionNote =
+    position.status === 'offRoute'
+      ? t('field.offRoute')
+      : position.status === 'tracking'
+        ? null
+        : position.status === 'searching' && !position.snap
+          ? t('field.searching')
+          : position.snap
+            ? null
+            : t('field.noPosition')
 
   return (
     <>
       <div className="flex items-center justify-between px-[22px] pt-[max(env(safe-area-inset-top),28px)] text-[13px] text-field-muted">
         <span className="flex items-center gap-2">
           <span aria-hidden="true" className="size-2 rounded-full bg-field-muted" />
-          {t('field.offline', { time: hikeStartedAt ? formatClock(clockOf(new Date(hikeStartedAt))) : '--:--' })}
+          {t('field.started', { time: hikeStartedAt ? formatClock(clockOf(new Date(hikeStartedAt))) : '--:--' })}
         </span>
         <span className="tabular-nums">{formatClock(now)}</span>
       </div>
@@ -67,20 +97,31 @@ export function FieldScreen() {
         <div>
           <p className="text-[13px] font-semibold tracking-[0.08em] text-field-muted uppercase">
             {t('field.next', {
-              place: crux.name,
-              km: formatKm(route.field.nextKm, lang),
-              ascent: route.field.nextAscentM,
+              place: stopLabel(target, t),
+              km: formatKm(progress.remainingKm, lang),
+              ascent: formatInt(progress.remainingAscentM),
             })}
           </p>
           <h1 className="mt-2 font-serif text-[34px] leading-[1.15] font-medium text-pretty">
-            {status === 'ahead' ? t('field.ahead') : t('field.behind')}
+            {progress.passedCrux ? t('field.pastCrux', { place: crux.name }) : status === 'ahead' ? t('field.ahead') : t('field.behind')}
           </h1>
           <p className="mt-2.5 text-xl leading-[1.4] text-crux-body">
-            {tr('field.eta', {
-              eta: <strong className="font-semibold text-white">{formatClock(eta)}</strong>,
-              rule: <strong className="font-semibold text-white">{t('field.turnBy', { time: formatClock(turnaround) })}</strong>,
-            })}
+            {progress.passedCrux
+              ? tr('field.etaEnd', {
+                  place: stopLabel(target, t),
+                  eta: <strong className="font-semibold text-white">{formatClock(progress.eta)}</strong>,
+                })
+              : tr('field.eta', {
+                  place: crux.name,
+                  eta: <strong className="font-semibold text-white">{formatClock(progress.eta)}</strong>,
+                  rule: <strong className="font-semibold text-white">{t('field.turnBy', { time: formatClock(turnaround) })}</strong>,
+                })}
           </p>
+          {positionNote && (
+            <p role="status" className="mt-2 text-[15px] leading-normal text-field-muted">
+              {positionNote}
+            </p>
+          )}
         </div>
 
         {ruleSaysTurn && (

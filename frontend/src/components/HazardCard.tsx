@@ -1,28 +1,24 @@
 import type { FlaggedHazard } from '../domain/assessment'
-import { formatClock } from '../domain/timing'
 import { useT } from '../i18n'
+import { hazardText } from '../i18n/hazardCopy'
 import { SeverityDot } from './Severity'
 
 /** Severity dot, place + time title, template body, optional "Lifts if", provenance footnote. */
 export function HazardCard({ flagged }: { flagged: FlaggedHazard }) {
-  const { t } = useT()
+  const { t, lang } = useT()
   const { hazard, severity } = flagged
-  const params = {
-    place: hazard.place ?? '',
-    from: formatClock(hazard.window.from),
-    to: formatClock(hazard.window.to),
-  }
+  const liftsIf = hazard.hasLiftsIf ? hazardText(lang, hazard, 'liftsIf') : null
 
   return (
     <article className="flex gap-3 rounded-card border border-line bg-card p-4">
       <SeverityDot severity={severity} className="mt-1.5" />
       <div className="flex min-w-0 flex-col gap-1.5">
-        <h3 className="text-base leading-[1.3] font-semibold">{t(`hazard.${hazard.kind}.title` as const, params)}</h3>
-        <p className="text-sm leading-normal text-ink-2">{t(`hazard.${hazard.kind}.body` as const, params)}</p>
-        {hazard.hasLiftsIf && (
+        <h3 className="text-base leading-[1.3] font-semibold">{hazardText(lang, hazard, 'title')}</h3>
+        <p className="text-sm leading-normal text-ink-2">{hazardText(lang, hazard, 'body')}</p>
+        {liftsIf && (
           <p className="text-[13px] leading-normal text-muted">
             <strong className="font-semibold text-ink-3">{t('flagged.liftsIf')}</strong>{' '}
-            {t(`hazard.${hazard.kind}.liftsIf` as const, params)}
+            {liftsIf}
           </p>
         )}
         <p className="text-xs text-faint">{hazard.provenance}</p>

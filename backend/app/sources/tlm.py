@@ -14,7 +14,7 @@ import logging
 
 from ..config import Settings
 from ..domain import GeoPoint, PlaceHit
-from ..models import RecentRoute, Route, RouteRequest
+from ..models import Route, RouteRequest
 from ..routing.build import build_route, refine, route_id_for
 from ..routing.graph import load_graph
 from ..routing.stops import Vertex, flatten, with_elevations
@@ -35,7 +35,7 @@ GRADE_MARGIN_DEG = 0.01
 # Bumped whenever the routing, timing or stop selection changes shape. The route *id* is a digest
 # of the request and must stay stable — the frontend persists it — so the version lives in the
 # cache key instead: old entries simply stop being found, and the next request rebuilds them.
-ROUTE_BUILD_VERSION = 1
+ROUTE_BUILD_VERSION = 2
 
 
 def _cache_key(route_id: str) -> CacheKey:
@@ -68,9 +68,6 @@ class TlmRouteSource:
         if cached is None:
             return None
         return Route.model_validate(cached)
-
-    async def recent_routes(self) -> list[RecentRoute]:
-        raise SourceUnavailable("geoadmin", "recent routes are not implemented yet (Phase 4)")
 
     async def create_route(self, request: RouteRequest) -> Route:
         existing = await self.get_route(route_id_for(request))

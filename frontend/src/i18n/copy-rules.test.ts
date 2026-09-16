@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { en, type MessageKey } from './en'
 import { fr } from './fr'
+import { BASE_PLACEHOLDERS, FACT_PLACEHOLDERS } from './hazardCopy'
 
 /** The UI never gives a verdict: no "safe", "fine", "clear to" (spec copy rules). */
 const BANNED: Record<'en' | 'fr', RegExp[]> = {
@@ -36,5 +37,38 @@ describe('copy rules', () => {
       PLACE_NAMES.filter((place) => en[key].includes(place) && !fr[key].includes(place)).map((place) => `${key}: ${place}`),
     )
     expect(missing).toEqual([])
+  })
+
+  describe('hazard copy', () => {
+    const hazardKeys = keys.filter((key) => key.startsWith('hazard.'))
+
+    it('carries no figures: every number comes from the facts', () => {
+      const withDigits = hazardKeys.flatMap((key) =>
+        [en[key], fr[key]].filter((text) => /\d/.test(text)).map((text) => `${key}: ${text}`),
+      )
+      expect(withDigits).toEqual([])
+    })
+
+    it('uses only placeholders the facts can fill', () => {
+      const known = new Set([...BASE_PLACEHOLDERS, ...Object.keys(FACT_PLACEHOLDERS)])
+      const unknown = hazardKeys.flatMap((key) => placeholders(en[key]).filter((name) => !known.has(name)).map((name) => `${key}: {${name}}`))
+      expect(unknown).toEqual([])
+    })
+
+    it('has a generic fallback for every string that needs a fact', () => {
+      const facts = new Set(Object.keys(FACT_PLACEHOLDERS))
+      const missing = hazardKeys.filter(
+        (key) =>
+          !key.endsWith('Generic') &&
+          !key.endsWith('.liftsIf') &&
+          placeholders(en[key]).some((name) => facts.has(name)) &&
+          !(`${key}Generic` in en),
+      )
+      expect(missing).toEqual([])
+      const genericNeedingFacts = hazardKeys.filter(
+        (key) => key.endsWith('Generic') && placeholders(en[key]).some((name) => facts.has(name)),
+      )
+      expect(genericNeedingFacts).toEqual([])
+    })
   })
 })

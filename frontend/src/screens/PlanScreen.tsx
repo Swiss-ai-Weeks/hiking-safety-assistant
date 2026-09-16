@@ -1,7 +1,5 @@
-import { useSuspenseQuery } from '@tanstack/react-query'
-import { useState, type MouseEvent } from 'react'
+import { type MouseEvent } from 'react'
 import { Link, useNavigate } from 'react-router'
-import { recentRoutesQuery } from '../api/queries'
 import { BottomAction } from '../components/BottomAction'
 import { Button } from '../components/Button'
 import { Card, Eyebrow } from '../components/Card'
@@ -24,7 +22,6 @@ export function PlanScreen() {
   const { t, lang } = useT()
   const navigate = useNavigate()
   const route = useRoute()
-  const { data: recentRoutes } = useSuspenseQuery(recentRoutesQuery)
   const date = usePlan((s) => s.date)
   const start = usePlan((s) => s.start)
   const saved = usePlan((s) => s.saved)
@@ -33,7 +30,8 @@ export function PlanScreen() {
   const setPlannedStart = usePlan((s) => s.setPlannedStart)
   const checkConditions = usePlan((s) => s.checkConditions)
   const reopenPlan = usePlan((s) => s.reopenPlan)
-  const [demoNote, setDemoNote] = useState(false)
+  const setRouteId = usePlan((s) => s.setRouteId)
+  const recentRoutes = usePlan((s) => s.recentRoutes).filter((recent) => recent.id !== route.id)
 
   return (
     <>
@@ -63,11 +61,11 @@ export function PlanScreen() {
         )}
 
         <Card className="overflow-hidden">
-          <button
-            type="button"
-            onClick={() => setDemoNote((v) => !v)}
-            aria-expanded={demoNote}
-            className="flex w-full items-center justify-between gap-3 border-b border-divider px-4 py-3.5 text-left"
+          <Link
+            to="/routes/new"
+            aria-disabled={hikeStarted}
+            onClick={(event) => hikeStarted && event.preventDefault()}
+            className="flex w-full items-center justify-between gap-3 border-b border-divider px-4 py-3.5 text-left text-ink hover:bg-subtle hover:text-ink"
           >
             <span className="flex min-w-0 flex-col gap-[3px]">
               <span className="text-xs text-muted">{t('plan.route')}</span>
@@ -80,8 +78,11 @@ export function PlanScreen() {
                 })}
               </span>
             </span>
-            <ChevronRight className="shrink-0 text-chevron" />
-          </button>
+            <span className="flex shrink-0 items-center gap-1 text-[13px] text-plum">
+              {t('plan.changeRoute')}
+              <ChevronRight className="text-chevron" />
+            </span>
+          </Link>
           <div className="flex">
             <label className="relative flex flex-1 flex-col gap-[3px] border-r border-divider px-4 py-3.5 focus-within:bg-subtle">
               <span className="text-xs text-muted">{t('plan.date')}</span>
@@ -114,52 +115,49 @@ export function PlanScreen() {
           </div>
         </Card>
 
-        {demoNote && (
-          <p role="status" className="px-1 text-[13px] text-plum">
-            {t('plan.demoOnly')}
-          </p>
-        )}
-
         <p className="px-1 text-[13px] leading-normal text-muted">{t('plan.sourceNote')}</p>
 
-        <section className="mt-2 flex flex-col gap-2">
-          <Eyebrow className="px-1 pb-0.5 tracking-[0.06em]">{t('plan.recent')}</Eyebrow>
-          {saved.map((plan) => (
-            <button
-              key={plan.id}
-              type="button"
-              onClick={() => {
-                reopenPlan(plan)
-                navigate('/assessment')
-              }}
-              className="flex items-center justify-between gap-3 rounded-control border border-line bg-card px-4 py-3 text-left hover:bg-subtle"
-            >
-              <span>
-                <span className="block text-[15px] font-medium">{plan.routeName}</span>
-                <span className="block text-[13px] text-muted">
-                  {t('plan.savedMeta', { grade: plan.grade, date: formatShortDate(plan.date, lang), start: formatClock(plan.start) })}
+        {(saved.length > 0 || recentRoutes.length > 0) && (
+          <section className="mt-2 flex flex-col gap-2">
+            <Eyebrow className="px-1 pb-0.5 tracking-[0.06em]">{t('plan.recent')}</Eyebrow>
+            {saved.map((plan) => (
+              <button
+                key={plan.id}
+                type="button"
+                onClick={() => {
+                  reopenPlan(plan)
+                  navigate('/assessment')
+                }}
+                className="flex items-center justify-between gap-3 rounded-control border border-line bg-card px-4 py-3 text-left hover:bg-subtle"
+              >
+                <span>
+                  <span className="block text-[15px] font-medium">{plan.routeName}</span>
+                  <span className="block text-[13px] text-muted">
+                    {t('plan.savedMeta', { grade: plan.grade, date: formatShortDate(plan.date, lang), start: formatClock(plan.start) })}
+                  </span>
                 </span>
-              </span>
-              <ChevronRight className="shrink-0 text-chevron" />
-            </button>
-          ))}
-          {recentRoutes.map((recent) => (
-            <button
-              key={recent.id}
-              type="button"
-              onClick={() => setDemoNote(true)}
-              className="flex items-center justify-between gap-3 rounded-control border border-line bg-card px-4 py-3 text-left hover:bg-subtle"
-            >
-              <span>
-                <span className="block text-[15px] font-medium">{recent.name}</span>
-                <span className="block text-[13px] text-muted">
-                  {t('plan.recentMeta', { grade: recent.grade, date: formatDayMonth(recent.checkedOn, lang) })}
+                <ChevronRight className="shrink-0 text-chevron" />
+              </button>
+            ))}
+            {recentRoutes.map((recent) => (
+              <button
+                key={recent.id}
+                type="button"
+                disabled={hikeStarted}
+                onClick={() => setRouteId(recent.id)}
+                className="flex items-center justify-between gap-3 rounded-control border border-line bg-card px-4 py-3 text-left hover:bg-subtle"
+              >
+                <span>
+                  <span className="block text-[15px] font-medium">{recent.name}</span>
+                  <span className="block text-[13px] text-muted">
+                    {t('plan.recentMeta', { grade: recent.grade, date: formatDayMonth(new Date(recent.usedAt), lang) })}
+                  </span>
                 </span>
-              </span>
-              <ChevronRight className="shrink-0 text-chevron" />
-            </button>
-          ))}
-        </section>
+                <ChevronRight className="shrink-0 text-chevron" />
+              </button>
+            ))}
+          </section>
+        )}
       </main>
 
       <BottomAction>

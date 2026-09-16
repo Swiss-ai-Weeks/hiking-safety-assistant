@@ -13,8 +13,11 @@ Grade = Literal["T1", "T2", "T3", "T4", "T5", "T6"]
 Severity = Literal["none", "mod", "high"]
 Outcome = Literal["assessed", "partial", "not_assessable"]
 Scenario = Literal["assessed", "partial", "not_assessable", "stale"]
-HazardKind = Literal["gusts", "showers"]
+HazardKind = Literal["gusts", "showers", "thunder", "cold", "snow", "visibility", "daylight"]
 GapKind = Literal["warnings", "snowline", "pace"]
+# Why there is no assessment: the forecast source failed, or the day is further ahead than any
+# model reaches. Said apart, because "unavailable since" is untrue of a day nobody forecasts yet.
+UnavailableReason = Literal["source", "beyond_horizon"]
 
 
 class Schema(BaseModel):
@@ -75,13 +78,6 @@ class Leg(Schema):
     to_index: int | None = None
 
 
-class FieldPosition(Schema):
-    elapsed: Minutes
-    remaining_to_crux: Minutes
-    next_km: float
-    next_ascent_m: int
-
-
 class Route(Schema):
     id: str
     from_name: str
@@ -96,9 +92,6 @@ class Route(Schema):
     bailout_name: str
     last_boat: Minutes
     turnaround_default: Minutes
-    # Where field mode starts from: at the trailhead, not yet moving. Phase 4 replaces it with a
-    # live position, which is why it stays a plain part of the route for now.
-    field: FieldPosition
     descent_m: int | None = None
     # Which stop the bail-out is, so the map can place its label. `bailout_name` alone cannot be
     # located on the route.
@@ -139,17 +132,55 @@ class Window(Schema):
     to: Minutes
 
 
+class SeverityInterval(Schema):
+    """A severity that holds from `from` up to, but not including, `to`."""
+
+    from_: Minutes = Field(alias="from")
+    to: Minutes
+    severity: Severity
+
+
+class HazardFacts(Schema):
+    """The figures behind a hazard, at the stop where it is worst, for the copy to quote.
+
+    Numbers reach the hazard text only through here: the strings carry placeholders, never figures.
+    Every field is optional. A hazard raised by a warning alone has no facts at all, and the copy
+    then falls back to a sentence that needs none.
+    """
+
+    # Peak gust in the flagged hours, and the gust at which the rule starts flagging this stop.
+    gust_kmh: int | None = None
+    threshold_kmh: int | None = None
+    # Peak hourly precipitation, and the amount at which wet rock starts to count.
+    precip_mm: float | None = None
+    threshold_mm: float | None = None
+    # Peak share of ensemble members with thunderstorm energy, 0-100.
+    thunder_pct: int | None = None
+    # Lowest wind chill in the flagged hours.
+    feels_like_c: int | None = None
+    # Lowest levels in the flagged hours.
+    freezing_level_m: int | None = None
+    snowline_m: int | None = None
+    cloud_base_m: int | None = None
+    # Height of the stop the figures are for.
+    elevation_m: int | None = None
+    # Daylight only: sunset that day.
+    sunset: Minutes | None = None
+
+
 class HazardDef(Schema):
     id: str
     kind: HazardKind
-    # Forecast window in which the hazard applies at full severity.
+    # Where the hazard is at its worst: the span of its `high` intervals, or of all its intervals
+    # when none is high. What titles and map labels quote; severity itself is read from `stops`.
     window: Window
-    # Before the window, exposed stops read as moderate.
-    build_up_from: Minutes | None = None
-    # Severity per exposed stop while inside the window.
-    stops: dict[str, Severity]
+    # Severity over the day per exposed stop, sorted and non-overlapping. A stop at a time no
+    # interval covers reads as "none". Evaluated client-side at the hiker's arrival, so moving the
+    # start time needs no request.
+    stops: dict[str, list[SeverityInterval]]
     place: str | None = None
     has_lifts_if: bool
+    facts: HazardFacts | None = None
     # Rule and source identifiers, shown only as a footnote.
     provenance: str
 
@@ -162,9 +193,15 @@ class StartEarlier(Schema):
 
 
 class AltRoute(Schema):
+    """The same route cut short: turn back at `stop_id` instead of going on over the crux."""
+
     id: str
     kind: Literal["altRoute"]
     duration: str
+    stop_id: str
+    # Official place name, never translated.
+    place: str
+    grade: Grade
 
 
 Alternative = Annotated[StartEarlier | AltRoute, Field(discriminator="kind")]
@@ -180,7 +217,17 @@ class Forecast(Schema):
     unavailable_since: Minutes
     checked_at: Minutes
     stale_hours: int
-    feels_like_c: int
+    unavailable_reason: UnavailableReason | None = None
+
+
+class StopConditions(Schema):
+    """What the forecast says at a stop over `[from, to)`: the numbers the crux card shows."""
+
+    from_: Minutes = Field(alias="from")
+    to: Minutes
+    gust_kmh: int | None = None
+    feels_like_c: int | None = None
+    precip_mm: float | None = None
 
 
 class AssessmentData(Schema):
@@ -191,13 +238,8 @@ class AssessmentData(Schema):
     gaps: list[GapKind]
     alternatives: list[Alternative]
     not_evaluated: list[NotEvaluated]
-
-
-class RecentRoute(Schema):
-    id: str
-    name: str
-    grade: Grade
-    checked_on: str
+    # Per stop id, in time order. A stop that was not evaluated has none: no number beats a guess.
+    conditions: dict[str, list[StopConditions]]
 
 
 class RetryResult(Schema):

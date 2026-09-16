@@ -6,6 +6,7 @@ import { ScreenHeader } from '../components/ScreenHeader'
 import { formatClock } from '../domain/timing'
 import { useAssessmentView } from '../hooks/useAssessmentView'
 import { useT } from '../i18n'
+import { hazardText } from '../i18n/hazardCopy'
 import { formatDateTime, formatKm, formatShortDate, formatWeekday } from '../lib/format'
 import { routeName, stopWaypoint } from '../lib/route'
 import { usePlan, useTurnaround } from '../store/plan'
@@ -40,7 +41,7 @@ export function ShareScreen() {
       ? t('na.title')
       : evaluation.flagged.length > 0
         ? evaluation.flagged
-            .map(({ hazard }) => t(`hazard.${hazard.kind}.watch` as const, { from: formatClock(hazard.window.from) }))
+            .map(({ hazard }) => hazardText(lang, hazard, 'watch'))
             .join(' ')
         : t('share.watchNothing', { time: formatClock(data.forecast.issuedAt) })
 

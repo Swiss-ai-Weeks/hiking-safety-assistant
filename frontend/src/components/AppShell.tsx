@@ -11,8 +11,7 @@ export function AppShell() {
   const setRouteId = usePlan((s) => s.setRouteId)
   const dark = pathname.startsWith('/field')
 
-  // `?routeId=` opens a route the backend has computed. Until the picker lands in Phase 4 this is
-  // how a real routed hike is reached; it stays useful afterwards as a way to share one.
+  // `?routeId=` opens a route the backend has computed: how a routed hike is shared.
   const requestedRouteId = params.get('routeId')
   useEffect(() => {
     if (!requestedRouteId) return

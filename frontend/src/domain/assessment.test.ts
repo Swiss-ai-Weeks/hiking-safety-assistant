@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { resolveScenario } from '../lib/scenario'
 import { getAssessmentData } from '../test/fixtures/mockApi'
 import { oeschinenRoute as route } from '../test/fixtures/route-oeschinensee'
-import { evaluate, gustAt, hazardSeverityAt, nothingFlaggedRange } from './assessment'
+import { conditionsAt, evaluate, gustAt, hazardSeverityAt, nothingFlaggedRange } from './assessment'
 import { computeArrivals } from './timing'
 import type { PaceAnswer, Scenario } from './types'
 
@@ -74,8 +74,23 @@ describe('hazard helpers', () => {
     expect(hazardSeverityAt(gusts, 'ober', 700)).toBe('none')
   })
 
-  it('reports crux gusts for the crux card', () => {
-    expect(gustAt([gusts], 'hohturli', 700)).toEqual({ kmh: 55, severity: 'high' })
+  it('treats intervals as half-open', () => {
+    expect(hazardSeverityAt(gusts, 'hohturli', 630)).toBe('mod')
+    expect(hazardSeverityAt(gusts, 'hohturli', 660)).toBe('high')
+    expect(hazardSeverityAt(gusts, 'hohturli', 840)).toBe('none')
+  })
+
+  it('reports crux gusts from the forecast conditions, with the gust rule severity', () => {
+    const data = getAssessmentData('assessed')
+    expect(gustAt(data, 'hohturli', 700)).toEqual({ kmh: 55, severity: 'high' })
+    expect(gustAt(data, 'hohturli', 600)).toEqual({ kmh: 25, severity: 'none' })
+    expect(conditionsAt(data, 'hohturli', 700)?.feelsLikeC).toBe(-2)
+  })
+
+  it('has no crux numbers where there is no data', () => {
+    const data = getAssessmentData('not_assessable')
+    expect(gustAt(data, 'hohturli', 700)).toBeNull()
+    expect(conditionsAt(data, 'hohturli', 700)).toBeNull()
   })
 })
 

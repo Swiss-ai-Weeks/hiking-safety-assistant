@@ -1,3 +1,4 @@
+import { useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useNavigate } from 'react-router'
 import { AlternativeCard } from '../components/AlternativeCard'
@@ -11,7 +12,7 @@ import { OutcomeLine } from '../components/OutcomeLine'
 import { ScreenHeader } from '../components/ScreenHeader'
 import { Timeline } from '../components/Timeline'
 import { retryForecast } from '../api/queries'
-import { gustAt, nothingFlaggedRange } from '../domain/assessment'
+import { conditionsAt, gustAt, nothingFlaggedRange } from '../domain/assessment'
 import { computeArrivals, formatArrival, formatClock } from '../domain/timing'
 import { useAssessmentView, type AssessmentView } from '../hooks/useAssessmentView'
 import { STREAM_DELAY_MS, useDelayed } from '../hooks/useDelayed'
@@ -56,6 +57,7 @@ function Assessed({ view }: { view: AssessmentView }) {
   const crux = stopById(route, route.cruxStopId)
   const cruxWaypoint = stopWaypoint(route, crux.id)
   const cruxUnknown = evaluation.stopSeverity[crux.id] === 'unknown'
+  const cruxConditions = cruxUnknown ? null : conditionsAt(data, crux.id, arrivals[crux.id])
   const showers = data.hazards.find((h) => h.kind === 'showers')
 
   const range = nothingFlaggedRange(route, evaluation.stopSeverity)
@@ -85,8 +87,8 @@ function Assessed({ view }: { view: AssessmentView }) {
           place={cruxWaypoint.name}
           elevationM={cruxWaypoint.elevationM}
           arrival={arrivals[crux.id]}
-          gust={cruxUnknown ? null : gustAt(data.hazards, crux.id, arrivals[crux.id])}
-          feelsLikeC={data.forecast.feelsLikeC}
+          gust={cruxUnknown ? null : gustAt(data, crux.id, arrivals[crux.id])}
+          feelsLikeC={cruxConditions?.feelsLikeC ?? null}
           showersFrom={showers ? showers.window.from : null}
           stale={data.stale}
         />
@@ -143,14 +145,17 @@ function Assessed({ view }: { view: AssessmentView }) {
                   onSelect={() => setStart(startAlt.start)}
                 />
               )}
-              {routeAlts.map((alt) => (
-                <AlternativeCard
-                  key={alt.id}
-                  title={t('alt.loop.title')}
-                  body={t('alt.loop.body', { day: formatWeekday(date, lang), time: forecastTime })}
-                  badge={alt.kind === 'altRoute' && <span className="shrink-0 text-xs text-muted">{alt.duration}</span>}
-                />
-              ))}
+              {routeAlts.map(
+                (alt) =>
+                  alt.kind === 'altRoute' && (
+                    <AlternativeCard
+                      key={alt.id}
+                      title={t('alt.bailout.title', { place: alt.place, grade: alt.grade })}
+                      body={t('alt.bailout.body', { day: formatWeekday(date, lang), time: forecastTime })}
+                      badge={<span className="shrink-0 text-xs text-muted">{alt.duration}</span>}
+                    />
+                  ),
+              )}
             </section>
           </>
         ) : (
@@ -175,15 +180,22 @@ function Assessed({ view }: { view: AssessmentView }) {
 
 /** 02b: reason stated, official channels named, no hazards, no primary action. */
 function NotAssessable({ view }: { view: AssessmentView }) {
-  const { t } = useT()
+  const { t, lang } = useT()
   const subtitle = useHeaderSubtitle(view)
+  const date = usePlan((s) => s.date)
+  const queryClient = useQueryClient()
   const [checking, setChecking] = useState(false)
   const [checkedAt, setCheckedAt] = useState(view.data.forecast.checkedAt)
+  const beyondHorizon = view.data.forecast.unavailableReason === 'beyond_horizon'
 
   const retry = () => {
     setChecking(true)
-    retryForecast()
-      .then((result) => setCheckedAt(result.checkedAt))
+    retryForecast(date)
+      .then((result) => {
+        setCheckedAt(result.checkedAt)
+        // The source answers again: fetch the assessment rather than keep showing the outage.
+        if (result.available) return queryClient.invalidateQueries({ queryKey: ['assessment', view.route.id] })
+      })
       .catch(() => {})
       .finally(() => setChecking(false))
   }
@@ -196,7 +208,9 @@ function NotAssessable({ view }: { view: AssessmentView }) {
         <Card className="flex flex-col gap-3 px-[18px] py-5">
           <h2 className="font-serif text-2xl leading-[1.2] font-medium text-pretty">{t('na.title')}</h2>
           <p className="text-[15px] leading-normal">
-            {t('na.reason', { time: formatClock(view.data.forecast.unavailableSince) })}
+            {beyondHorizon
+              ? t('na.reasonBeyondHorizon', { date: formatShortDate(date, lang) })
+              : t('na.reason', { time: formatClock(view.data.forecast.unavailableSince) })}
           </p>
           <p className="text-sm leading-[1.6] text-ink-3">
             {t('na.checkDirectly')}

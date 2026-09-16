@@ -21,10 +21,30 @@ export const fr: Messages = {
   'plan.sourceNote':
     'Les itinéraires sont résolus sur le réseau officiel swisstopo. Les prévisions viennent de MétéoSuisse. Chaque tronçon est vérifié pour l’heure à laquelle vous y serez.',
   'plan.recent': 'Récents',
-  'plan.recentMeta': '{grade} · vérifié le {date}',
+  'plan.recentMeta': '{grade} · choisi le {date}',
   'plan.savedMeta': '{grade} · {date} · départ {start}',
-  'plan.demoOnly': 'Les données de démo couvrent uniquement l’itinéraire d’Oeschinensee.',
+  'plan.changeRoute': 'Changer',
   'plan.cta': 'Vérifier les conditions',
+
+  'picker.title': 'Choisir un itinéraire',
+  'picker.from': 'De',
+  'picker.to': 'À',
+  'picker.via': 'Par (facultatif)',
+  'picker.addVia': 'Ajouter une étape',
+  'picker.removeVia': 'Retirer',
+  'picker.placeholder': 'Village, cabane, col, lac…',
+  'picker.searching': 'Recherche…',
+  'picker.noResults': 'Aucun lieu ne correspond à « {query} ».',
+  'picker.searchFailed': 'La recherche de lieux n’a pas répondu. Réessayez dans un instant.',
+  'picker.change': 'Changer',
+  'picker.note':
+    'L’itinéraire suit le réseau de randonnée officiel swisstopo entre les lieux choisis, aller et retour.',
+  'picker.build': 'Trouver l’itinéraire',
+  'picker.building': 'Recherche de l’itinéraire…',
+  'picker.noTrail':
+    'Aucun sentier balisé ne relie ces lieux, ou l’un d’eux est trop loin du réseau. Essayez un village, une cabane ou un col proche.',
+  'picker.demoOnly': 'En mode démo, seuls les lieux de l’itinéraire d’Oeschinensee peuvent être reliés.',
+  'picker.unavailable': 'Le calcul d’itinéraire n’est pas disponible pour le moment. Réessayez dans un instant.',
 
   'outcome.assessed': 'Évalué',
   'outcome.assessedDetail': '· tous les tronçons · prévision de {time} aujourd’hui',
@@ -65,18 +85,64 @@ export const fr: Messages = {
   'flagged.notEvaluatedBody':
     'Pas de données de rafales au-dessus de 2 600 m pour ce tronçon. Les suggestions qui en dépendent sont masquées.',
 
-  'hazard.gusts.title': 'Fortes rafales sur l’arête du {place}, {from}–{to}',
+  'hazard.gusts.title': 'Fortes rafales au {place}, {from}–{to}',
   'hazard.gusts.body':
-    'Rafales de 50–60 km/h sur un passage T3 exposé, équipé de câbles. Atteindre le col avant {from} vous garde sous 40 km/h.',
-  'hazard.gusts.liftsIf': 'la mise à jour de 09:00 annonce des rafales inférieures à 40 km/h à 2 800 m.',
-  'hazard.gusts.short': 'rafales de 50–60 km/h dès {from}',
-  'hazard.gusts.watch': 'Rafales sur l’arête après {from}.',
-  'hazard.showers.title': 'Averses pendant la descente dès {from}',
+    'Rafales jusqu’à {gust} km/h au {place}, {elevation} m. En terrain exposé, elles déséquilibrent dès {threshold} km/h.',
+  'hazard.gusts.bodyGeneric': 'En terrain exposé, de fortes rafales déséquilibrent, surtout sur les câbles et les arêtes.',
+  'hazard.gusts.liftsIf': 'une prévision plus récente annonce des rafales inférieures à {threshold} km/h au {place}.',
+  'hazard.gusts.short': 'rafales jusqu’à {gust} km/h dès {from}',
+  'hazard.gusts.shortGeneric': 'fortes rafales dès {from}',
+  'hazard.gusts.watch': 'Rafales sur les passages exposés après {from}.',
+  'hazard.showers.title': 'Averses et rocher mouillé dès {from}',
   'hazard.showers.body':
-    'Rocher mouillé sur le raide sentier de moraine entre Hütte et Oberbärgli, en fin de journée. Isotherme zéro à 2 900 m : de la pluie, pas de neige.',
-  'hazard.showers.liftsIf': '',
-  'hazard.showers.short': 'rocher mouillé au retour dès {from}',
-  'hazard.showers.watch': 'Rocher mouillé dans la descente de la moraine dès {from}.',
+    'Jusqu’à {precip} mm par heure en terrain raide, où le rocher devient glissant dès {thresholdMm} mm. Isotherme zéro à {freezingLevel} m.',
+  'hazard.showers.bodyGeneric': 'Rocher mouillé en terrain raide, souvent parcouru fatigué à la descente.',
+  'hazard.showers.liftsIf': 'une prévision plus récente annonce moins de {thresholdMm} mm par heure.',
+  'hazard.showers.short': 'rocher mouillé dès {from}',
+  'hazard.showers.watch': 'Rocher mouillé sur les passages raides dès {from}.',
+  'hazard.thunder.title': 'Risque d’orage vers {place}, {from}–{to}',
+  'hazard.thunder.body':
+    '{thunder} % des scénarios de prévision montrent de l’énergie orageuse vers {place}. Les orages se forment vite sur un terrain élevé et ouvert, et une arête n’offre aucun abri.',
+  'hazard.thunder.bodyGeneric':
+    'Les orages peuvent se former vite sur un terrain élevé et ouvert, et une arête n’offre aucun abri. Prévoyez d’avoir quitté les passages exposés avant {from}.',
+  'hazard.thunder.liftsIf': '',
+  'hazard.thunder.short': 'risque d’orage dès {from}',
+  'hazard.thunder.watch': 'Nuages bourgeonnants et orage après {from}.',
+  'hazard.cold.title': 'Refroidissement éolien sous zéro au {place}, {from}–{to}',
+  'hazard.cold.body':
+    'Ressenti {feelsLike} au {place} avec le vent. Des mains froides tiennent moins bien câbles et rocher : prenez gants et couche chaude.',
+  'hazard.cold.bodyGeneric':
+    'Avec le vent, le ressenti est plus froid que l’air. Des mains froides tiennent moins bien câbles et rocher : prenez gants et couche chaude.',
+  'hazard.cold.liftsIf': 'une prévision plus récente donne un ressenti au-dessus de zéro au {place}.',
+  'hazard.cold.short': 'ressenti {feelsLike}, {from}–{to}',
+  'hazard.cold.shortGeneric': 'ressenti sous zéro {from}–{to}',
+  'hazard.cold.watch': 'Ressenti sous zéro {from}–{to}.',
+  'hazard.snow.title': 'Neige ou glace possibles au {place}, {from}–{to}',
+  'hazard.snow.body':
+    'Isotherme zéro jusqu’à {freezingLevel} m, pour un {place} à {elevation} m. Attendez-vous à du rocher verglacé ou enneigé plus haut.',
+  'hazard.snow.bodyGeneric':
+    'L’isotherme zéro ou la limite des neiges atteint cette partie de l’itinéraire. Attendez-vous à du rocher verglacé ou enneigé plus haut.',
+  'hazard.snow.liftsIf': 'une prévision plus récente place l’isotherme zéro au-dessus de {elevation} m.',
+  'hazard.snow.short': 'isotherme zéro à {freezingLevel} m dès {from}',
+  'hazard.snow.shortGeneric': 'neige ou glace possibles dès {from}',
+  'hazard.snow.watch': 'Neige ou glace sur les passages hauts après {from}.',
+  'hazard.visibility.title': 'Dans les nuages au {place}, {from}–{to}',
+  'hazard.visibility.body':
+    'Base des nuages jusqu’à {cloudBase} m, pour un {place} à {elevation} m. Le balisage devient difficile à suivre et trouver le chemin prend plus de temps.',
+  'hazard.visibility.bodyGeneric':
+    'La base des nuages se trouve sous cette partie de l’itinéraire. Le balisage devient difficile à suivre et trouver le chemin prend plus de temps.',
+  'hazard.visibility.liftsIf': 'une prévision plus récente place la base des nuages au-dessus de {elevation} m.',
+  'hazard.visibility.short': 'base des nuages à {cloudBase} m dès {from}',
+  'hazard.visibility.shortGeneric': 'dans les nuages dès {from}',
+  'hazard.visibility.watch': 'Nuages bas sur l’itinéraire après {from}.',
+  'hazard.daylight.title': 'Nuit dès {from}',
+  'hazard.daylight.body':
+    'Le soleil se couche à {sunset}. Ensuite, la descente se fait à la frontale, et dans une vallée la lumière baisse plus tôt encore.',
+  'hazard.daylight.bodyGeneric':
+    'Après le coucher du soleil, la descente se fait à la frontale, et dans une vallée la lumière baisse plus tôt encore. Prévoyez d’être en bas avant {from}.',
+  'hazard.daylight.liftsIf': '',
+  'hazard.daylight.short': 'nuit dès {from}',
+  'hazard.daylight.watch': 'Nuit dès {from}.',
 
   'gaps.title': 'Ce que nous ne voyons pas',
   'gap.warnings': 'Les alertes météo officielles n’ont pas pu être vérifiées. Consultez {link} vous-même.',
@@ -89,8 +155,9 @@ export const fr: Messages = {
   'alt.startEarlier.title': 'Partir plutôt à {start}',
   'alt.startEarlier.body':
     'Vous êtes au {place} à {time}, avant que les rafales ne forcissent. Vous gardez le repas à la cabane et le dernier bateau de {boat}.',
-  'alt.loop.title': 'Ou : boucle haute d’Oeschinensee, T2',
-  'alt.loop.body': 'Même lac, même vue, sans arête. Rien de signalé pour {day} sur cet itinéraire selon les données de {time}.',
+  'alt.bailout.title': 'Ou : faire demi-tour à {place}, {grade}',
+  'alt.bailout.body':
+    'Redescendre par le même chemin, avant le passage exposé. Rien d’élevé signalé sur cette journée plus courte pour {day}, selon les données de {time}.',
 
   disclaimer:
     'Aide à la décision, pas un feu vert ni un feu rouge. Les conditions changent ; consultez MétéoSuisse et le bulletin du SLF avant de partir. Urgence : 1414 (Rega) · 112.',
@@ -98,6 +165,8 @@ export const fr: Messages = {
   'na.title': 'Nous ne pouvons pas évaluer cette randonnée pour l’instant.',
   'na.reason':
     'La prévision MétéoSuisse pour cette zone est indisponible depuis {time}. Sans elle, nous n’affichons ni dangers ni recommandations, car une liste vide pourrait passer pour un signal rassurant.',
+  'na.reasonBeyondHorizon':
+    'Les prévisions MétéoSuisse ne couvrent pas encore le {date} : elles portent sur les cinq prochains jours environ. Sans prévision, nous n’affichons ni dangers ni recommandations, car une liste vide pourrait passer pour un signal rassurant.',
   'na.checkDirectly': 'Vérifiez directement :',
   'na.meteoswiss': 'Prévisions MétéoSuisse',
   'na.slf': 'Bulletin d’avalanches du SLF',
@@ -157,11 +226,16 @@ export const fr: Messages = {
   'pre.cta': 'Commencer la randonnée',
   'pre.toField': 'Retour au sentier',
 
-  'field.offline': 'Hors ligne · plan de {time}',
+  'field.started': 'Départ à {time}',
   'field.next': 'Prochain : {place} · {km} km · ↑{ascent} m',
   'field.ahead': 'Vous êtes en avance sur votre demi-tour.',
   'field.behind': 'Vous avez dépassé votre heure de demi-tour.',
-  'field.eta': 'À ce rythme, vous atteignez le col vers {eta}. Votre règle : {rule}.',
+  'field.eta': 'À ce rythme, vous atteignez {place} vers {eta}. Votre règle : {rule}.',
+  'field.etaEnd': 'À ce rythme, vous êtes de retour à {place} vers {eta}.',
+  'field.pastCrux': 'Vous avez passé {place}.',
+  'field.searching': 'Recherche de votre position. En attendant, les heures suivent votre plan.',
+  'field.noPosition': 'Pas de position. Les heures suivent votre plan depuis votre départ.',
+  'field.offRoute': 'Vous semblez hors de l’itinéraire. Les heures restent calculées depuis l’endroit où vous l’avez quitté.',
   'field.turnBy': 'demi-tour à {time}',
   'field.decided': 'Ce que vous avez décidé hier soir',
   'field.rule': 'Pas au {place} à {time}, ou nuages sous l’arête → redescendre par {bailout}.',

@@ -224,7 +224,7 @@ GRIB source runs end to end (run discovery, per-variable search, download, neare
 fallback to the previous run, pruning) through a fake decoder. The one test that decodes real GRIB
 needs `--record` and eccodes.
 
-## Phase 3 - The hazard engine (~6 h)
+## Phase 3 - The hazard engine (~6 h) - done
 
 `backend/app/hazards/` maps (terrain x forecast x arrival hour) to severity per stop:
 gusts, showers and wet rock, thunderstorms, cold and wind chill, freezing level and
@@ -249,7 +249,85 @@ Three decisions shape the API:
 Also: real `provenance` strings (rule id, version, model run) and a
 `/api/forecast/retry` that actually re-checks.
 
-## Phase 4 - Frontend generalisation (~5 h)
+### What landed
+
+`SOURCE_MODE=live` now answers `/api/routes/{id}/assessment` from the engine. The same computed
+Oeschinensee route, assessed live against Open-Meteo, came back `assessed`: ICON-CH1 for tomorrow,
+ICON-CH2 for Saturday, `not_assessable` / `beyond_horizon` two weeks out. A cold request (seven
+waypoints × seventeen hours plus the ensemble) takes about two seconds. The only thing flagged was a
+morning wind chill below freezing at Hohtürli and the hut, and nowhere lower, which is what the
+forecast said.
+
+The engine is split the way routing is. `hazards/` is pure: `terrain.py` (grade, cables and exposure
+per stop, from every leg that touches it, return stops included), `rules.py`, `intervals.py`,
+`daylight.py`, `alternatives.py` and `engine.py`. `sources/assessor.py` does the fetching, maps
+failures to outcomes and caches the result under route + day + model run + `ENGINE_VERSION`. A test
+parses both packages and fails if either imports from `sources/`.
+
+The rules, each with an id and version that end up in `provenance`:
+
+| Kind | Rule | Moderate | High |
+|---|---|---|---|
+| gusts | `WIND-EXP v1` | ≥ 40 km/h exposed (T3+ or cables), ≥ 60 open | ≥ 55 exposed, ≥ 80 open |
+| showers | `PRECIP-WET v1` | ≥ 0.5 mm/h on T3+ | ≥ 2 mm/h on T4+ or cables |
+| thunder | `THUNDER v1` | ≥ 30 % of members with CAPE ≥ 500 (control CAPE if no ensemble) | ≥ 60 %; one step up above 2 000 m or exposed |
+| cold | `COLD-CHILL v1` | wind chill ≤ 0 °C | ≤ −10 °C |
+| snow | `SNOW-LEVEL v1` | freezing level at or below the stop | snowline at or below it, with ≥ 0.2 mm falling |
+| visibility | `CLOUD-BASE v1` | cloud base below the stop on T3 | on T4+ |
+| daylight | `DAYLIGHT v1` | before sunrise; the 45 min before sunset | after sunset |
+
+The day runs from 05:00 to 21:00. Each hour `[h, h+60)` takes the worse of the forecasts at `h` and
+`h+60`, because ICON's gusts and precipitation describe the hour *ending* at a time while its
+temperature is an instant. Taking both ends is right under either reading. Deviations from the plan
+above, and what the plan did not say:
+
+- **`HazardDef.stops` is intervals, and `buildUpFrom` is gone.** A build-up is just a `mod` interval.
+  `window` stays, now defined as the hazard's high span, because titles, map notes and the share
+  text quote it. The demo data was converted by hand. The frontend's spec-timeline tests (07:30 at a
+  cautious pace, 06:30 clearing Hohtürli) pass unchanged against it, which is the check that the
+  conversion kept the meaning. Intervals are half-open, so 14:00 exactly now reads as after the gusts.
+- **`AssessmentData.conditions`, hourly per stop, replaced `Forecast.feelsLikeC`.** The crux card had
+  been inventing its gust figure from the severity (55/40/25 km/h), and a single feels-like number
+  cannot be right for an arrival time that moves. A stop that was not evaluated has no conditions,
+  so the card says "no data" rather than a guess.
+- **`?date=` on the assessment and on retry.** The plan store has always had a date, but nothing
+  sent it. `Forecast.unavailableReason` separates `source` from `beyond_horizon`, because "MeteoSwiss
+  has been unavailable since…" is untrue of a day no model reaches yet.
+- **`notEvaluated` is decided per stop.** A stop is set aside when:
+  - any hour's forecast failed, or lacks gusts, precipitation or temperature;
+  - the model cell's terrain is more than 500 m off the real height;
+  - at an exposed stop, the gust p10–p90 spread is ≥ 25 km/h *and* straddles a threshold.
+
+  A leg is not evaluated if either end is. Following the Phase 2 caveat, spread is read as
+  uncertainty and never as bounds on the control value. No stop answering at all is
+  `not_assessable`.
+- **`altRoute` turns back at the computed bail-out** rather than re-routing. On a hut or pass route
+  there is usually no second line to the same place, and turning back always exists. It is offered
+  only when something is high at the reference start (07:30, cautious pace, matching the plan
+  store) and the shorter day has nothing high. `AltRoute` gained `stopId`, `place` and `grade`.
+  `startEarlier` tries −30/−60/−90 min. It picks the smallest shift that lowers the hazard, and
+  never one that makes any other hazard worse, the dark included.
+- **Warnings raise, they don't replace.** A current (non-outlook) wind, thunderstorm, rain or snow
+  warning from the app feed floors that kind at `mod` while it is valid, and says so in provenance.
+- **`hasLiftsIf` is false for every computed hazard.** The existing "lifts if" copy has numbers baked
+  in, and until Phase 4's `facts` there are no true numbers to put in it. The five new kinds have
+  short generic EN/FR copy with no figures.
+- **Retry re-checks for real.** It asks for the latest run plus one probe forecast. When the source
+  answers, the not-assessable screen refetches the assessment. The demo assessor still answers
+  "still down", so the demo keeps its state.
+
+Assumption to revisit: an absent cloud base is read as no ceiling (ICON writes CEILING as undefined
+when there is no cloud). A failed fetch never gets that far, because the stop has already been set
+aside.
+
+Tests stay offline. The rules are tested at their thresholds, wind chill and sun times against
+published tables, and the engine against the showcase route with forecasts written per waypoint and
+hour: calm, gusty col, missing stop, missing hour, wide spread, cell height mismatch, warnings, stale
+run, both alternatives and their refusals. The assessor is tested against a fake weather source for
+failure mapping, caching and recheck, and end to end over the recorded Open-Meteo fixtures in
+`test_api_live.py`.
+
+## Phase 4 - Frontend generalisation (~5 h) - done
 
 1. Data-driven hazard copy: a `facts` object per hazard (`gustKmh`, `freezingLevelM`,
    `tempC`) and i18n strings with placeholders, EN and FR for every hazard kind.
@@ -263,6 +341,77 @@ Also: real `provenance` strings (rule id, version, model run) and a
 5. Field mode becomes real: `navigator.geolocation.watchPosition` snapped to the
    polyline gives elapsed, remaining and next ascent, and recomputes ETA and turnaround
    live. Deletes `route.field`.
+
+### What landed
+
+A place searched for in live mode can now be routed, assessed, mapped and walked with nothing
+hand-authored on the way. Checked against the live services: searching "Oeschinensee" and
+"Blüemlisalphütte", then routing between them, gives a 1 370-point route with no `field`. Its assessment
+for tomorrow came back `partial` from ICON-CH2, flagging only the dark, with `facts: {sunset: 19:35}`.
+Checked in a browser over the demo build: picker → plan → assessment → map → field. The positions were
+set through the geolocation override, and no console errors appeared. Deviations from the plan above,
+and what it did not say:
+
+- **Two of the five items were already partly there.** Automatic labels landed in Phase 1, and
+  `LABEL_POSITION` was already gone. `copy-rules.test.ts` already enforced placeholder parity and
+  banned verdict words. What the phase added to it is the part that makes the copy data-driven:
+  - no digit in any `hazard.*` string, in either language;
+  - every placeholder is one `FACT_PLACEHOLDERS` can fill;
+  - every string that needs a fact has a `…Generic` variant that needs none.
+- **`facts` are the worst the rule itself flagged, at the stop the hazard is named after.** Taking
+  them there, not across the route, keeps `{gust}` and `{place}` in the same sentence true of the
+  same place. Hours raised only by a warning contribute no figure, because quoting a calm hour's gust
+  next to a warning would contradict the card. A warning-only hazard therefore has `facts=None` and
+  renders the generic sentence.
+  - `gusts` also carries the threshold it crossed at that stop (exposed or open ground).
+  - `showers` carries the wet-rock threshold, so "lifts if" can quote the figure it turns on.
+  - `hasLiftsIf` is now true exactly when that figure is known: gusts, showers, cold, snow and
+    visibility. It stays false for thunder and daylight.
+  - `ENGINE_VERSION` is 2.
+- **`i18n/hazardCopy.ts` picks the string, not the caller.** `hazardText(lang, hazard, part)` uses the
+  specific key when every placeholder in it has a value, otherwise the generic one. For "lifts if" with
+  no generic it returns `null`, and the card leaves the line out. The card, the map's segment notes and
+  the share card all go through it; before, each built its own `{from}`/`{to}` params.
+  - The demo hazards carry the figures their copy was written with (60/40 km/h at 2 778 m; 1.2 mm with
+    the freezing level at 2 900 m).
+  - "The 09:00 forecast update" is gone from the copy, because no fact backs it.
+- **Recent routes are kept on the device; the endpoint is dropped.** The server has no users. The only
+  list it could serve is a scan of its route cache, which would show everyone's searches.
+  - `GET /api/recent-routes`, `RouteSource.recent_routes` and the two made-up demo entries (whose ids
+    404'd) are removed.
+  - The plan store keeps the last five routes picked (persist version 2, migrated). Those, not saved
+    plans, are what Recent shows next to the saved plans.
+  - Before this, in live mode that endpoint answered 503 and took the whole Plan screen down with it.
+- **The picker is `/routes/new`: from, to and one optional via.** Search is debounced 300 ms. A 503
+  now carries its `source` in `ApiError`, so the picker can tell "no marked trail connects these"
+  (`swisstlm3d`) and "demo mode" apart from an outage.
+  - Demo `create_route` returns the showcase route when both ends are its own waypoints, which is all
+    demo search offers, so the picker can be walked through offline.
+  - The demo waypoints are illustrative: the hand-typed hut sits about 2 km from the gazetteer's, and
+    routing live between the demo coordinates fails to snap. Live search results are what to route
+    between.
+- **Map tiles are swisstopo's `pixelkarte-farbe` over WMTS** (EPSG:3857, JPEG, © swisstopo, zoom
+  ≤ 18). They loaded from both this workstation and the browser check.
+- **Field mode walks the timeline, not the geometry.**
+  - `domain/field.ts` builds a track stop by stop, out and back. It uses the real geometry where legs
+    index into it, reversed on the way down, and chords between stops on the demo route, which has no
+    geometry.
+  - Snapping only searches forward of the furthest progress so far, less 150 m for jitter. That is
+    what reads the moraine as the climb in the morning and the descent after the hut; tested both ways.
+  - Target is the crux until it is passed, then the end. Remaining time is the rest of the current
+    section plus later sections, pace-scaled, with breaks. Distance and ascent are measured along the
+    track from the snapped point.
+- **`useFieldPosition` wraps `watchPosition`.**
+  - Fixes worse than 250 m are ignored.
+  - A fix more than 150 m off the line shows an off-route note and holds progress where the hiker left
+    the route.
+  - Denied, unavailable or still searching falls back to where the plan puts the hiker now, timed from
+    when the hike actually started, and says so on screen.
+  - The clock is the real one, ticked every 30 s. `route.field`, `FieldPosition` and `fieldEstimate`
+    are deleted, and `ROUTE_BUILD_VERSION` is 2.
+
+Not done: there are still no component or screen tests (vitest runs in `node`). The browser check above
+was scripted by hand rather than added to the suite. Phase 6's Playwright tests are where it belongs.
 
 ## Phase 5 - The AI layer (~6 h)
 

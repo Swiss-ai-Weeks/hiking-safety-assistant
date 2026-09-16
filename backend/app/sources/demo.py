@@ -7,8 +7,8 @@ it means `SOURCE_MODE=demo` provably serves the same bytes as before this seam e
 from datetime import date, datetime
 
 from ..domain import ElevationProfile, GeoPoint, ModelRun, PlaceHit, PointForecast, Warning
-from ..mock_data import FORECAST, RECENT_ROUTES, ROUTES, get_assessment
-from ..models import AssessmentData, RecentRoute, Route, RouteRequest, Scenario
+from ..mock_data import FEELS_LIKE_C, FORECAST, ROUTES, get_assessment
+from ..models import AssessmentData, Route, RouteRequest, Scenario
 from .base import SourceUnavailable
 from .weather_common import ICON_CH1, SWISS_TIME, local_today
 
@@ -33,12 +33,18 @@ class DemoRouteSource:
         return ROUTES.get(route_id)
 
     async def create_route(self, request: RouteRequest) -> Route:
-        # Demo mode has no trail network to route over, and inventing a line between two arbitrary
-        # points is exactly the kind of made-up data this mode exists to keep honest.
-        raise SourceUnavailable("demo", "routing needs SOURCE_MODE=live and an imported trail graph")
+        """The showcase route, when both ends are places on it; nothing else.
 
-    async def recent_routes(self) -> list[RecentRoute]:
-        return RECENT_ROUTES
+        Search only ever offers the showcase route's own waypoints, so the picker can be walked
+        through offline. Any other pair gets no route: there is no trail network to route over, and
+        inventing a line between two points is the made-up data this mode exists to keep honest.
+        """
+        ends = {request.from_.name, request.to.name}
+        for route in ROUTES.values():
+            names = {waypoint.name for waypoint in route.waypoints}
+            if len(ends) == 2 and ends <= names:
+                return route
+        raise SourceUnavailable("demo", "routing needs SOURCE_MODE=live and an imported trail graph")
 
 
 class DemoElevationSource:
@@ -52,7 +58,7 @@ class DemoWeatherSource:
     """One forecast, from `mock_data.FORECAST`. In demo mode the hazards are the authored truth."""
 
     async def forecast_at(self, point: GeoPoint, hour: int, day: date | None = None) -> PointForecast:
-        return PointForecast(model_run=DEMO_MODEL_RUN, hour=hour, temp_c=FORECAST.feels_like_c)
+        return PointForecast(model_run=DEMO_MODEL_RUN, hour=hour, temp_c=FEELS_LIKE_C)
 
     async def latest_run(self, day: date | None = None) -> ModelRun:
         """The authored issue time, today: the demo forecast is always this morning's."""
@@ -70,7 +76,11 @@ class DemoWarningSource:
 
 
 class DemoAssessor:
-    """The authored hazards, picked by scenario. Phase 3's engine replaces exactly this."""
+    """The authored hazards, picked by scenario. `SOURCE_MODE=live` runs the hazard engine instead."""
 
-    async def assess(self, route: Route, scenario: Scenario) -> AssessmentData:
+    async def assess(self, route: Route, scenario: Scenario, day: date | None = None) -> AssessmentData:
         return get_assessment(scenario)
+
+    async def recheck(self, day: date | None = None) -> bool:
+        """The not-assessable demo is a source that stays down, so "Try again" has something to show."""
+        return False

@@ -2,7 +2,7 @@ import { useSuspenseQuery } from '@tanstack/react-query'
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { routeQuery } from '../api/queries'
-import type { CloudAnswer, Lang, Minutes, PaceAnswer, Route, SavedPlan, Scenario } from '../domain/types'
+import type { CloudAnswer, Lang, Minutes, PaceAnswer, RecentRoute, Route, SavedPlan, Scenario } from '../domain/types'
 
 export function nextSaturdayISO(from: Date = new Date()): string {
   const d = new Date(from.getFullYear(), from.getMonth(), from.getDate())
@@ -20,6 +20,7 @@ export function nextSaturdayISO(from: Date = new Date()): string {
  */
 export const DEFAULT_ROUTE_ID = 'oeschinensee-bluemlisalphuette'
 const DEFAULT_START: Minutes = 7 * 60 + 30
+const MAX_RECENT = 5
 
 interface PlanData {
   lang: Lang
@@ -39,11 +40,15 @@ interface PlanData {
   hikeStartedAt: number | null
   cloudObservation: { answer: CloudAnswer; at: number } | null
   saved: SavedPlan[]
+  /** Routes picked on this device, most recent first. The server keeps no history. */
+  recentRoutes: RecentRoute[]
 }
 
 interface PlanActions {
   setLang: (lang: Lang) => void
   setRouteId: (routeId: string) => void
+  /** Plan `route` and remember it under Recent. */
+  openRoute: (route: Pick<Route, 'id' | 'fromName' | 'toName' | 'grade'>) => void
   setScenario: (scenario: Scenario) => void
   setDate: (date: string) => void
   setPlannedStart: (start: Minutes) => void
@@ -78,6 +83,7 @@ const initialData = (): PlanData => ({
   hikeStartedAt: null,
   cloudObservation: null,
   saved: [],
+  recentRoutes: [],
 })
 
 export const usePlan = create<PlanState>()(
@@ -92,6 +98,21 @@ export const usePlan = create<PlanState>()(
         ...initialData(),
         setLang: (lang) => set({ lang }),
         setRouteId: (routeId) => edit({ routeId, planAccepted: false, turnaround: null }),
+        openRoute: (route) => {
+          if (get().hikeStarted) return
+          const recent: RecentRoute = {
+            id: route.id,
+            name: `${route.fromName} → ${route.toName}`,
+            grade: route.grade,
+            usedAt: Date.now(),
+          }
+          set({
+            routeId: route.id,
+            planAccepted: false,
+            turnaround: null,
+            recentRoutes: [recent, ...get().recentRoutes.filter((r) => r.id !== route.id)].slice(0, MAX_RECENT),
+          })
+        },
         setScenario: (scenario) => set({ scenario }),
         setDate: (date) => edit({ date }),
         setPlannedStart: (start) => edit({ start, originalStart: start }),
@@ -126,7 +147,15 @@ export const usePlan = create<PlanState>()(
         resetDemo: () => set({ ...initialData(), lang: get().lang }),
       }
     },
-    { name: 'hsa-plan', version: 1 },
+    {
+      name: 'hsa-plan',
+      version: 2,
+      // v2 keeps recent routes on the device, now that the server no longer invents a list.
+      migrate: (persisted, version) => {
+        const state = persisted as Partial<PlanData>
+        return version < 2 ? { ...state, recentRoutes: [] } : state
+      },
+    },
   ),
 )
 

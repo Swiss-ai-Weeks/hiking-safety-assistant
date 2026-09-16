@@ -9,7 +9,7 @@ from typing import Any
 
 from ..config import Settings
 from ..domain import GeoPoint, PlaceHit
-from ..models import RecentRoute, Route
+from ..models import Route
 from .base import SourceUnavailable
 from .http import CachedHttpClient, CacheKey
 
@@ -60,6 +60,3 @@ class GeoAdminRouteSource:
 
     async def get_route(self, route_id: str) -> Route | None:
         raise SourceUnavailable("geoadmin", "routing over swissTLM3D Wanderwege is not implemented yet (Phase 1)")
-
-    async def recent_routes(self) -> list[RecentRoute]:
-        raise SourceUnavailable("geoadmin", "recent routes are not implemented yet (Phase 4)")

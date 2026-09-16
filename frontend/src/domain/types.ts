@@ -72,13 +72,6 @@ export interface Route {
   bailoutName: string
   lastBoat: Minutes
   turnaroundDefault: Minutes
-  /** Where field mode starts: at the trailhead, not yet moving. Phase 4 makes it live. */
-  field: {
-    elapsed: Minutes
-    remainingToCrux: Minutes
-    nextKm: number
-    nextAscentM: number
-  }
   descentM?: number
   /** Which stop the bail-out is. `bailoutName` alone cannot be placed on the map. */
   bailoutStopId?: string
@@ -105,19 +98,54 @@ export interface RouteRequest {
   via?: PlaceRef[]
 }
 
-export type HazardKind = 'gusts' | 'showers'
+export type HazardKind = 'gusts' | 'showers' | 'thunder' | 'cold' | 'snow' | 'visibility' | 'daylight'
+
+/** A severity from `from` up to, but not including, `to`. */
+export interface SeverityInterval {
+  from: Minutes
+  to: Minutes
+  severity: Severity
+}
+
+/**
+ * The figures behind a hazard, at the stop where it is worst. The only way a number reaches hazard
+ * text: the strings carry placeholders (see `i18n/hazardCopy.ts`). Any field may be absent, and a
+ * hazard raised by a warning alone has no facts at all.
+ */
+export interface HazardFacts {
+  /** Peak gust in the flagged hours, and the gust from which the rule flags this stop. */
+  gustKmh?: number
+  thresholdKmh?: number
+  /** Peak precipitation per hour, and the amount from which wet rock counts. */
+  precipMm?: number
+  thresholdMm?: number
+  /** Share of ensemble members with thunderstorm energy, 0–100. */
+  thunderPct?: number
+  /** Lowest wind chill in the flagged hours. */
+  feelsLikeC?: number
+  freezingLevelM?: number
+  snowlineM?: number
+  cloudBaseM?: number
+  /** Height of the stop the figures are for. */
+  elevationM?: number
+  /** Daylight only. */
+  sunset?: Minutes
+}
 
 export interface HazardDef {
   id: string
   kind: HazardKind
-  /** Forecast window in which the hazard applies at full severity. */
+  /** Where the hazard is at its worst (its high span, else all of it). What titles quote. */
   window: { from: Minutes; to: Minutes }
-  /** Before the window, exposed stops read as moderate. */
-  buildUpFrom?: Minutes
-  /** Severity per exposed stop while inside the window. */
-  stops: Record<string, Severity>
+  /**
+   * Severity over the day per exposed stop, sorted and non-overlapping. Looked up at the hiker's
+   * arrival; a time no interval covers reads as "none".
+   */
+  stops: Record<string, SeverityInterval[]>
   place?: string
+  /** Whether "lifts if" can be said: the figure it turns on is in `facts`. */
   hasLiftsIf: boolean
+  facts?: HazardFacts
   /** Rule and source identifiers, shown only as a footnote. */
   provenance: string
 }
@@ -126,7 +154,8 @@ export type GapKind = 'warnings' | 'snowline' | 'pace'
 
 export type Alternative =
   | { id: string; kind: 'startEarlier'; start: Minutes; dependsOn: string }
-  | { id: string; kind: 'altRoute'; duration: string }
+  /** The same route, turned back at `stopId` before the crux. `place` is never translated. */
+  | { id: string; kind: 'altRoute'; duration: string; stopId: string; place: string; grade: Grade }
 
 export interface NotEvaluated {
   legIds: string[]
@@ -138,7 +167,17 @@ export interface Forecast {
   unavailableSince: Minutes
   checkedAt: Minutes
   staleHours: number
-  feelsLikeC: number
+  /** Why there is no assessment. A day beyond every model's reach is not an outage. */
+  unavailableReason?: 'source' | 'beyond_horizon'
+}
+
+/** The forecast numbers at a stop over `[from, to)`. */
+export interface StopConditions {
+  from: Minutes
+  to: Minutes
+  gustKmh?: number
+  feelsLikeC?: number
+  precipMm?: number
 }
 
 export interface AssessmentData {
@@ -149,13 +188,17 @@ export interface AssessmentData {
   gaps: GapKind[]
   alternatives: Alternative[]
   notEvaluated: NotEvaluated[]
+  /** Hourly per stop id. A stop that was not evaluated has none. */
+  conditions: Record<string, StopConditions[]>
 }
 
+/** A route this device picked or opened, most recent first. Kept locally: the server has no users. */
 export interface RecentRoute {
   id: string
   name: string
   grade: Grade
-  checkedOn: string
+  /** Epoch milliseconds. */
+  usedAt: number
 }
 
 export interface SavedPlan {

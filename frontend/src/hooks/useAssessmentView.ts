@@ -13,10 +13,11 @@ export function useAssessmentView() {
   const start = usePlan((s) => s.start)
   const paceAnswer = usePlan((s) => s.paceAnswer)
   const storedScenario = usePlan((s) => s.scenario)
+  const date = usePlan((s) => s.date)
   const [params] = useSearchParams()
 
   const scenario = resolveScenario(storedScenario, params)
-  const { data } = useSuspenseQuery(assessmentQuery(route.id, scenario))
+  const { data } = useSuspenseQuery(assessmentQuery(route.id, scenario, date))
   const arrivals = useMemo(() => computeArrivals(route, start, paceAnswer), [route, start, paceAnswer])
   const evaluation = useMemo(() => evaluate(route, arrivals, data), [route, arrivals, data])
 

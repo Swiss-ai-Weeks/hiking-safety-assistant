@@ -6,19 +6,21 @@ Replace with MeteoSwiss and swisstopo data when wiring real sources.
 from .models import (
     AltRoute,
     AssessmentData,
-    FieldPosition,
     Forecast,
     GapKind,
     HazardDef,
+    HazardFacts,
     KeyLabel,
     Leg,
     NotEvaluated,
     PlaceLabel,
-    RecentRoute,
     Route,
     Scenario,
+    Severity,
+    SeverityInterval,
     StartEarlier,
     Stop,
+    StopConditions,
     Waypoint,
     Window,
 )
@@ -49,27 +51,38 @@ OESCHINEN_ROUTE = Route(
         Stop(id="lake-end", waypoint_id="lake", label=KeyLabel(key="stop.lake"), leg_minutes=150),
     ],
     legs=[
-        Leg(id="lake-ober", from_stop="lake-start", to_stop="ober", stop_ids=["lake-start", "ober", "lake-end"],
-            grade="T2"),
+        Leg(
+            id="lake-ober",
+            from_stop="lake-start",
+            to_stop="ober",
+            stop_ids=["lake-start", "ober", "lake-end"],
+            grade="T2",
+        ),
         Leg(id="ober-moraine", from_stop="ober", to_stop="moraine", stop_ids=["ober", "descent"], grade="T3"),
-        Leg(id="moraine-hohturli", from_stop="moraine", to_stop="hohturli", stop_ids=["moraine", "hohturli"],
-            grade="T3", cables=True),
-        Leg(id="hohturli-hutte", from_stop="hohturli", to_stop="hutte", stop_ids=["hohturli", "hutte"], grade="T3",
-            cables=True),
+        Leg(
+            id="moraine-hohturli",
+            from_stop="moraine",
+            to_stop="hohturli",
+            stop_ids=["moraine", "hohturli"],
+            grade="T3",
+            cables=True,
+        ),
+        Leg(
+            id="hohturli-hutte",
+            from_stop="hohturli",
+            to_stop="hutte",
+            stop_ids=["hohturli", "hutte"],
+            grade="T3",
+            cables=True,
+        ),
     ],
     crux_stop_id="hohturli",
     bailout_name="Oberbärgli",
     last_boat=16 * 60 + 10,
     turnaround_default=11 * 60 + 30,
-    field=FieldPosition(elapsed=262, remaining_to_crux=23, next_km=1.1, next_ascent_m=310),
 )
 
 ROUTES: dict[str, Route] = {OESCHINEN_ROUTE.id: OESCHINEN_ROUTE}
-
-RECENT_ROUTES: list[RecentRoute] = [
-    RecentRoute(id="schynige-platte-faulhorn", name="Schynige Platte → Faulhorn", grade="T2", checked_on="2026-09-06"),
-    RecentRoute(id="gemmipass", name="Gemmipass", grade="T2", checked_on="2026-08-30"),
-]
 
 FORECAST = Forecast(
     model="ICON-CH1",
@@ -77,35 +90,77 @@ FORECAST = Forecast(
     unavailable_since=5 * 60 + 10,
     checked_at=8 * 60 + 12,
     stale_hours=7,
-    feels_like_c=-2,
 )
+# The one wind-chill figure the demo was authored with, at every stop and hour.
+FEELS_LIKE_C = -2
+DAY_END = 24 * 60
+
+
+def _span(start: int, end: int, severity: Severity) -> SeverityInterval:
+    return SeverityInterval(from_=start, to=end, severity=severity)
+
+
+# The authored gusts: moderate from the 10:30 build-up, high at the col and hut from 11:00 to 14:00.
+GUST_BUILD_UP = 10 * 60 + 30
+GUST_WINDOW = Window(from_=11 * 60, to=14 * 60)
+GUSTS_ON_RIDGE = [_span(GUST_BUILD_UP, GUST_WINDOW.from_, "mod"), _span(GUST_WINDOW.from_, GUST_WINDOW.to, "high")]
 
 HAZARDS: list[HazardDef] = [
     HazardDef(
         id="gusts-hohturli",
         kind="gusts",
-        window=Window(from_=11 * 60, to=14 * 60),
-        build_up_from=10 * 60 + 30,
-        stops={"moraine": "mod", "hohturli": "high", "hutte": "high"},
+        window=GUST_WINDOW,
+        stops={
+            "moraine": [_span(GUST_BUILD_UP, GUST_WINDOW.to, "mod")],
+            "hohturli": GUSTS_ON_RIDGE,
+            "hutte": GUSTS_ON_RIDGE,
+        },
         place="Hohtürli",
         has_lifts_if=True,
+        # The figures the gusts copy was first written with, now data rather than prose.
+        facts=HazardFacts(gust_kmh=60, threshold_kmh=40, elevation_m=2778),
         provenance="Rule WIND-EXP-02 v3 · SAC guidance · ICON-CH1 06:40",
     ),
     HazardDef(
         id="showers-descent",
         kind="showers",
         window=Window(from_=13 * 60, to=18 * 60),
-        stops={"descent": "mod"},
+        stops={"descent": [_span(13 * 60, 18 * 60, "mod")]},
         has_lifts_if=False,
+        facts=HazardFacts(precip_mm=1.2, threshold_mm=0.5, freezing_level_m=2900),
         provenance="Rule PRECIP-DESC-01 v2 · ICON-CH1 06:40",
     ),
 ]
+
+# The gust figures the crux card showed for each severity before conditions were data.
+GUST_KMH: dict[Severity, int] = {"none": 25, "mod": 40, "high": 55}
+
+
+def _conditions(hazards: list[HazardDef]) -> dict[str, list[StopConditions]]:
+    """Per stop, the authored gust figure for each stretch of the day, and the authored chill."""
+    gusts = next((h for h in hazards if h.kind == "gusts"), None)
+    conditions: dict[str, list[StopConditions]] = {}
+    for stop in OESCHINEN_ROUTE.stops:
+        spans = gusts.stops.get(stop.id, []) if gusts else []
+        cursor, rows = 0, []
+        for span in [*spans, _span(DAY_END, DAY_END, "none")]:
+            if span.from_ > cursor:
+                rows.append((cursor, span.from_, "none"))
+            if span.to > span.from_:
+                rows.append((span.from_, span.to, span.severity))
+            cursor = max(cursor, span.to)
+        conditions[stop.id] = [
+            StopConditions(from_=start, to=end, gust_kmh=GUST_KMH[severity], feels_like_c=FEELS_LIKE_C)
+            for start, end, severity in rows
+        ]
+    return conditions
+
 
 GAPS: list[GapKind] = ["warnings", "snowline", "pace"]
 
 ALTERNATIVES: list[StartEarlier | AltRoute] = [
     StartEarlier(id="start-earlier", kind="startEarlier", start=6 * 60 + 30, depends_on="gusts-hohturli"),
-    AltRoute(id="high-loop", kind="altRoute", duration="4 h 10"),
+    AltRoute(id="turn-at-ober", kind="altRoute", duration="4 h 10", stop_id="ober", place="Oberbärgli", grade="T2"),
 ]
 
 # Used by the "partially assessed" scenario: no gust data above 2 600 m.
@@ -115,20 +170,34 @@ PARTIAL_NOT_EVALUATED = [NotEvaluated(leg_ids=["moraine-hohturli", "hohturli-hut
 def get_assessment(scenario: Scenario) -> AssessmentData:
     if scenario == "not_assessable":
         return AssessmentData(
-            outcome="not_assessable", stale=False, forecast=FORECAST, hazards=[], gaps=[], alternatives=[],
+            outcome="not_assessable",
+            stale=False,
+            forecast=FORECAST.model_copy(update={"unavailable_reason": "source"}),
+            hazards=[],
+            gaps=[],
+            alternatives=[],
             not_evaluated=[],
+            conditions={},
         )
     if scenario == "partial":
+        hazards = [h for h in HAZARDS if h.kind != "gusts"]
         return AssessmentData(
             outcome="partial",
             stale=False,
             forecast=FORECAST,
-            hazards=[h for h in HAZARDS if h.kind != "gusts"],
+            hazards=hazards,
             gaps=GAPS,
             alternatives=[a for a in ALTERNATIVES if a.kind != "startEarlier"],
             not_evaluated=PARTIAL_NOT_EVALUATED,
+            conditions=_conditions(hazards),
         )
     return AssessmentData(
-        outcome="assessed", stale=scenario == "stale", forecast=FORECAST, hazards=HAZARDS, gaps=GAPS,
-        alternatives=ALTERNATIVES, not_evaluated=[],
+        outcome="assessed",
+        stale=scenario == "stale",
+        forecast=FORECAST,
+        hazards=HAZARDS,
+        gaps=GAPS,
+        alternatives=ALTERNATIVES,
+        not_evaluated=[],
+        conditions=_conditions(HAZARDS),
     )
