@@ -19,8 +19,8 @@ def assessment(client, scenario):
     return response.json()
 
 
-def test_health(client):
-    assert client.get("/api/health").json() == {"status": "ok"}
+def test_health_reports_the_active_source_mode(client):
+    assert client.get("/api/health").json() == {"status": "ok", "mode": "demo"}
 
 
 def test_route_uses_camel_case_and_omits_unset_fields(client):
@@ -92,7 +92,7 @@ def test_serves_frontend_with_spa_fallback(tmp_path):
     assert client.get("/").text == "<div id=root></div>"
     assert client.get("/assessment/map").text == "<div id=root></div>"
     assert client.get("/assets/app.js").text == "console.log(1)"
-    assert client.get("/api/health").json() == {"status": "ok"}
+    assert client.get("/api/health").json()["status"] == "ok"
 
     missing_api = client.get("/api/nope")
     assert missing_api.status_code == 404

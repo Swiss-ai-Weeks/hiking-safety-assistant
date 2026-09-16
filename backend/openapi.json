@@ -1,0 +1,845 @@
+{
+  "components": {
+    "schemas": {
+      "AltRoute": {
+        "properties": {
+          "duration": {
+            "title": "Duration",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "kind": {
+            "const": "altRoute",
+            "title": "Kind",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "duration"
+        ],
+        "title": "AltRoute",
+        "type": "object"
+      },
+      "AssessmentData": {
+        "properties": {
+          "alternatives": {
+            "items": {
+              "discriminator": {
+                "mapping": {
+                  "altRoute": "#/components/schemas/AltRoute",
+                  "startEarlier": "#/components/schemas/StartEarlier"
+                },
+                "propertyName": "kind"
+              },
+              "oneOf": [
+                {
+                  "$ref": "#/components/schemas/StartEarlier"
+                },
+                {
+                  "$ref": "#/components/schemas/AltRoute"
+                }
+              ]
+            },
+            "title": "Alternatives",
+            "type": "array"
+          },
+          "forecast": {
+            "$ref": "#/components/schemas/Forecast"
+          },
+          "gaps": {
+            "items": {
+              "enum": [
+                "warnings",
+                "snowline",
+                "pace"
+              ],
+              "type": "string"
+            },
+            "title": "Gaps",
+            "type": "array"
+          },
+          "hazards": {
+            "items": {
+              "$ref": "#/components/schemas/HazardDef"
+            },
+            "title": "Hazards",
+            "type": "array"
+          },
+          "notEvaluated": {
+            "items": {
+              "$ref": "#/components/schemas/NotEvaluated"
+            },
+            "title": "Notevaluated",
+            "type": "array"
+          },
+          "outcome": {
+            "enum": [
+              "assessed",
+              "partial",
+              "not_assessable"
+            ],
+            "title": "Outcome",
+            "type": "string"
+          },
+          "stale": {
+            "title": "Stale",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "outcome",
+          "stale",
+          "forecast",
+          "hazards",
+          "gaps",
+          "alternatives",
+          "notEvaluated"
+        ],
+        "title": "AssessmentData",
+        "type": "object"
+      },
+      "FieldPosition": {
+        "properties": {
+          "elapsed": {
+            "title": "Elapsed",
+            "type": "integer"
+          },
+          "nextAscentM": {
+            "title": "Nextascentm",
+            "type": "integer"
+          },
+          "nextKm": {
+            "title": "Nextkm",
+            "type": "number"
+          },
+          "remainingToCrux": {
+            "title": "Remainingtocrux",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "elapsed",
+          "remainingToCrux",
+          "nextKm",
+          "nextAscentM"
+        ],
+        "title": "FieldPosition",
+        "type": "object"
+      },
+      "Forecast": {
+        "properties": {
+          "checkedAt": {
+            "title": "Checkedat",
+            "type": "integer"
+          },
+          "feelsLikeC": {
+            "title": "Feelslikec",
+            "type": "integer"
+          },
+          "issuedAt": {
+            "title": "Issuedat",
+            "type": "integer"
+          },
+          "model": {
+            "title": "Model",
+            "type": "string"
+          },
+          "staleHours": {
+            "title": "Stalehours",
+            "type": "integer"
+          },
+          "unavailableSince": {
+            "title": "Unavailablesince",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "model",
+          "issuedAt",
+          "unavailableSince",
+          "checkedAt",
+          "staleHours",
+          "feelsLikeC"
+        ],
+        "title": "Forecast",
+        "type": "object"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "title": "Detail",
+            "type": "array"
+          }
+        },
+        "title": "HTTPValidationError",
+        "type": "object"
+      },
+      "HazardDef": {
+        "properties": {
+          "buildUpFrom": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Buildupfrom"
+          },
+          "hasLiftsIf": {
+            "title": "Hasliftsif",
+            "type": "boolean"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "kind": {
+            "enum": [
+              "gusts",
+              "showers"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "place": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Place"
+          },
+          "provenance": {
+            "title": "Provenance",
+            "type": "string"
+          },
+          "stops": {
+            "additionalProperties": {
+              "enum": [
+                "none",
+                "mod",
+                "high"
+              ],
+              "type": "string"
+            },
+            "title": "Stops",
+            "type": "object"
+          },
+          "window": {
+            "$ref": "#/components/schemas/Window"
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "window",
+          "stops",
+          "hasLiftsIf",
+          "provenance"
+        ],
+        "title": "HazardDef",
+        "type": "object"
+      },
+      "KeyLabel": {
+        "properties": {
+          "key": {
+            "enum": [
+              "stop.lake",
+              "stop.moraine",
+              "stop.descent"
+            ],
+            "title": "Key",
+            "type": "string"
+          }
+        },
+        "required": [
+          "key"
+        ],
+        "title": "KeyLabel",
+        "type": "object"
+      },
+      "Leg": {
+        "description": "A mapped section of the official route.",
+        "properties": {
+          "cables": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cables"
+          },
+          "fromStop": {
+            "title": "Fromstop",
+            "type": "string"
+          },
+          "grade": {
+            "enum": [
+              "T1",
+              "T2",
+              "T3",
+              "T4",
+              "T5",
+              "T6"
+            ],
+            "title": "Grade",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "stopIds": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Stopids",
+            "type": "array"
+          },
+          "toStop": {
+            "title": "Tostop",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "fromStop",
+          "toStop",
+          "stopIds",
+          "grade"
+        ],
+        "title": "Leg",
+        "type": "object"
+      },
+      "NotEvaluated": {
+        "properties": {
+          "legIds": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Legids",
+            "type": "array"
+          }
+        },
+        "required": [
+          "legIds"
+        ],
+        "title": "NotEvaluated",
+        "type": "object"
+      },
+      "PlaceLabel": {
+        "properties": {
+          "place": {
+            "title": "Place",
+            "type": "string"
+          }
+        },
+        "required": [
+          "place"
+        ],
+        "title": "PlaceLabel",
+        "type": "object"
+      },
+      "RecentRoute": {
+        "properties": {
+          "checkedOn": {
+            "title": "Checkedon",
+            "type": "string"
+          },
+          "grade": {
+            "enum": [
+              "T1",
+              "T2",
+              "T3",
+              "T4",
+              "T5",
+              "T6"
+            ],
+            "title": "Grade",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "grade",
+          "checkedOn"
+        ],
+        "title": "RecentRoute",
+        "type": "object"
+      },
+      "RetryResult": {
+        "properties": {
+          "available": {
+            "title": "Available",
+            "type": "boolean"
+          },
+          "checkedAt": {
+            "title": "Checkedat",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "available",
+          "checkedAt"
+        ],
+        "title": "RetryResult",
+        "type": "object"
+      },
+      "Route": {
+        "properties": {
+          "ascentM": {
+            "title": "Ascentm",
+            "type": "integer"
+          },
+          "bailoutName": {
+            "title": "Bailoutname",
+            "type": "string"
+          },
+          "cruxStopId": {
+            "title": "Cruxstopid",
+            "type": "string"
+          },
+          "distanceKm": {
+            "title": "Distancekm",
+            "type": "number"
+          },
+          "field": {
+            "$ref": "#/components/schemas/FieldPosition"
+          },
+          "fromName": {
+            "title": "Fromname",
+            "type": "string"
+          },
+          "grade": {
+            "enum": [
+              "T1",
+              "T2",
+              "T3",
+              "T4",
+              "T5",
+              "T6"
+            ],
+            "title": "Grade",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "lastBoat": {
+            "title": "Lastboat",
+            "type": "integer"
+          },
+          "legs": {
+            "items": {
+              "$ref": "#/components/schemas/Leg"
+            },
+            "title": "Legs",
+            "type": "array"
+          },
+          "stops": {
+            "items": {
+              "$ref": "#/components/schemas/Stop"
+            },
+            "title": "Stops",
+            "type": "array"
+          },
+          "toName": {
+            "title": "Toname",
+            "type": "string"
+          },
+          "turnaroundDefault": {
+            "title": "Turnarounddefault",
+            "type": "integer"
+          },
+          "waypoints": {
+            "items": {
+              "$ref": "#/components/schemas/Waypoint"
+            },
+            "title": "Waypoints",
+            "type": "array"
+          }
+        },
+        "required": [
+          "id",
+          "fromName",
+          "toName",
+          "grade",
+          "distanceKm",
+          "ascentM",
+          "waypoints",
+          "stops",
+          "legs",
+          "cruxStopId",
+          "bailoutName",
+          "lastBoat",
+          "turnaroundDefault",
+          "field"
+        ],
+        "title": "Route",
+        "type": "object"
+      },
+      "StartEarlier": {
+        "properties": {
+          "dependsOn": {
+            "title": "Dependson",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "kind": {
+            "const": "startEarlier",
+            "title": "Kind",
+            "type": "string"
+          },
+          "start": {
+            "title": "Start",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "start",
+          "dependsOn"
+        ],
+        "title": "StartEarlier",
+        "type": "object"
+      },
+      "Stop": {
+        "description": "A point on the day's timeline, in walking order (out and back).",
+        "properties": {
+          "breakMinutes": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Breakminutes"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "label": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PlaceLabel"
+              },
+              {
+                "$ref": "#/components/schemas/KeyLabel"
+              }
+            ],
+            "title": "Label"
+          },
+          "legMinutes": {
+            "title": "Legminutes",
+            "type": "integer"
+          },
+          "waypointId": {
+            "title": "Waypointid",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "waypointId",
+          "label",
+          "legMinutes"
+        ],
+        "title": "Stop",
+        "type": "object"
+      },
+      "ValidationError": {
+        "properties": {
+          "ctx": {
+            "title": "Context",
+            "type": "object"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "title": "Location",
+            "type": "array"
+          },
+          "msg": {
+            "title": "Message",
+            "type": "string"
+          },
+          "type": {
+            "title": "Error Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError",
+        "type": "object"
+      },
+      "Waypoint": {
+        "properties": {
+          "elevationM": {
+            "title": "Elevationm",
+            "type": "integer"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "latLng": {
+            "maxItems": 2,
+            "minItems": 2,
+            "prefixItems": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "number"
+              }
+            ],
+            "title": "Latlng",
+            "type": "array"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "latLng",
+          "elevationM"
+        ],
+        "title": "Waypoint",
+        "type": "object"
+      },
+      "Window": {
+        "properties": {
+          "from": {
+            "title": "From",
+            "type": "integer"
+          },
+          "to": {
+            "title": "To",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "from",
+          "to"
+        ],
+        "title": "Window",
+        "type": "object"
+      }
+    }
+  },
+  "info": {
+    "title": "Hiking safety assistant API",
+    "version": "0.1.0"
+  },
+  "openapi": "3.1.0",
+  "paths": {
+    "/api/forecast/retry": {
+      "post": {
+        "description": "\"Try again\" on the not-assessable screen: the source is still down.",
+        "operationId": "retry_forecast_api_forecast_retry_post",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RetryResult"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Retry Forecast"
+      }
+    },
+    "/api/health": {
+      "get": {
+        "operationId": "health_api_health_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "title": "Response Health Api Health Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Health"
+      }
+    },
+    "/api/recent-routes": {
+      "get": {
+        "operationId": "get_recent_routes_api_recent_routes_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/RecentRoute"
+                  },
+                  "title": "Response Get Recent Routes Api Recent Routes Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Get Recent Routes"
+      }
+    },
+    "/api/routes/{route_id}": {
+      "get": {
+        "operationId": "get_route_api_routes__route_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "route_id",
+            "required": true,
+            "schema": {
+              "title": "Route Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Route"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Route"
+      }
+    },
+    "/api/routes/{route_id}/assessment": {
+      "get": {
+        "operationId": "get_route_assessment_api_routes__route_id__assessment_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "route_id",
+            "required": true,
+            "schema": {
+              "title": "Route Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "scenario",
+            "required": false,
+            "schema": {
+              "default": "assessed",
+              "enum": [
+                "assessed",
+                "partial",
+                "not_assessable",
+                "stale"
+              ],
+              "title": "Scenario",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AssessmentData"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Route Assessment"
+      }
+    }
+  }
+}

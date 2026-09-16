@@ -1,0 +1,311 @@
+{
+  "results": [
+    {
+      "attrs": {
+        "detail": "oeschinensee kandersteg",
+        "geom_quadindex": "02",
+        "geom_st_box2d": "BOX(7.713686 46.493987,7.73744 46.502894)",
+        "label": "<i>See</i> <b>Oeschinensee</b> (BE) - Kandersteg",
+        "lat": 46.49835968017578,
+        "lon": 7.72667121887207,
+        "num": 1,
+        "objectclass": "TLM_STEHENDES_GEWAESSER",
+        "origin": "gazetteer",
+        "rank": 6,
+        "x": 7.72667121887207,
+        "y": 46.49835968017578,
+        "zoomlevel": 9
+      },
+      "id": 50480,
+      "weight": 100
+    },
+    {
+      "attrs": {
+        "detail": "oeschinensee 2b 3718 kandersteg 565 kandersteg ch be",
+        "featureId": "504038732_0",
+        "geom_quadindex": "023101011020033003231",
+        "geom_st_box2d": "BOX(7.708509 46.495924,7.708509 46.495924)",
+        "label": "Oeschinensee 2b <b>3718 Kandersteg</b>",
+        "lat": 46.49592208862305,
+        "links": [
+          {
+            "href": "/rest/services/ech/MapServer/ch.swisstopo.amtliches-gebaeudeadressverzeichnis/102909710",
+            "rel": "related",
+            "title": "ch.swisstopo.amtliches-gebaeudeadressverzeichnis"
+          },
+          {
+            "href": "/rest/services/ech/MapServer/ch.bfs.gebaeude_wohnungs_register/504038732_0",
+            "rel": "related",
+            "title": "ch.bfs.gebaeude_wohnungs_register"
+          }
+        ],
+        "lon": 7.708506107330322,
+        "num": 2,
+        "objectclass": "",
+        "origin": "address",
+        "rank": 7,
+        "x": 7.708506107330322,
+        "y": 46.49592208862305,
+        "zoomlevel": 10
+      },
+      "id": 1673229,
+      "weight": 100
+    },
+    {
+      "attrs": {
+        "detail": "oeschinensee 2a 3718 kandersteg 565 kandersteg ch be",
+        "featureId": "191508191_0",
+        "geom_quadindex": "023101011020032213102",
+        "geom_st_box2d": "BOX(7.708231 46.495814,7.708231 46.495814)",
+        "label": "Oeschinensee 2a <b>3718 Kandersteg</b>",
+        "lat": 46.495811462402344,
+        "links": [
+          {
+            "href": "/rest/services/ech/MapServer/ch.swisstopo.amtliches-gebaeudeadressverzeichnis/102178287",
+            "rel": "related",
+            "title": "ch.swisstopo.amtliches-gebaeudeadressverzeichnis"
+          },
+          {
+            "href": "/rest/services/ech/MapServer/ch.bfs.gebaeude_wohnungs_register/191508191_0",
+            "rel": "related",
+            "title": "ch.bfs.gebaeude_wohnungs_register"
+          }
+        ],
+        "lon": 7.708228588104248,
+        "num": 2,
+        "objectclass": "",
+        "origin": "address",
+        "rank": 7,
+        "x": 7.708228588104248,
+        "y": 46.495811462402344,
+        "zoomlevel": 10
+      },
+      "id": 1778050,
+      "weight": 100
+    },
+    {
+      "attrs": {
+        "detail": "oeschinensee 4 3718 kandersteg 565 kandersteg ch be",
+        "featureId": "191080590_0",
+        "geom_quadindex": "023101011020312312020",
+        "geom_st_box2d": "BOX(7.709873 46.495279,7.709873 46.495279)",
+        "label": "Oeschinensee 4 <b>3718 Kandersteg</b>",
+        "lat": 46.495277404785156,
+        "links": [
+          {
+            "href": "/rest/services/ech/MapServer/ch.swisstopo.amtliches-gebaeudeadressverzeichnis/101869421",
+            "rel": "related",
+            "title": "ch.swisstopo.amtliches-gebaeudeadressverzeichnis"
+          },
+          {
+            "href": "/rest/services/ech/MapServer/ch.bfs.gebaeude_wohnungs_register/191080590_0",
+            "rel": "related",
+            "title": "ch.bfs.gebaeude_wohnungs_register"
+          }
+        ],
+        "lon": 7.709870338439941,
+        "num": 4,
+        "objectclass": "",
+        "origin": "address",
+        "rank": 7,
+        "x": 7.709870338439941,
+        "y": 46.495277404785156,
+        "zoomlevel": 10
+      },
+      "id": 1653935,
+      "weight": 100
+    },
+    {
+      "attrs": {
+        "detail": "oeschinensee 8 3718 kandersteg 565 kandersteg ch be",
+        "featureId": "3061785_0",
+        "geom_quadindex": "023101011012200222112",
+        "geom_st_box2d": "BOX(7.713447 46.497581,7.713447 46.497581)",
+        "label": "Oeschinensee 8 <b>3718 Kandersteg</b>",
+        "lat": 46.49757766723633,
+        "links": [
+          {
+            "href": "/rest/services/ech/MapServer/ch.swisstopo.amtliches-gebaeudeadressverzeichnis/101052249",
+            "rel": "related",
+            "title": "ch.swisstopo.amtliches-gebaeudeadressverzeichnis"
+          },
+          {
+            "href": "/rest/services/ech/MapServer/ch.bfs.gebaeude_wohnungs_register/3061785_0",
+            "rel": "related",
+            "title": "ch.bfs.gebaeude_wohnungs_register"
+          }
+        ],
+        "lon": 7.713444232940674,
+        "num": 8,
+        "objectclass": "",
+        "origin": "address",
+        "rank": 7,
+        "x": 7.713444232940674,
+        "y": 46.49757766723633,
+        "zoomlevel": 10
+      },
+      "id": 852280,
+      "weight": 100
+    },
+    {
+      "attrs": {
+        "detail": "oeschinensee 10 3718 kandersteg 565 kandersteg ch be",
+        "featureId": "9010086_0",
+        "geom_quadindex": "023101011012203200201",
+        "geom_st_box2d": "BOX(7.713803 46.497403,7.713803 46.497403)",
+        "label": "Oeschinensee 10 <b>3718 Kandersteg</b>",
+        "lat": 46.49740219116211,
+        "links": [
+          {
+            "href": "/rest/services/ech/MapServer/ch.swisstopo.amtliches-gebaeudeadressverzeichnis/101280140",
+            "rel": "related",
+            "title": "ch.swisstopo.amtliches-gebaeudeadressverzeichnis"
+          },
+          {
+            "href": "/rest/services/ech/MapServer/ch.bfs.gebaeude_wohnungs_register/9010086_0",
+            "rel": "related",
+            "title": "ch.bfs.gebaeude_wohnungs_register"
+          }
+        ],
+        "lon": 7.713799953460693,
+        "num": 10,
+        "objectclass": "",
+        "origin": "address",
+        "rank": 7,
+        "x": 7.713799953460693,
+        "y": 46.49740219116211,
+        "zoomlevel": 10
+      },
+      "id": 1659964,
+      "weight": 100
+    },
+    {
+      "attrs": {
+        "detail": "oeschinensee 12 3718 kandersteg 565 kandersteg ch be",
+        "featureId": "9010087_0",
+        "geom_quadindex": "023101011012211020303",
+        "geom_st_box2d": "BOX(7.714591 46.497728,7.714591 46.497728)",
+        "label": "Oeschinensee 12 <b>3718 Kandersteg</b>",
+        "lat": 46.49772644042969,
+        "links": [
+          {
+            "href": "/rest/services/ech/MapServer/ch.swisstopo.amtliches-gebaeudeadressverzeichnis/101949484",
+            "rel": "related",
+            "title": "ch.swisstopo.amtliches-gebaeudeadressverzeichnis"
+          },
+          {
+            "href": "/rest/services/ech/MapServer/ch.bfs.gebaeude_wohnungs_register/9010087_0",
+            "rel": "related",
+            "title": "ch.bfs.gebaeude_wohnungs_register"
+          }
+        ],
+        "lon": 7.714588165283203,
+        "num": 12,
+        "objectclass": "",
+        "origin": "address",
+        "rank": 7,
+        "x": 7.714588165283203,
+        "y": 46.49772644042969,
+        "zoomlevel": 10
+      },
+      "id": 867130,
+      "weight": 100
+    },
+    {
+      "attrs": {
+        "detail": "oeschinensee 12b 3718 kandersteg 565 kandersteg ch be",
+        "featureId": "504038734_0",
+        "geom_quadindex": "023101011012033230232",
+        "geom_st_box2d": "BOX(7.714667 46.497851,7.714667 46.497851)",
+        "label": "Oeschinensee 12b <b>3718 Kandersteg</b>",
+        "lat": 46.49784851074219,
+        "links": [
+          {
+            "href": "/rest/services/ech/MapServer/ch.swisstopo.amtliches-gebaeudeadressverzeichnis/102909693",
+            "rel": "related",
+            "title": "ch.swisstopo.amtliches-gebaeudeadressverzeichnis"
+          },
+          {
+            "href": "/rest/services/ech/MapServer/ch.bfs.gebaeude_wohnungs_register/504038734_0",
+            "rel": "related",
+            "title": "ch.bfs.gebaeude_wohnungs_register"
+          }
+        ],
+        "lon": 7.714664459228516,
+        "num": 12,
+        "objectclass": "",
+        "origin": "address",
+        "rank": 7,
+        "x": 7.714664459228516,
+        "y": 46.49784851074219,
+        "zoomlevel": 10
+      },
+      "id": 934778,
+      "weight": 100
+    },
+    {
+      "attrs": {
+        "detail": "oeschinensee 12c 3718 kandersteg 565 kandersteg ch be",
+        "featureId": "191887173_0",
+        "geom_quadindex": "023101011012033200003",
+        "geom_st_box2d": "BOX(7.714567 46.497942,7.714567 46.497942)",
+        "label": "Oeschinensee 12c <b>3718 Kandersteg</b>",
+        "lat": 46.49794006347656,
+        "links": [
+          {
+            "href": "/rest/services/ech/MapServer/ch.swisstopo.amtliches-gebaeudeadressverzeichnis/102657333",
+            "rel": "related",
+            "title": "ch.swisstopo.amtliches-gebaeudeadressverzeichnis"
+          },
+          {
+            "href": "/rest/services/ech/MapServer/ch.bfs.gebaeude_wohnungs_register/191887173_0",
+            "rel": "related",
+            "title": "ch.bfs.gebaeude_wohnungs_register"
+          }
+        ],
+        "lon": 7.714564800262451,
+        "num": 12,
+        "objectclass": "",
+        "origin": "address",
+        "rank": 7,
+        "x": 7.714564800262451,
+        "y": 46.49794006347656,
+        "zoomlevel": 10
+      },
+      "id": 1684114,
+      "weight": 100
+    },
+    {
+      "attrs": {
+        "detail": "oeschinensee 14a 3718 kandersteg 565 kandersteg ch be",
+        "featureId": "191979588_0",
+        "geom_quadindex": "023101011012211112233",
+        "geom_st_box2d": "BOX(7.714863 46.497749,7.714863 46.497749)",
+        "label": "Oeschinensee 14a <b>3718 Kandersteg</b>",
+        "lat": 46.49774932861328,
+        "links": [
+          {
+            "href": "/rest/services/ech/MapServer/ch.swisstopo.amtliches-gebaeudeadressverzeichnis/103271860",
+            "rel": "related",
+            "title": "ch.swisstopo.amtliches-gebaeudeadressverzeichnis"
+          },
+          {
+            "href": "/rest/services/ech/MapServer/ch.bfs.gebaeude_wohnungs_register/191979588_0",
+            "rel": "related",
+            "title": "ch.bfs.gebaeude_wohnungs_register"
+          }
+        ],
+        "lon": 7.714859962463379,
+        "num": 14,
+        "objectclass": "",
+        "origin": "address",
+        "rank": 7,
+        "x": 7.714859962463379,
+        "y": 46.49774932861328,
+        "zoomlevel": 10
+      },
+      "id": 1114829,
+      "weight": 100
+    }
+  ]
+}

@@ -12,6 +12,10 @@ Type=simple
 User=hiker
 WorkingDirectory=/opt/hiking-safety-assistant/backend
 Environment=PYTHONUNBUFFERED=1
+# Which sources the service uses. `live` is selectable but most sources are not implemented yet
+# and fail loudly when called; `/api/health` reports the active mode.
+Environment=SOURCE_MODE=demo
+Environment=CACHE_DIR=/opt/hiking-safety-assistant/backend/.cache
 ExecStart=/opt/hiking-safety-assistant/backend/.venv/bin/uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers 2
 Restart=on-failure
 RestartSec=3

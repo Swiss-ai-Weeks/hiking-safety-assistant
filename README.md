@@ -24,11 +24,25 @@ In dev, Vite proxies `/api` to the backend. In production the backend serves the
 
 Switch between demo states (assessed, partially assessed, not assessable, stale forecast) in Settings, or with `?outcome=partial`, `?outcome=not_assessable` or `?stale=1` on `/assessment`.
 
+### Configuration
+
+The backend reads its settings from the environment, or a `backend/.env` file — see [backend/app/config.py](backend/app/config.py) for every field and its default.
+
+`SOURCE_MODE` picks where data comes from. `demo` (the default) serves the hand-authored Oeschinensee data. `live` hits the real sources: swisstopo place search works, and everything else fails with a 503 naming the phase that implements it. `/api/health` reports the active mode.
+
+The frontend types are checked against the backend's schema rather than kept in step by hand. After changing [backend/app/models.py](backend/app/models.py):
+
+```bash
+pnpm gen:api   # backend/openapi.json + frontend/src/api/schema.d.ts, both committed
+```
+
+A rename then fails `pytest` (the schema snapshot is stale) and `tsc -b` (the assertions in [frontend/src/api/contract.ts](frontend/src/api/contract.ts)). `frontend/src/domain/types.ts` stays hand-written; the generated schema is what it is checked against.
+
 ### API
 
 | Method | Path | Returns |
 |---|---|---|
-| GET | `/api/health` | `{"status": "ok"}` |
+| GET | `/api/health` | `{"status": "ok", "mode": "demo"}` — `mode` is the active `SOURCE_MODE` |
 | GET | `/api/routes/{routeId}` | Route geometry, stops and legs |
 | GET | `/api/routes/{routeId}/assessment?scenario=assessed` | Forecast, hazards, gaps and alternatives (`assessed`, `partial`, `not_assessable`, `stale`) |
 | GET | `/api/recent-routes` | Recently checked routes |

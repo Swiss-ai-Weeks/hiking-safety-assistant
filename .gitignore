@@ -28,3 +28,6 @@ __pycache__
 *.sw?
 .vercel
 .env*
+
+# Recorded source responses (see SOURCE_MODE)
+backend/.cache
