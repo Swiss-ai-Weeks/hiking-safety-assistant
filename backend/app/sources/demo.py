@@ -4,10 +4,13 @@
 it means `SOURCE_MODE=demo` provably serves the same bytes as before this seam existed.
 """
 
-from ..domain import ElevationProfile, GeoPoint, PlaceHit, PointForecast, Warning
+from datetime import date, datetime
+
+from ..domain import ElevationProfile, GeoPoint, ModelRun, PlaceHit, PointForecast, Warning
 from ..mock_data import FORECAST, RECENT_ROUTES, ROUTES, get_assessment
 from ..models import AssessmentData, RecentRoute, Route, RouteRequest, Scenario
 from .base import SourceUnavailable
+from .weather_common import ICON_CH1, SWISS_TIME, local_today
 
 # `mock_data.FORECAST` records the run as a model name and an issue time in minutes.
 DEMO_MODEL_RUN = f"{FORECAST.model} {FORECAST.issued_at // 60:02d}:{FORECAST.issued_at % 60:02d}"
@@ -48,8 +51,15 @@ class DemoElevationSource:
 class DemoWeatherSource:
     """One forecast, from `mock_data.FORECAST`. In demo mode the hazards are the authored truth."""
 
-    async def forecast_at(self, point: GeoPoint, hour: int) -> PointForecast:
+    async def forecast_at(self, point: GeoPoint, hour: int, day: date | None = None) -> PointForecast:
         return PointForecast(model_run=DEMO_MODEL_RUN, hour=hour, temp_c=FORECAST.feels_like_c)
+
+    async def latest_run(self, day: date | None = None) -> ModelRun:
+        """The authored issue time, today: the demo forecast is always this morning's."""
+        day = day or local_today()
+        hours, minutes = divmod(FORECAST.issued_at, 60)
+        issued = datetime(day.year, day.month, day.day, hours, minutes, tzinfo=SWISS_TIME)
+        return ModelRun(FORECAST.model, issued, ICON_CH1.horizon_h)
 
 
 class DemoWarningSource:

@@ -14,11 +14,13 @@ from app.main import create_app
 from app.sources import get_sources
 from app.sources.base import Sources
 from app.sources.http import CachedHttpClient
-from app.sources.live import NotImplementedAssessor, NotImplementedWarningSource, NotImplementedWeatherSource
+from app.sources.live import NotImplementedAssessor
 from app.sources.names import SwissNamesSource
+from app.sources.openmeteo import OpenMeteoIconSource
 from app.sources.osm import OverpassGradeSource
 from app.sources.swissalti import SwissAltiElevationSource
 from app.sources.tlm import TlmRouteSource
+from app.sources.warnings_app import AppWarningSource
 
 BODY = {
     "from": {"name": "Oeschinensee", "latLng": [46.49836, 7.72667]},
@@ -53,8 +55,8 @@ def live_client(tmp_path):
             names=SwissNamesSource(settings, client),
         ),
         elevation=elevation,
-        weather=NotImplementedWeatherSource(),
-        warnings=NotImplementedWarningSource(),
+        weather=OpenMeteoIconSource(settings, client),
+        warnings=AppWarningSource(settings, client),
         assessor=NotImplementedAssessor(),
     )
 
@@ -181,8 +183,8 @@ def test_a_failing_grade_lookup_costs_detail_not_the_route(tmp_path):
             names=SwissNamesSource(settings, client),
         ),
         elevation=elevation,
-        weather=NotImplementedWeatherSource(),
-        warnings=NotImplementedWarningSource(),
+        weather=OpenMeteoIconSource(settings, client),
+        warnings=AppWarningSource(settings, client),
         assessor=NotImplementedAssessor(),
     )
     app = create_app(frontend_dist=tmp_path)

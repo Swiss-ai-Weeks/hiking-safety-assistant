@@ -1,5 +1,6 @@
 """Picks the source implementations for the configured mode."""
 
+import importlib.util
 import logging
 from functools import lru_cache
 
@@ -15,15 +16,14 @@ from .base import (
 )
 from .demo import DemoAssessor, DemoElevationSource, DemoRouteSource, DemoWarningSource, DemoWeatherSource
 from .http import CachedHttpClient
-from .live import (
-    NotImplementedAssessor,
-    NotImplementedWarningSource,
-    NotImplementedWeatherSource,
-)
+from .icon_grib import IconGribSource
+from .live import NotImplementedAssessor
 from .names import SwissNamesSource
+from .openmeteo import OpenMeteoIconSource
 from .osm import OverpassGradeSource
 from .swissalti import SwissAltiElevationSource
 from .tlm import TlmRouteSource
+from .warnings_app import AppWarningSource
 
 log = logging.getLogger(__name__)
 
@@ -53,6 +53,11 @@ def build_sources(settings: Settings) -> Sources:
 
     client = CachedHttpClient(settings)
     elevation = SwissAltiElevationSource(settings, client)
+    open_meteo = OpenMeteoIconSource(settings, client)
+    # Ensemble spread comes from Open-Meteo either way: as GRIB it would be ten times the download.
+    weather: WeatherSource = (
+        IconGribSource(settings, client, spread=open_meteo) if settings.weather_source == "grib" else open_meteo
+    )
     sources = Sources(
         mode="live",
         routes=TlmRouteSource(
@@ -63,23 +68,22 @@ def build_sources(settings: Settings) -> Sources:
             names=SwissNamesSource(settings, client),
         ),
         elevation=elevation,
-        weather=NotImplementedWeatherSource(),
-        warnings=NotImplementedWarningSource(),
+        weather=weather,
+        warnings=AppWarningSource(settings, client),
         assessor=NotImplementedAssessor(),
     )
     log.warning(
-        "SOURCE_MODE=live: routes and elevation are live, but %s are not implemented yet "
-        "and will fail when called",
-        ", ".join(
-            f"{name} ({getattr(source, 'phase', '?')})"
-            for name, source in (
-                ("weather", sources.weather),
-                ("warnings", sources.warnings),
-                ("assessor", sources.assessor),
-            )
-            if hasattr(source, "phase")
-        ),
+        "SOURCE_MODE=live: routes, elevation and weather (%s) are live; the hazard engine is not "
+        "implemented yet (%s) and fails when called. App warnings are %s.",
+        settings.weather_source,
+        NotImplementedAssessor.phase,
+        "on" if settings.meteoswiss_app_warnings else "off",
     )
+    if settings.weather_source == "grib" and importlib.util.find_spec("eccodes") is None:
+        log.warning(
+            "WEATHER_SOURCE=grib but eccodes is not installed, so every forecast will fail: "
+            "`uv sync --group grib`, or set WEATHER_SOURCE=open-meteo"
+        )
     return sources
 
 

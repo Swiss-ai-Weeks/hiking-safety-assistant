@@ -5,9 +5,10 @@ GRIB2 or JSON is the source's problem, and stops there.
 """
 
 from dataclasses import dataclass
+from datetime import date
 from typing import Protocol, runtime_checkable
 
-from ..domain import ElevationProfile, GeoPoint, PlaceHit, PointForecast, Warning
+from ..domain import ElevationProfile, GeoPoint, ModelRun, PlaceHit, PointForecast, Warning
 from ..errors import SourceUnavailable
 from ..models import AssessmentData, RecentRoute, Route, RouteRequest, Scenario
 
@@ -42,9 +43,18 @@ class ElevationSource(Protocol):
 
 @runtime_checkable
 class WeatherSource(Protocol):
-    """Implemented twice in Phase 2 (ICON GRIB2 and Open-Meteo), switched by `SOURCE_MODE`."""
+    """Implemented twice: ICON GRIB2 from MeteoSwiss and the same model over Open-Meteo's JSON.
 
-    async def forecast_at(self, point: GeoPoint, hour: int) -> PointForecast: ...
+    `hour` is minutes since local midnight (Europe/Zurich), like every time on the wire, and is
+    floored to the hour. `day` defaults to today there. Which model answers — ICON-CH1 for the
+    next 33 hours, ICON-CH2 beyond — is the source's decision, reported in `model_run`.
+    """
+
+    async def forecast_at(self, point: GeoPoint, hour: int, day: date | None = None) -> PointForecast: ...
+
+    async def latest_run(self, day: date | None = None) -> ModelRun:
+        """The newest run that covers `day`: the real `issuedAt` behind the stale banner."""
+        ...
 
 
 @runtime_checkable

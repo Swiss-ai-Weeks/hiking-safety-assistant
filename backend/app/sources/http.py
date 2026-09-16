@@ -145,24 +145,66 @@ class CachedHttpClient:
         self.cache.write(key, body)
         return body
 
-    async def post_json(self, url: str, *, key: CacheKey, ttl_s: float, data: dict[str, Any]) -> Any:
+    async def post_json(
+        self,
+        url: str,
+        *,
+        key: CacheKey,
+        ttl_s: float,
+        data: dict[str, Any] | None = None,
+        json_body: Any = None,
+    ) -> Any:
         """Same cache and retry as `get_json`, for the requests too large to be a URL.
 
         A routed polyline has hundreds of vertices; as a query parameter it overruns what
         swisstopo's profile endpoint accepts. The cache key still describes the *request*, not
-        the method, so a cached profile is a cached profile either way.
+        the method, so a cached profile is a cached profile either way. `data` goes as a form,
+        `json_body` as JSON (the STAC search takes only JSON).
         """
         cached = self.cache.read(key, ttl_s)
         if cached is not None:
             return cached
-        body = await self._fetch(url, key.source, None, form=data)
+        body = await self._fetch(url, key.source, None, form=data, json_body=json_body)
         self.cache.write(key, body)
         return body
 
-    async def _fetch(
-        self, url: str, source: str, params: dict[str, Any] | None, form: dict[str, Any] | None = None
-    ) -> Any:
-        retrying = AsyncRetrying(
+    async def download(self, url: str, dest: Path, *, source: str) -> Path:
+        """Stream a binary file to `dest`, with the same retry. Existing files are not fetched again.
+
+        Not cached by key: what is downloaded here are GRIB messages behind presigned URLs that
+        expire, so the URL is never a stable identity; `dest` is.
+        """
+        if dest.is_file():
+            return dest
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        retrying = self._retrying()
+        try:
+            await retrying(self._download_once, url, dest, source)
+        except _Retryable as exc:
+            attempts = self.settings.http_attempts
+            raise SourceUnavailable(source, f"download failed after {attempts} attempts: {exc}") from exc
+        return dest
+
+    async def _download_once(self, url: str, dest: Path, source: str) -> None:
+        tmp = dest.with_suffix(dest.suffix + ".part")
+        try:
+            async with self._connection().stream("GET", url) as response:
+                if response.status_code >= 500:
+                    raise _Retryable(f"HTTP {response.status_code}")
+                if response.status_code >= 400:
+                    raise SourceUnavailable(source, f"download returned HTTP {response.status_code}")
+                with tmp.open("wb") as file:
+                    async for chunk in response.aiter_bytes():
+                        file.write(chunk)
+            # Write-then-rename, as the JSON cache does: a half-downloaded message is never read.
+            tmp.replace(dest)
+        except httpx.TransportError as exc:
+            raise _Retryable(str(exc)) from exc
+        finally:
+            tmp.unlink(missing_ok=True)
+
+    def _retrying(self) -> AsyncRetrying:
+        return AsyncRetrying(
             stop=stop_after_attempt(self.settings.http_attempts),
             wait=wait_exponential_jitter(
                 initial=self.settings.http_backoff_s,
@@ -171,19 +213,38 @@ class CachedHttpClient:
             retry=retry_if_exception_type(_Retryable),
             reraise=True,
         )
+
+    async def _fetch(
+        self,
+        url: str,
+        source: str,
+        params: dict[str, Any] | None,
+        form: dict[str, Any] | None = None,
+        json_body: Any = None,
+    ) -> Any:
+        retrying = self._retrying()
         try:
-            return await retrying(self._once, url, source, params, form)
+            return await retrying(self._once, url, source, params, form, json_body)
         except _Retryable as exc:
             attempts = self.settings.http_attempts
             raise SourceUnavailable(source, f"{url} failed after {attempts} attempts: {exc}") from exc
 
-    async def _once(self, url: str, source: str, params: dict[str, Any] | None, form: dict[str, Any] | None) -> Any:
+    async def _once(
+        self,
+        url: str,
+        source: str,
+        params: dict[str, Any] | None,
+        form: dict[str, Any] | None,
+        json_body: Any,
+    ) -> Any:
         try:
             connection = self._connection()
-            if form is None:
-                response = await connection.get(url, params=params)
-            else:
+            if json_body is not None:
+                response = await connection.post(url, json=json_body)
+            elif form is not None:
                 response = await connection.post(url, data=form)
+            else:
+                response = await connection.get(url, params=params)
         except httpx.TransportError as exc:
             raise _Retryable(str(exc)) from exc
         if response.status_code >= 500:

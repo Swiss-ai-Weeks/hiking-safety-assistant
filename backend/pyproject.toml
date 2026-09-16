@@ -21,6 +21,15 @@ dev = [
     "pytest>=9.1.1",
     "ruff>=0.16.7",
 ]
+# Phase 2, the official ICON GRIB2 source. Optional: `uv sync --group grib`. `eccodes` is only the
+# Python binding; on Linux `eccodeslib` supplies the C library as a wheel, on macOS (no such wheel)
+# it needs `brew install eccodes`. Without the group, WEATHER_SOURCE=open-meteo serves the same
+# model with nothing to install.
+grib = [
+    "eccodes>=2.41",
+    "eccodeslib>=2.41; sys_platform == 'linux'",
+    "numpy>=2",
+]
 
 [tool.pytest.ini_options]
 pythonpath = ["."]

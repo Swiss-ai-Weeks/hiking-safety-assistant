@@ -7,6 +7,7 @@ vocabulary the hazard engine will reason over.
 """
 
 from dataclasses import dataclass
+from datetime import UTC, datetime
 
 # Metres above sea level.
 Metres = float
@@ -63,6 +64,29 @@ class ElevationProfile:
 
 
 @dataclass(frozen=True, slots=True)
+class ModelRun:
+    """One run of a forecast model: which model, and when it was initialised.
+
+    `reference_time` is the run's own clock (UTC), not when it was published — that is what the
+    stale banner measures age against, because it is what the numbers are a forecast *from*.
+    """
+
+    model: str
+    reference_time: datetime
+    # How far ahead the run reaches, in hours. CH1 stops at +33 h, CH2 at +120 h.
+    horizon_h: int
+
+    @property
+    def label(self) -> str:
+        """e.g. "ICON-CH1 2026-09-16T06:00Z". Shown as provenance, and part of every forecast cache key."""
+        return f"{self.model} {self.reference_time.astimezone(UTC):%Y-%m-%dT%H:%MZ}"
+
+    def covers(self, target: datetime) -> bool:
+        hours = (target - self.reference_time).total_seconds() / 3600
+        return 0 <= hours <= self.horizon_h
+
+
+@dataclass(frozen=True, slots=True)
 class PointForecast:
     """The forecast at one coordinate for one hour, from one model run.
 
@@ -72,21 +96,51 @@ class PointForecast:
 
     # The model run this came from, e.g. "ICON-CH1 2026-09-16T06:00Z". Shown as provenance.
     model_run: str
-    # Minutes since local midnight, matching `models.Minutes`.
+    # Minutes since local midnight, matching `models.Minutes`. Floored to the hour it describes.
     hour: int
     temp_c: float | None = None
+    dewpoint_c: float | None = None
     wind_kmh: float | None = None
+    # The strongest gust in the hour *ending* at `hour`, as ICON's VMAX_10M defines it.
     gust_kmh: float | None = None
+    # Precipitation in the hour ending at `hour`.
     precip_mm: float | None = None
+    # Fraction of ensemble members with enough CAPE for a thunderstorm; None without an ensemble.
     thunder_probability: float | None = None
+    cape_jkg: float | None = None
     cloud_base_m: Metres | None = None
     freezing_level_m: Metres | None = None
+    snowline_m: Metres | None = None
+    # The height of the model's own terrain at this point. Where it differs from the stop's real
+    # elevation by hundreds of metres, the 1 km grid is smoothing a ridge into a valley.
+    model_elevation_m: Metres | None = None
+    # Ensemble spread (10th and 90th percentile). None when no ensemble answered, which is itself
+    # a reason to call the assessment partial rather than pretend the control run is certain.
+    gust_kmh_p10: float | None = None
+    gust_kmh_p90: float | None = None
+    precip_mm_p10: float | None = None
+    precip_mm_p90: float | None = None
+
+    @property
+    def has_spread(self) -> bool:
+        return self.gust_kmh_p90 is not None or self.precip_mm_p90 is not None
 
 
 @dataclass(frozen=True, slots=True)
 class Warning:
-    """An official MeteoSwiss warning covering the route. Fills the `warnings` gap in Phase 2."""
+    """A MeteoSwiss warning covering part of the route.
+
+    `official` is False for the app feed: MeteoSwiss publishes no warnings as open data, and the
+    only machine-readable source is the undocumented API behind its phone app.
+    """
 
     kind: str
     level: int
     text: str
+    valid_from: datetime | None = None
+    valid_to: datetime | None = None
+    # The warning region as the source names it (a MeteoSwiss region id for the app feed).
+    region: str | None = None
+    official: bool = True
+    # A pre-warning: the hazard is expected but not yet issued as a warning.
+    outlook: bool = False

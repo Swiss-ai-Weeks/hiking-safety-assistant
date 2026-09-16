@@ -15,8 +15,12 @@ from app.sources.base import (
     WarningSource,
     WeatherSource,
 )
+from app.sources.icon_grib import IconGribSource
+from app.sources.openmeteo import OpenMeteoIconSource
 from app.sources.swissalti import SwissAltiElevationSource
 from app.sources.tlm import TlmRouteSource
+from app.sources.warnings_app import AppWarningSource
+from app.sources.weather_common import SWISS_TIME
 
 pytestmark = pytest.mark.anyio
 
@@ -96,19 +100,41 @@ def test_live_mode_wires_routing_and_elevation():
     assert isinstance(live.elevation, ElevationSource)
 
 
-@pytest.mark.parametrize(
-    ("attribute", "call", "phase"),
-    [
-        ("weather", lambda s: s.weather.forecast_at(GeoPoint(46.5, 7.7), 600), "Phase 2"),
-        ("warnings", lambda s: s.warnings.warnings_for([]), "Phase 2"),
-        ("assessor", lambda s: s.assessor.assess(OESCHINEN_ROUTE, "assessed"), "Phase 3"),
-    ],
-)
-async def test_unimplemented_live_sources_fail_loudly(attribute, call, phase):
+def test_live_weather_is_grib_by_default_with_open_meteo_spread():
     live = build_sources(Settings(source_mode="live"))
 
-    with pytest.raises(SourceUnavailable, match=phase):
-        await call(live)
+    assert isinstance(live.weather, IconGribSource)
+    assert isinstance(live.weather.spread, OpenMeteoIconSource)
+    assert isinstance(live.weather, WeatherSource)
+    assert isinstance(live.warnings, AppWarningSource)
+    assert isinstance(live.warnings, WarningSource)
+
+
+def test_one_setting_switches_weather_to_open_meteo():
+    live = build_sources(Settings(source_mode="live", weather_source="open-meteo"))
+
+    assert isinstance(live.weather, OpenMeteoIconSource)
+
+
+async def test_live_warnings_are_a_gap_unless_the_app_feed_is_enabled():
+    live = build_sources(Settings(source_mode="live"))
+
+    with pytest.raises(SourceUnavailable, match="METEOSWISS_APP_WARNINGS"):
+        await live.warnings.warnings_for([GeoPoint(46.5, 7.7)])
+
+
+async def test_the_hazard_engine_still_fails_loudly():
+    live = build_sources(Settings(source_mode="live"))
+
+    with pytest.raises(SourceUnavailable, match="Phase 3"):
+        await live.assessor.assess(OESCHINEN_ROUTE, "assessed")
+
+
+async def test_demo_weather_run_is_the_authored_issue_time():
+    run = await DEMO.weather.latest_run()
+
+    assert run.model == "ICON-CH1"
+    assert run.reference_time.astimezone(SWISS_TIME).strftime("%H:%M") == "06:40"
 
 
 async def test_live_routing_without_an_imported_graph_says_how_to_build_it(tmp_path):

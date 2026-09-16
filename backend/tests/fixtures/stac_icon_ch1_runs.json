@@ -1,0 +1,740 @@
+{
+  "features": [
+    {
+      "assets": {
+        "icon-ch1-eps-202609151800-0-t_2m-ctrl.grib2": {
+          "created": "2026-09-15T19:17:11.044144Z",
+          "href": "https://rgw.cscs.ch/cscs.meteoswiss.ogd.nwp/icon-ch1-eps-202609151800-0-t_2m-ctrl.grib2?AWSAccessKeyId=13GC1T4NT2CY1N0L92YC&Signature=RnDsRy5DNIFaZ4Rw4b8%2F7t3atcI%3D&Expires=1789586230",
+          "roles": [
+            "data"
+          ],
+          "title": "Forecast Model Data",
+          "type": "application/grib",
+          "updated": "2026-09-15T19:17:11.186228Z"
+        }
+      },
+      "bbox": [
+        -0.82,
+        42.03,
+        17.71,
+        50.5
+      ],
+      "collection": "ch.meteoschweiz.ogd-forecasting-icon-ch1",
+      "geometry": {
+        "coordinates": [
+          [
+            [
+              -0.82,
+              42.03
+            ],
+            [
+              -0.82,
+              50.5
+            ],
+            [
+              17.71,
+              50.5
+            ],
+            [
+              17.71,
+              42.03
+            ],
+            [
+              -0.82,
+              42.03
+            ]
+          ]
+        ],
+        "type": "Polygon"
+      },
+      "id": "09152026-1800-0-t_2m-ctrl-4tm4gbfg",
+      "links": [
+        {
+          "href": "https://data.geo.admin.ch/api/stac/v1/collections/ch.meteoschweiz.ogd-forecasting-icon-ch1/items/09152026-1800-0-t_2m-ctrl-4tm4gbfg",
+          "rel": "self"
+        },
+        {
+          "href": "https://data.geo.admin.ch/api/stac/v1/",
+          "rel": "root"
+        },
+        {
+          "href": "https://data.geo.admin.ch/api/stac/v1/collections/ch.meteoschweiz.ogd-forecasting-icon-ch1",
+          "rel": "parent"
+        },
+        {
+          "href": "https://data.geo.admin.ch/api/stac/v1/collections/ch.meteoschweiz.ogd-forecasting-icon-ch1",
+          "rel": "collection"
+        },
+        {
+          "href": "https://data.geo.admin.ch/browser/index.html#/collections/ch.meteoschweiz.ogd-forecasting-icon-ch1/items/09152026-1800-0-t_2m-ctrl-4tm4gbfg",
+          "rel": "alternate",
+          "title": "STAC Browser",
+          "type": "text/html"
+        }
+      ],
+      "properties": {
+        "created": "2026-09-15T19:17:10.962575Z",
+        "datetime": "2026-09-15T18:00:00Z",
+        "expires": "2026-09-16T19:17:05.407430Z",
+        "forecast:horizon": "P0DT00H00M00S",
+        "forecast:perturbed": false,
+        "forecast:reference_datetime": "2026-09-15T18:00:00Z",
+        "forecast:variable": "T_2M",
+        "title": "T_2M at 15.09.2026 18:00 Step 0 (Control)",
+        "updated": "2026-09-15T19:17:11.186228Z"
+      },
+      "stac_extensions": [
+        "https://stac-extensions.github.io/timestamps/v1.1.0/schema.json",
+        "https://stac-extensions.github.io/forecast/v0.2.0/schema.json"
+      ],
+      "stac_version": "1.0.0",
+      "type": "Feature"
+    },
+    {
+      "assets": {
+        "icon-ch1-eps-202609152100-0-t_2m-ctrl.grib2": {
+          "created": "2026-09-15T22:14:59.672892Z",
+          "href": "https://rgw.cscs.ch/cscs.meteoswiss.ogd.nwp/icon-ch1-eps-202609152100-0-t_2m-ctrl.grib2?AWSAccessKeyId=13GC1T4NT2CY1N0L92YC&Signature=yZUV%2FPOz4rql0ugKEW66autu%2B48%3D&Expires=1789596899",
+          "roles": [
+            "data"
+          ],
+          "title": "Forecast Model Data",
+          "type": "application/grib",
+          "updated": "2026-09-15T22:14:59.682448Z"
+        }
+      },
+      "bbox": [
+        -0.82,
+        42.03,
+        17.71,
+        50.5
+      ],
+      "collection": "ch.meteoschweiz.ogd-forecasting-icon-ch1",
+      "geometry": {
+        "coordinates": [
+          [
+            [
+              -0.82,
+              42.03
+            ],
+            [
+              -0.82,
+              50.5
+            ],
+            [
+              17.71,
+              50.5
+            ],
+            [
+              17.71,
+              42.03
+            ],
+            [
+              -0.82,
+              42.03
+            ]
+          ]
+        ],
+        "type": "Polygon"
+      },
+      "id": "09152026-2100-0-t_2m-ctrl-7obt4cfj",
+      "links": [
+        {
+          "href": "https://data.geo.admin.ch/api/stac/v1/collections/ch.meteoschweiz.ogd-forecasting-icon-ch1/items/09152026-2100-0-t_2m-ctrl-7obt4cfj",
+          "rel": "self"
+        },
+        {
+          "href": "https://data.geo.admin.ch/api/stac/v1/",
+          "rel": "root"
+        },
+        {
+          "href": "https://data.geo.admin.ch/api/stac/v1/collections/ch.meteoschweiz.ogd-forecasting-icon-ch1",
+          "rel": "parent"
+        },
+        {
+          "href": "https://data.geo.admin.ch/api/stac/v1/collections/ch.meteoschweiz.ogd-forecasting-icon-ch1",
+          "rel": "collection"
+        },
+        {
+          "href": "https://data.geo.admin.ch/browser/index.html#/collections/ch.meteoschweiz.ogd-forecasting-icon-ch1/items/09152026-2100-0-t_2m-ctrl-7obt4cfj",
+          "rel": "alternate",
+          "title": "STAC Browser",
+          "type": "text/html"
+        }
+      ],
+      "properties": {
+        "created": "2026-09-15T22:14:59.604347Z",
+        "datetime": "2026-09-15T21:00:00Z",
+        "expires": "2026-09-16T22:14:54.088508Z",
+        "forecast:horizon": "P0DT00H00M00S",
+        "forecast:perturbed": false,
+        "forecast:reference_datetime": "2026-09-15T21:00:00Z",
+        "forecast:variable": "T_2M",
+        "title": "T_2M at 15.09.2026 21:00 Step 0 (Control)",
+        "updated": "2026-09-15T22:14:59.682448Z"
+      },
+      "stac_extensions": [
+        "https://stac-extensions.github.io/timestamps/v1.1.0/schema.json",
+        "https://stac-extensions.github.io/forecast/v0.2.0/schema.json"
+      ],
+      "stac_version": "1.0.0",
+      "type": "Feature"
+    },
+    {
+      "assets": {
+        "icon-ch1-eps-202609160000-0-t_2m-ctrl.grib2": {
+          "created": "2026-09-16T01:14:59.074878Z",
+          "href": "https://rgw.cscs.ch/cscs.meteoswiss.ogd.nwp/icon-ch1-eps-202609160000-0-t_2m-ctrl.grib2?AWSAccessKeyId=13GC1T4NT2CY1N0L92YC&Signature=J3D7lipCEV085Sl4k1B%2ByotZjeY%3D&Expires=1789607698",
+          "roles": [
+            "data"
+          ],
+          "title": "Forecast Model Data",
+          "type": "application/grib",
+          "updated": "2026-09-16T01:14:59.085267Z"
+        }
+      },
+      "bbox": [
+        -0.82,
+        42.03,
+        17.71,
+        50.5
+      ],
+      "collection": "ch.meteoschweiz.ogd-forecasting-icon-ch1",
+      "geometry": {
+        "coordinates": [
+          [
+            [
+              -0.82,
+              42.03
+            ],
+            [
+              -0.82,
+              50.5
+            ],
+            [
+              17.71,
+              50.5
+            ],
+            [
+              17.71,
+              42.03
+            ],
+            [
+              -0.82,
+              42.03
+            ]
+          ]
+        ],
+        "type": "Polygon"
+      },
+      "id": "09162026-0000-0-t_2m-ctrl-1m0dfc31",
+      "links": [
+        {
+          "href": "https://data.geo.admin.ch/api/stac/v1/collections/ch.meteoschweiz.ogd-forecasting-icon-ch1/items/09162026-0000-0-t_2m-ctrl-1m0dfc31",
+          "rel": "self"
+        },
+        {
+          "href": "https://data.geo.admin.ch/api/stac/v1/",
+          "rel": "root"
+        },
+        {
+          "href": "https://data.geo.admin.ch/api/stac/v1/collections/ch.meteoschweiz.ogd-forecasting-icon-ch1",
+          "rel": "parent"
+        },
+        {
+          "href": "https://data.geo.admin.ch/api/stac/v1/collections/ch.meteoschweiz.ogd-forecasting-icon-ch1",
+          "rel": "collection"
+        },
+        {
+          "href": "https://data.geo.admin.ch/browser/index.html#/collections/ch.meteoschweiz.ogd-forecasting-icon-ch1/items/09162026-0000-0-t_2m-ctrl-1m0dfc31",
+          "rel": "alternate",
+          "title": "STAC Browser",
+          "type": "text/html"
+        }
+      ],
+      "properties": {
+        "created": "2026-09-16T01:14:59.009946Z",
+        "datetime": "2026-09-16T00:00:00Z",
+        "expires": "2026-09-17T01:14:53.508631Z",
+        "forecast:horizon": "P0DT00H00M00S",
+        "forecast:perturbed": false,
+        "forecast:reference_datetime": "2026-09-16T00:00:00Z",
+        "forecast:variable": "T_2M",
+        "title": "T_2M at 16.09.2026 00:00 Step 0 (Control)",
+        "updated": "2026-09-16T01:14:59.085267Z"
+      },
+      "stac_extensions": [
+        "https://stac-extensions.github.io/timestamps/v1.1.0/schema.json",
+        "https://stac-extensions.github.io/forecast/v0.2.0/schema.json"
+      ],
+      "stac_version": "1.0.0",
+      "type": "Feature"
+    },
+    {
+      "assets": {
+        "icon-ch1-eps-202609160300-0-t_2m-ctrl.grib2": {
+          "created": "2026-09-16T04:14:54.535147Z",
+          "href": "https://rgw.cscs.ch/cscs.meteoswiss.ogd.nwp/icon-ch1-eps-202609160300-0-t_2m-ctrl.grib2?AWSAccessKeyId=13GC1T4NT2CY1N0L92YC&Signature=kTiiG7q%2FJZTOHx0ZFTUABjyr4JQ%3D&Expires=1789618493",
+          "roles": [
+            "data"
+          ],
+          "title": "Forecast Model Data",
+          "type": "application/grib",
+          "updated": "2026-09-16T04:14:54.544815Z"
+        }
+      },
+      "bbox": [
+        -0.82,
+        42.03,
+        17.71,
+        50.5
+      ],
+      "collection": "ch.meteoschweiz.ogd-forecasting-icon-ch1",
+      "geometry": {
+        "coordinates": [
+          [
+            [
+              -0.82,
+              42.03
+            ],
+            [
+              -0.82,
+              50.5
+            ],
+            [
+              17.71,
+              50.5
+            ],
+            [
+              17.71,
+              42.03
+            ],
+            [
+              -0.82,
+              42.03
+            ]
+          ]
+        ],
+        "type": "Polygon"
+      },
+      "id": "09162026-0300-0-t_2m-ctrl-redxtpt3",
+      "links": [
+        {
+          "href": "https://data.geo.admin.ch/api/stac/v1/collections/ch.meteoschweiz.ogd-forecasting-icon-ch1/items/09162026-0300-0-t_2m-ctrl-redxtpt3",
+          "rel": "self"
+        },
+        {
+          "href": "https://data.geo.admin.ch/api/stac/v1/",
+          "rel": "root"
+        },
+        {
+          "href": "https://data.geo.admin.ch/api/stac/v1/collections/ch.meteoschweiz.ogd-forecasting-icon-ch1",
+          "rel": "parent"
+        },
+        {
+          "href": "https://data.geo.admin.ch/api/stac/v1/collections/ch.meteoschweiz.ogd-forecasting-icon-ch1",
+          "rel": "collection"
+        },
+        {
+          "href": "https://data.geo.admin.ch/browser/index.html#/collections/ch.meteoschweiz.ogd-forecasting-icon-ch1/items/09162026-0300-0-t_2m-ctrl-redxtpt3",
+          "rel": "alternate",
+          "title": "STAC Browser",
+          "type": "text/html"
+        }
+      ],
+      "properties": {
+        "created": "2026-09-16T04:14:54.464240Z",
+        "datetime": "2026-09-16T03:00:00Z",
+        "expires": "2026-09-17T04:14:48.988328Z",
+        "forecast:horizon": "P0DT00H00M00S",
+        "forecast:perturbed": false,
+        "forecast:reference_datetime": "2026-09-16T03:00:00Z",
+        "forecast:variable": "T_2M",
+        "title": "T_2M at 16.09.2026 03:00 Step 0 (Control)",
+        "updated": "2026-09-16T04:14:54.544815Z"
+      },
+      "stac_extensions": [
+        "https://stac-extensions.github.io/timestamps/v1.1.0/schema.json",
+        "https://stac-extensions.github.io/forecast/v0.2.0/schema.json"
+      ],
+      "stac_version": "1.0.0",
+      "type": "Feature"
+    },
+    {
+      "assets": {
+        "icon-ch1-eps-202609160600-0-t_2m-ctrl.grib2": {
+          "created": "2026-09-16T07:24:15.998235Z",
+          "href": "https://rgw.cscs.ch/cscs.meteoswiss.ogd.nwp/icon-ch1-eps-202609160600-0-t_2m-ctrl.grib2?AWSAccessKeyId=13GC1T4NT2CY1N0L92YC&Signature=NQZT3xaTuS3saAsPGk4YTJT3y%2Bk%3D&Expires=1789629855",
+          "roles": [
+            "data"
+          ],
+          "title": "Forecast Model Data",
+          "type": "application/grib",
+          "updated": "2026-09-16T07:24:16.010885Z"
+        }
+      },
+      "bbox": [
+        -0.82,
+        42.03,
+        17.71,
+        50.5
+      ],
+      "collection": "ch.meteoschweiz.ogd-forecasting-icon-ch1",
+      "geometry": {
+        "coordinates": [
+          [
+            [
+              -0.82,
+              42.03
+            ],
+            [
+              -0.82,
+              50.5
+            ],
+            [
+              17.71,
+              50.5
+            ],
+            [
+              17.71,
+              42.03
+            ],
+            [
+              -0.82,
+              42.03
+            ]
+          ]
+        ],
+        "type": "Polygon"
+      },
+      "id": "09162026-0600-0-t_2m-ctrl-96tvoc0q",
+      "links": [
+        {
+          "href": "https://data.geo.admin.ch/api/stac/v1/collections/ch.meteoschweiz.ogd-forecasting-icon-ch1/items/09162026-0600-0-t_2m-ctrl-96tvoc0q",
+          "rel": "self"
+        },
+        {
+          "href": "https://data.geo.admin.ch/api/stac/v1/",
+          "rel": "root"
+        },
+        {
+          "href": "https://data.geo.admin.ch/api/stac/v1/collections/ch.meteoschweiz.ogd-forecasting-icon-ch1",
+          "rel": "parent"
+        },
+        {
+          "href": "https://data.geo.admin.ch/api/stac/v1/collections/ch.meteoschweiz.ogd-forecasting-icon-ch1",
+          "rel": "collection"
+        },
+        {
+          "href": "https://data.geo.admin.ch/browser/index.html#/collections/ch.meteoschweiz.ogd-forecasting-icon-ch1/items/09162026-0600-0-t_2m-ctrl-96tvoc0q",
+          "rel": "alternate",
+          "title": "STAC Browser",
+          "type": "text/html"
+        }
+      ],
+      "properties": {
+        "created": "2026-09-16T07:24:15.931132Z",
+        "datetime": "2026-09-16T06:00:00Z",
+        "expires": "2026-09-17T07:24:10.507249Z",
+        "forecast:horizon": "P0DT00H00M00S",
+        "forecast:perturbed": false,
+        "forecast:reference_datetime": "2026-09-16T06:00:00Z",
+        "forecast:variable": "T_2M",
+        "title": "T_2M at 16.09.2026 06:00 Step 0 (Control)",
+        "updated": "2026-09-16T07:24:16.010885Z"
+      },
+      "stac_extensions": [
+        "https://stac-extensions.github.io/timestamps/v1.1.0/schema.json",
+        "https://stac-extensions.github.io/forecast/v0.2.0/schema.json"
+      ],
+      "stac_version": "1.0.0",
+      "type": "Feature"
+    },
+    {
+      "assets": {
+        "icon-ch1-eps-202609160900-0-t_2m-ctrl.grib2": {
+          "created": "2026-09-16T10:15:26.929958Z",
+          "href": "https://rgw.cscs.ch/cscs.meteoswiss.ogd.nwp/icon-ch1-eps-202609160900-0-t_2m-ctrl.grib2?AWSAccessKeyId=13GC1T4NT2CY1N0L92YC&Signature=oX9zHJ5x5jY4ZHOivHyZgDyXQAY%3D&Expires=1789640126",
+          "roles": [
+            "data"
+          ],
+          "title": "Forecast Model Data",
+          "type": "application/grib",
+          "updated": "2026-09-16T10:15:26.941352Z"
+        }
+      },
+      "bbox": [
+        -0.82,
+        42.03,
+        17.71,
+        50.5
+      ],
+      "collection": "ch.meteoschweiz.ogd-forecasting-icon-ch1",
+      "geometry": {
+        "coordinates": [
+          [
+            [
+              -0.82,
+              42.03
+            ],
+            [
+              -0.82,
+              50.5
+            ],
+            [
+              17.71,
+              50.5
+            ],
+            [
+              17.71,
+              42.03
+            ],
+            [
+              -0.82,
+              42.03
+            ]
+          ]
+        ],
+        "type": "Polygon"
+      },
+      "id": "09162026-0900-0-t_2m-ctrl-m4s4vse9",
+      "links": [
+        {
+          "href": "https://data.geo.admin.ch/api/stac/v1/collections/ch.meteoschweiz.ogd-forecasting-icon-ch1/items/09162026-0900-0-t_2m-ctrl-m4s4vse9",
+          "rel": "self"
+        },
+        {
+          "href": "https://data.geo.admin.ch/api/stac/v1/",
+          "rel": "root"
+        },
+        {
+          "href": "https://data.geo.admin.ch/api/stac/v1/collections/ch.meteoschweiz.ogd-forecasting-icon-ch1",
+          "rel": "parent"
+        },
+        {
+          "href": "https://data.geo.admin.ch/api/stac/v1/collections/ch.meteoschweiz.ogd-forecasting-icon-ch1",
+          "rel": "collection"
+        },
+        {
+          "href": "https://data.geo.admin.ch/browser/index.html#/collections/ch.meteoschweiz.ogd-forecasting-icon-ch1/items/09162026-0900-0-t_2m-ctrl-m4s4vse9",
+          "rel": "alternate",
+          "title": "STAC Browser",
+          "type": "text/html"
+        }
+      ],
+      "properties": {
+        "created": "2026-09-16T10:15:26.853447Z",
+        "datetime": "2026-09-16T09:00:00Z",
+        "expires": "2026-09-17T10:15:21.359299Z",
+        "forecast:horizon": "P0DT00H00M00S",
+        "forecast:perturbed": false,
+        "forecast:reference_datetime": "2026-09-16T09:00:00Z",
+        "forecast:variable": "T_2M",
+        "title": "T_2M at 16.09.2026 09:00 Step 0 (Control)",
+        "updated": "2026-09-16T10:15:26.941352Z"
+      },
+      "stac_extensions": [
+        "https://stac-extensions.github.io/timestamps/v1.1.0/schema.json",
+        "https://stac-extensions.github.io/forecast/v0.2.0/schema.json"
+      ],
+      "stac_version": "1.0.0",
+      "type": "Feature"
+    },
+    {
+      "assets": {
+        "icon-ch1-eps-202609161200-0-t_2m-ctrl.grib2": {
+          "created": "2026-09-16T13:15:34.893451Z",
+          "href": "https://rgw.cscs.ch/cscs.meteoswiss.ogd.nwp/icon-ch1-eps-202609161200-0-t_2m-ctrl.grib2?AWSAccessKeyId=13GC1T4NT2CY1N0L92YC&Signature=qqCbYP7c56d%2FYwSuK%2BPYR4XqH%2B4%3D&Expires=1789650934",
+          "roles": [
+            "data"
+          ],
+          "title": "Forecast Model Data",
+          "type": "application/grib",
+          "updated": "2026-09-16T13:15:34.903578Z"
+        }
+      },
+      "bbox": [
+        -0.82,
+        42.03,
+        17.71,
+        50.5
+      ],
+      "collection": "ch.meteoschweiz.ogd-forecasting-icon-ch1",
+      "geometry": {
+        "coordinates": [
+          [
+            [
+              -0.82,
+              42.03
+            ],
+            [
+              -0.82,
+              50.5
+            ],
+            [
+              17.71,
+              50.5
+            ],
+            [
+              17.71,
+              42.03
+            ],
+            [
+              -0.82,
+              42.03
+            ]
+          ]
+        ],
+        "type": "Polygon"
+      },
+      "id": "09162026-1200-0-t_2m-ctrl-xgz8awgn",
+      "links": [
+        {
+          "href": "https://data.geo.admin.ch/api/stac/v1/collections/ch.meteoschweiz.ogd-forecasting-icon-ch1/items/09162026-1200-0-t_2m-ctrl-xgz8awgn",
+          "rel": "self"
+        },
+        {
+          "href": "https://data.geo.admin.ch/api/stac/v1/",
+          "rel": "root"
+        },
+        {
+          "href": "https://data.geo.admin.ch/api/stac/v1/collections/ch.meteoschweiz.ogd-forecasting-icon-ch1",
+          "rel": "parent"
+        },
+        {
+          "href": "https://data.geo.admin.ch/api/stac/v1/collections/ch.meteoschweiz.ogd-forecasting-icon-ch1",
+          "rel": "collection"
+        },
+        {
+          "href": "https://data.geo.admin.ch/browser/index.html#/collections/ch.meteoschweiz.ogd-forecasting-icon-ch1/items/09162026-1200-0-t_2m-ctrl-xgz8awgn",
+          "rel": "alternate",
+          "title": "STAC Browser",
+          "type": "text/html"
+        }
+      ],
+      "properties": {
+        "created": "2026-09-16T13:15:34.839946Z",
+        "datetime": "2026-09-16T12:00:00Z",
+        "expires": "2026-09-17T13:15:29.357711Z",
+        "forecast:horizon": "P0DT00H00M00S",
+        "forecast:perturbed": false,
+        "forecast:reference_datetime": "2026-09-16T12:00:00Z",
+        "forecast:variable": "T_2M",
+        "title": "T_2M at 16.09.2026 12:00 Step 0 (Control)",
+        "updated": "2026-09-16T13:15:34.903578Z"
+      },
+      "stac_extensions": [
+        "https://stac-extensions.github.io/timestamps/v1.1.0/schema.json",
+        "https://stac-extensions.github.io/forecast/v0.2.0/schema.json"
+      ],
+      "stac_version": "1.0.0",
+      "type": "Feature"
+    },
+    {
+      "assets": {
+        "icon-ch1-eps-202609161500-0-t_2m-ctrl.grib2": {
+          "created": "2026-09-16T16:16:03.235578Z",
+          "href": "https://rgw.cscs.ch/cscs.meteoswiss.ogd.nwp/icon-ch1-eps-202609161500-0-t_2m-ctrl.grib2?AWSAccessKeyId=13GC1T4NT2CY1N0L92YC&Signature=0WRWl9vc%2B4akJN4JtLArj0xMN5U%3D&Expires=1789661762",
+          "roles": [
+            "data"
+          ],
+          "title": "Forecast Model Data",
+          "type": "application/grib",
+          "updated": "2026-09-16T16:16:03.245476Z"
+        }
+      },
+      "bbox": [
+        -0.82,
+        42.03,
+        17.71,
+        50.5
+      ],
+      "collection": "ch.meteoschweiz.ogd-forecasting-icon-ch1",
+      "geometry": {
+        "coordinates": [
+          [
+            [
+              -0.82,
+              42.03
+            ],
+            [
+              -0.82,
+              50.5
+            ],
+            [
+              17.71,
+              50.5
+            ],
+            [
+              17.71,
+              42.03
+            ],
+            [
+              -0.82,
+              42.03
+            ]
+          ]
+        ],
+        "type": "Polygon"
+      },
+      "id": "09162026-1500-0-t_2m-ctrl-9oqyhrvq",
+      "links": [
+        {
+          "href": "https://data.geo.admin.ch/api/stac/v1/collections/ch.meteoschweiz.ogd-forecasting-icon-ch1/items/09162026-1500-0-t_2m-ctrl-9oqyhrvq",
+          "rel": "self"
+        },
+        {
+          "href": "https://data.geo.admin.ch/api/stac/v1/",
+          "rel": "root"
+        },
+        {
+          "href": "https://data.geo.admin.ch/api/stac/v1/collections/ch.meteoschweiz.ogd-forecasting-icon-ch1",
+          "rel": "parent"
+        },
+        {
+          "href": "https://data.geo.admin.ch/api/stac/v1/collections/ch.meteoschweiz.ogd-forecasting-icon-ch1",
+          "rel": "collection"
+        },
+        {
+          "href": "https://data.geo.admin.ch/browser/index.html#/collections/ch.meteoschweiz.ogd-forecasting-icon-ch1/items/09162026-1500-0-t_2m-ctrl-9oqyhrvq",
+          "rel": "alternate",
+          "title": "STAC Browser",
+          "type": "text/html"
+        }
+      ],
+      "properties": {
+        "created": "2026-09-16T16:16:03.120618Z",
+        "datetime": "2026-09-16T15:00:00Z",
+        "expires": "2026-09-17T16:15:57.592180Z",
+        "forecast:horizon": "P0DT00H00M00S",
+        "forecast:perturbed": false,
+        "forecast:reference_datetime": "2026-09-16T15:00:00Z",
+        "forecast:variable": "T_2M",
+        "title": "T_2M at 16.09.2026 15:00 Step 0 (Control)",
+        "updated": "2026-09-16T16:16:03.245476Z"
+      },
+      "stac_extensions": [
+        "https://stac-extensions.github.io/timestamps/v1.1.0/schema.json",
+        "https://stac-extensions.github.io/forecast/v0.2.0/schema.json"
+      ],
+      "stac_version": "1.0.0",
+      "type": "Feature"
+    }
+  ],
+  "links": [
+    {
+      "href": "https://data.geo.admin.ch/api/stac/v1/search",
+      "rel": "self"
+    },
+    {
+      "href": "https://data.geo.admin.ch/api/stac/v1/",
+      "rel": "root"
+    },
+    {
+      "href": "https://data.geo.admin.ch/api/stac/v1/",
+      "rel": "parent"
+    }
+  ],
+  "timeStamp": "2026-09-16T17:41:39.878476Z",
+  "type": "FeatureCollection"
+}

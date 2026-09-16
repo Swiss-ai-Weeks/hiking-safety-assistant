@@ -28,7 +28,23 @@ Switch between demo states (assessed, partially assessed, not assessable, stale 
 
 The backend reads its settings from the environment, or a `backend/.env` file — see [backend/app/config.py](backend/app/config.py) for every field and its default.
 
-`SOURCE_MODE` picks where data comes from. `demo` (the default) serves the hand-authored Oeschinensee data. `live` routes over the real swisstopo trail network; the forecast and hazard sources fail with a 503 naming the phase that implements them. `/api/health` reports the active mode.
+`SOURCE_MODE` picks where data comes from. `demo` (the default) serves the hand-authored Oeschinensee data. `live` routes over the real swisstopo trail network and reads real MeteoSwiss forecasts; the hazard engine still fails with a 503 naming the phase that implements it. `/api/health` reports the active mode.
+
+### Weather data
+
+Under `SOURCE_MODE=live`, `WEATHER_SOURCE` picks one of two implementations of the same model, MeteoSwiss ICON-CH1 (1 km, next 33 h) and ICON-CH2 (beyond that, up to 5 days):
+
+- `grib` (the default) reads the official GRIB2 files from MeteoSwiss Open Government Data. It needs eccodes:
+  ```sh
+  brew install eccodes          # macOS only; on Linux the `eccodeslib` wheel supplies the library
+  cd backend && uv sync --group grib
+  ```
+  The first forecast downloads the grid constants (34 MB) and about 25 MB of messages per forecast hour, which takes a minute. After that, later stops and hours come from the cache. Messages from superseded runs are deleted.
+- `open-meteo` serves the same ICON fields as JSON through [Open-Meteo](https://open-meteo.com/), with nothing to install. Switch to it if eccodes cannot be installed.
+
+Ensemble spread (10th and 90th percentile of gusts and precipitation, and thunderstorm potential from CAPE) comes from Open-Meteo's ensemble API for both sources. As GRIB it would be ten times the download.
+
+MeteoSwiss publishes no weather warnings as open data. `METEOSWISS_APP_WARNINGS=true` reads them from the undocumented API behind the MeteoSwiss app, and marks each one unofficial. Off (the default), warnings stay a reported gap rather than an empty all-clear.
 
 ### Trail data
 
@@ -107,7 +123,7 @@ git clone https://github.com/Swiss-ai-Weeks/hiking-safety-assistant.git /opt/hik
 cd /opt/hiking-safety-assistant
 pnpm install --frozen-lockfile
 pnpm build
-uv sync --directory backend --no-dev --frozen
+uv sync --directory backend --no-dev --frozen   # add `--group grib` for WEATHER_SOURCE=grib
 
 sudo cp deploy/hiking-safety-assistant.service /etc/systemd/system/
 sudo systemctl daemon-reload

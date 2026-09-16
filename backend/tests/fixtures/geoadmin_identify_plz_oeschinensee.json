@@ -1,0 +1,19 @@
+{
+  "results": [
+    {
+      "attributes": {
+        "bgdi_created": "01.09.2026",
+        "label": 3718,
+        "langtext": "Kandersteg",
+        "modified": "21.05.2025",
+        "plz": 3718,
+        "status": "REAL",
+        "zusziff": "00"
+      },
+      "featureId": "2178",
+      "id": "2178",
+      "layerBodId": "ch.swisstopo-vd.ortschaftenverzeichnis_plz",
+      "layerName": "Amtliches Ortschaftenverzeichnis"
+    }
+  ]
+}

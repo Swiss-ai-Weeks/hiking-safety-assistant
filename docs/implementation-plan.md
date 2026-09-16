@@ -145,7 +145,7 @@ Tests run offline. `tests/fixtures/trails_oeschinensee.sqlite` is the real impor
 edges (256 KB), so the graph, timing, stop selection and assembly are all exercised against real
 swisstopo geometry with no network; the three live sources replay recorded responses.
 
-## Phase 2 - Real weather (~8 h)
+## Phase 2 - Real weather (~8 h) - done
 
 MeteoSwiss OGD via the STAC API on `data.geo.admin.ch/api/stac/v1`:
 
@@ -168,6 +168,61 @@ env var, so a stalled GRIB toolchain cannot sink demo day.
 
 Output: `forecast_at(lat, lng, elevation_m, hour) -> PointForecast`, plus the real
 `issuedAt` behind the stale banner.
+
+### What landed
+
+`WeatherSource` is live twice over, as planned: `IconGribSource` (`sources/icon_grib.py`) and
+`OpenMeteoIconSource` (`sources/openmeteo.py`), switched by `WEATHER_SOURCE=grib|open-meteo`. The
+protocol gained `day` and `latest_run() -> ModelRun`, whose `reference_time` is the real `issuedAt`.
+Both were run against the live services for the same stops. At 23:00 from the ICON-CH1 15Z run they
+agree on the run, to within a degree on temperature and to within 60 m on freezing level at
+Oeschinensee and Hohtürli. No wire model changed: `openapi.json` and the frontend are untouched,
+because Phase 3 is what turns a `PointForecast` into hazards. What the sources turned out to say:
+
+- **MeteoSwiss publishes no warnings as open data.** They are absent from the OGD STAC catalogue,
+  and the geo.admin layers carry only FOEN's forest-fire, drought and flood maps. The only
+  machine-readable feed is the undocumented API behind the MeteoSwiss app (`plzDetail`, keyed by
+  postcode). `AppWarningSource` uses it behind `METEOSWISS_APP_WARNINGS` (off by default). It maps
+  route points to postcodes with swisstopo's locality directory and marks every warning
+  `official=False`. Off or failing, it raises `SourceUnavailable`, so `warnings` stays a reported gap
+  and never reads as an empty all-clear. Only `warnType` 10 (forest fire) is confirmed against a live
+  response; the rest of the code table is inferred.
+- **One GRIB file per variable per forecast hour.** The control run is 2.3 MB per file and the
+  10-member ensemble 23 MB, on the native unstructured grid (1 147 980 cells). The ensemble in GRIB
+  would be ~2 GB per run for a day hike, so the GRIB source reads the control run only. Spread
+  (p10/p90 of gusts and precipitation, and `thunder_probability` as the share of members with
+  mixed-layer CAPE ≥ 500 J/kg) comes from Open-Meteo's ensemble API for both sources. The caveat:
+  the two pick grid cells independently, so at a ridge stop the GRIB control value can sit outside
+  the Open-Meteo spread (at Hohtürli: control gust 45 km/h against a 32–36 km/h spread). Phase 3
+  should read the spread as uncertainty, not as bounds on the value.
+- **"Never materialise grids" became "never serve one".** The STAC search caps at 100 items, does
+  not page, and takes one variable per query. A downloaded message covers every stop at that hour,
+  so messages stay on disk while their run is current and superseded runs are pruned (two are kept).
+  Only per-point values are cached under run + point + hour. A cold first forecast takes about a
+  minute (34 MB of grid constants plus 11 messages); later stops and hours for the same run take
+  milliseconds. Phase 6's cache warm-up matters for the GRIB source.
+- **The newest run is published step by step.** If a step is missing from it, the source falls
+  back to the previous run rather than failing.
+- **Cell centres are `tlat`/`tlon` in degrees, terrain height is `h`**, and ICON writes no bitmap:
+  an undefined value (a snowfall limit when nothing falls) comes back as `9999`, which is now `None`.
+  The nearest cell to Hohtürli has terrain at 3 252 m against the real 2 778 m, so GRIB temperatures
+  are lapse-corrected (6.5 K/km) to the stop and `model_elevation_m` is reported. Open-Meteo does the
+  same downscaling server-side from the `elevation` it is sent.
+- **eccodes has no macOS wheel.** `eccodes` is only the Python binding. `eccodeslib` supplies the
+  library as a wheel on Linux only, so macOS needs `brew install eccodes`. Both live in an optional
+  `grib` dependency group; the base install and the whole test suite run without it, and startup
+  logs a warning when `WEATHER_SOURCE=grib` has no eccodes to use.
+- **Model choice is by lead time.** ICON-CH1 covers up to 30 h ahead (its 33 h horizon less
+  publication latency) and ICON-CH2 up to 114 h; anything later is `SourceUnavailable`.
+
+Deferred: **SMN station observations** move to Phase 6 as the live sanity check. No protocol consumes
+them yet, and nowcasting against them is a hazard-engine concern.
+
+Tests stay offline. Open-Meteo forecast, ensemble and run metadata, the STAC run listing, a message
+search and the collection, and the postcode and `plzDetail` responses are recorded fixtures. The
+GRIB source runs end to end (run discovery, per-variable search, download, nearest cell, cache,
+fallback to the previous run, pruning) through a fake decoder. The one test that decodes real GRIB
+needs `--record` and eccodes.
 
 ## Phase 3 - The hazard engine (~6 h)
 

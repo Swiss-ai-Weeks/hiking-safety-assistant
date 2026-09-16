@@ -1,0 +1,115 @@
+{
+  "assets": {
+    "horizontal_constants_icon-ch1-eps.grib2": {
+      "created": "2025-04-08T13:54:12.091825Z",
+      "href": "https://rgw.cscs.ch/cscs.meteoswiss.ogd.nwp.static/horizontal_constants_icon-ch1-eps.grib2?AWSAccessKeyId=13GC1T4NT2CY1N0L92YC&Signature=TjvZPjKEUJBA0%2FKq4HpARLwUtgA%3D&Expires=1792256161",
+      "roles": [
+        "data"
+      ],
+      "title": "Horizontal Grid Parameters",
+      "type": "application/grib",
+      "updated": "2026-09-16T16:56:01.293478Z"
+    },
+    "params_icon-ch1-eps.csv": {
+      "created": "2025-08-11T10:55:51.365447Z",
+      "href": "https://rgw.cscs.ch/cscs.meteoswiss.ogd.nwp.static/params_icon-ch1-eps.csv?AWSAccessKeyId=13GC1T4NT2CY1N0L92YC&Signature=GeyWiSG2wpoDffbQ9NMqxtVVnys%3D&Expires=1792256164",
+      "roles": [
+        "metadata"
+      ],
+      "title": "Overview of Parameters",
+      "type": "text/csv",
+      "updated": "2026-09-16T16:56:04.206354Z"
+    },
+    "vertical_constants_icon-ch1-eps.grib2": {
+      "created": "2025-04-08T13:54:14.504471Z",
+      "href": "https://rgw.cscs.ch/cscs.meteoswiss.ogd.nwp.static/vertical_constants_icon-ch1-eps.grib2?AWSAccessKeyId=13GC1T4NT2CY1N0L92YC&Signature=LSkv4QnK07ciZm7Ey5JTrTRadvo%3D&Expires=1792256163",
+      "roles": [
+        "data"
+      ],
+      "title": "Vertical Grid Parameters",
+      "type": "application/grib",
+      "updated": "2026-09-16T16:56:03.440936Z"
+    }
+  },
+  "created": "2025-03-10T07:33:57.064966Z",
+  "crs": [
+    "http://www.opengis.net/def/crs/OGC/1.3/CRS84"
+  ],
+  "description": "Forecast of temperature, humidity, precipitation, wind, pressure, geopotential, evaporation and radiation with 1 km grid size for the next 33 hours - updated every 3 hours, available for the last 24 hours.",
+  "extent": {
+    "spatial": {
+      "bbox": [
+        [
+          -0.82,
+          42.03,
+          17.71,
+          50.5
+        ]
+      ]
+    },
+    "temporal": {
+      "interval": [
+        [
+          "2026-09-15T18:00:00Z",
+          "2026-09-18T00:00:00Z"
+        ]
+      ]
+    }
+  },
+  "id": "ch.meteoschweiz.ogd-forecasting-icon-ch1",
+  "itemType": "Feature",
+  "license": "CC-BY",
+  "links": [
+    {
+      "href": "https://data.geo.admin.ch/api/stac/v1/collections/ch.meteoschweiz.ogd-forecasting-icon-ch1",
+      "rel": "self"
+    },
+    {
+      "href": "https://data.geo.admin.ch/api/stac/v1/",
+      "rel": "root"
+    },
+    {
+      "href": "https://data.geo.admin.ch/api/stac/v1/",
+      "rel": "parent"
+    },
+    {
+      "href": "https://data.geo.admin.ch/api/stac/v1/collections/ch.meteoschweiz.ogd-forecasting-icon-ch1/items",
+      "rel": "items"
+    },
+    {
+      "href": "https://data.geo.admin.ch/api/stac/v1/collections/ch.meteoschweiz.ogd-forecasting-icon-ch1/assets",
+      "rel": "assets"
+    },
+    {
+      "href": "https://data.geo.admin.ch/browser/index.html#/collections/ch.meteoschweiz.ogd-forecasting-icon-ch1",
+      "rel": "alternate",
+      "title": "STAC Browser",
+      "type": "text/html"
+    },
+    {
+      "href": "https://www.geocat.ch/geonetwork/srv/eng/catalog.search#/metadata/fae7e281-9f03-4c72-b861-41e00d2d5e68",
+      "rel": "describedby",
+      "title": "Metadata"
+    },
+    {
+      "href": "https://www.meteoswiss.admin.ch/services-and-publications/service/open-data.html",
+      "rel": "about",
+      "title": "Further information"
+    }
+  ],
+  "providers": [
+    {
+      "name": "Federal Office of Meteorology and Climatology MeteoSwiss",
+      "roles": [
+        "producer",
+        "licensor"
+      ],
+      "url": "https://www.meteoswiss.admin.ch"
+    }
+  ],
+  "stac_version": "1.0.0",
+  "summaries": {},
+  "title": "Numerical weather forecasting model ICON-CH1-EPS",
+  "type": "Collection",
+  "updated": "2026-09-16T16:56:04.206354Z"
+}
