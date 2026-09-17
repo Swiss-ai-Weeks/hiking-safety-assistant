@@ -203,7 +203,7 @@ export function FieldScreen() {
       </main>
 
       <BottomAction dark>
-        <ButtonLink to="/assessment/map?from=field" variant="field" className="flex-1">
+        <ButtonLink to="/map" variant="field" className="flex-1">
           {t('field.showDescent')}
         </ButtonLink>
         {/* Opens the dialer; the app never initiates contact itself. */}

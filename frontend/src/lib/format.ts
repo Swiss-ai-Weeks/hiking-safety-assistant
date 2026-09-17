@@ -41,6 +41,15 @@ export function formatKm(n: number, lang: Lang): string {
   return new Intl.NumberFormat(LOCALES[lang], { maximumFractionDigits: 1 }).format(n)
 }
 
+/** A span of time to the nearest five minutes: "8 h 35", "45 min", "6 h". */
+export function formatDuration(minutes: number): string {
+  const total = Math.max(0, Math.round(minutes / 5) * 5)
+  const h = Math.floor(total / 60)
+  const m = total % 60
+  if (h === 0) return `${m} min`
+  return m === 0 ? `${h} h` : `${h} h ${String(m).padStart(2, '0')}`
+}
+
 export function formatTemp(celsius: number): string {
   return `${celsius < 0 ? '−' : ''}${Math.abs(celsius)}°`
 }

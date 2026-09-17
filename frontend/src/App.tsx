@@ -1,16 +1,26 @@
 import { lazy, Suspense } from 'react'
-import { createBrowserRouter, Navigate, RouterProvider } from 'react-router'
+import { createBrowserRouter, Navigate, RouterProvider, useLocation } from 'react-router'
 import { AppShell } from './components/AppShell'
-import { AssessmentScreen } from './screens/AssessmentScreen'
 import { FieldScreen } from './screens/FieldScreen'
 import { PlanScreen } from './screens/PlanScreen'
-import { PreflightScreen } from './screens/PreflightScreen'
 import { RoutePickerScreen } from './screens/RoutePickerScreen'
 import { SettingsScreen } from './screens/SettingsScreen'
 import { ShareScreen } from './screens/ShareScreen'
 
-// Leaflet is only needed on the map screen.
+// Leaflet is only needed on the screens with a map.
+const BriefingScreen = lazy(() => import('./screens/BriefingScreen').then((m) => ({ default: m.BriefingScreen })))
 const RouteMapScreen = lazy(() => import('./screens/RouteMapScreen').then((m) => ({ default: m.RouteMapScreen })))
+
+const mapFallback = <div className="flex-1 animate-pulse bg-subtle" />
+
+/** The briefing replaced the assessment and "before you go" screens; old links land on it, keeping `?outcome=`. */
+function ToBriefing({ step }: { step?: number }) {
+  const { search } = useLocation()
+  const params = new URLSearchParams(search)
+  if (step) params.set('step', String(step))
+  const query = params.toString()
+  return <Navigate to={`/briefing${query ? `?${query}` : ''}`} replace />
+}
 
 const router = createBrowserRouter([
   {
@@ -19,16 +29,25 @@ const router = createBrowserRouter([
     children: [
       { index: true, element: <PlanScreen /> },
       { path: 'routes/new', element: <RoutePickerScreen /> },
-      { path: 'assessment', element: <AssessmentScreen /> },
       {
-        path: 'assessment/map',
+        path: 'briefing',
         element: (
-          <Suspense fallback={<div className="flex-1 animate-pulse bg-subtle" />}>
+          <Suspense fallback={mapFallback}>
+            <BriefingScreen />
+          </Suspense>
+        ),
+      },
+      {
+        path: 'map',
+        element: (
+          <Suspense fallback={mapFallback}>
             <RouteMapScreen />
           </Suspense>
         ),
       },
-      { path: 'preflight', element: <PreflightScreen /> },
+      { path: 'assessment', element: <ToBriefing /> },
+      { path: 'assessment/map', element: <Navigate to="/map" replace /> },
+      { path: 'preflight', element: <ToBriefing step={5} /> },
       { path: 'field', element: <FieldScreen /> },
       { path: 'share', element: <ShareScreen /> },
       { path: 'settings', element: <SettingsScreen /> },

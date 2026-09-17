@@ -126,7 +126,7 @@ export function PlanScreen() {
                 type="button"
                 onClick={() => {
                   reopenPlan(plan)
-                  navigate('/assessment')
+                  navigate('/briefing?step=5')
                 }}
                 className="flex items-center justify-between gap-3 rounded-control border border-line bg-card px-4 py-3 text-left hover:bg-subtle"
               >
@@ -165,7 +165,7 @@ export function PlanScreen() {
           className="flex-1"
           onClick={() => {
             checkConditions()
-            navigate('/assessment')
+            navigate('/briefing')
           }}
         >
           {t('plan.cta')}

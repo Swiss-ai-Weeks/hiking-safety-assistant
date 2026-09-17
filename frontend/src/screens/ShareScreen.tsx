@@ -64,7 +64,7 @@ export function ShareScreen() {
     <>
       <ScreenHeader
         bordered={false}
-        backTo={hikeStarted ? '/field' : '/preflight'}
+        backTo={hikeStarted ? '/field' : '/briefing?step=5'}
         title={t('share.title', { day: formatWeekday(date, lang) })}
       />
 
