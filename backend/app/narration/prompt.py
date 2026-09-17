@@ -15,7 +15,7 @@ from .guard import MAX_CHARS
 from .placeholders import UNIT_HINTS, available
 
 # Bumped whenever the prompt or the answer format changes: it is part of the cache key.
-PROMPT_VERSION = 1
+PROMPT_VERSION = 2
 
 LANGUAGE: dict[Lang, str] = {"en": "English (British spelling)", "fr": "French (as written in Switzerland, vous)"}
 
@@ -93,6 +93,20 @@ def build_messages(
     described = "\n\n".join(_describe(hazard, ground, citations) for hazard, ground, citations in hazards)
     user = f"GUIDANCE PASSAGES\n\n{guidance}\n\nHAZARDS\n\n{described}"
     return [{"role": "system", "content": system}, {"role": "user", "content": user}]
+
+
+def build_correction(rejected: dict[str, list[str]]) -> str:
+    """The follow-up turn when bodies broke a rule: which ones, and why, so the model can fix exactly that.
+
+    Nothing is repaired on the server. The model rewrites, and the rewrite goes through the same guard.
+    """
+    lines = [
+        "These bodies broke the rules and will not be shown. Rewrite only these hazards, in the same JSON "
+        "format. Remember: no digit at all (write grades and heights in words), and only the placeholders "
+        "listed for that hazard."
+    ]
+    lines += [f"- {hazard_id}: {'; '.join(problems)}" for hazard_id, problems in rejected.items()]
+    return "\n".join(lines)
 
 
 _THINK = re.compile(r"<think>.*?(</think>|$)", re.DOTALL)

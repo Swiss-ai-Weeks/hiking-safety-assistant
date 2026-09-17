@@ -90,6 +90,30 @@ async def test_a_body_that_breaks_a_rule_is_dropped_and_the_rest_kept(tmp_path):
     assert bodies == {"gusts-hohturli": GOOD["gusts-hohturli"], "showers-descent": None}
 
 
+async def test_a_rejected_body_is_sent_back_once_with_its_reasons(tmp_path):
+    bad = GOOD | {"showers-descent": "Rain on the T3 descent from {from}."}
+    endpoint = Endpoint(completion(answer(bad)), completion(answer({"showers-descent": GOOD["showers-descent"]})))
+
+    narration = await narrate(endpoint.narrator(narration_settings(tmp_path)))
+
+    assert {h.id: h.body for h in narration.hazards} == GOOD
+    assert len(endpoint.requests) == 2
+    follow_up = endpoint.requests[1]["messages"]
+    assert follow_up[-2]["role"] == "assistant"
+    assert "showers-descent" in follow_up[-1]["content"] and "figure" in follow_up[-1]["content"]
+    assert "gusts-hohturli" not in follow_up[-1]["content"]
+
+
+async def test_a_body_still_broken_after_the_correction_is_dropped(tmp_path):
+    bad = GOOD | {"showers-descent": "Rain on the T3 descent."}
+    endpoint = Endpoint(completion(answer(bad)))
+
+    narration = await narrate(endpoint.narrator(narration_settings(tmp_path)))
+
+    assert {h.id: h.body for h in narration.hazards}["showers-descent"] is None
+    assert len(endpoint.requests) == 2
+
+
 async def test_reasoning_and_fences_around_the_answer_are_tolerated(tmp_path):
     content = f"<think>exposed col, wet descent</think>\n```json\n{answer(GOOD)}\n```"
     narration = await narrate(Endpoint(completion(content)).narrator(narration_settings(tmp_path)))
@@ -173,12 +197,14 @@ async def test_the_fixture_answers_serve_what_the_fixture_says(tmp_path, recordi
         if not settings.narration_configured:
             pytest.skip("recording narration needs NARRATION_ENABLED, NARRATION_BASE_URL and a key")
         fixture = load_fixture(FIXTURE) if (FIXTURES / f"{FIXTURE}.json").is_file() else {}
-        captured: dict[str, str] = {}
+
+        captured: dict[str, list[str]] = {lang: []}
 
         class Capturing(LlmNarrator):
             async def _complete(self, messages):
-                captured[lang] = await super()._complete(messages)
-                return captured[lang]
+                content = await super()._complete(messages)
+                captured[lang].append(content)
+                return content
 
         served = await Capturing(settings, DiskCache(settings.cache_dir)).narrate(OESCHINEN_ROUTE, assessment, lang)
         fixture.update(recorded=True, model=settings.narration_model)
@@ -189,7 +215,9 @@ async def test_the_fixture_answers_serve_what_the_fixture_says(tmp_path, recordi
         save_fixture(FIXTURE, fixture)
 
     fixture = load_fixture(FIXTURE)
-    endpoint = Endpoint(completion(fixture["answers"][lang]))
+    # The first answer, then the correction turn if the guard sent one back.
+    answers = fixture["answers"][lang]
+    endpoint = Endpoint(*(completion(content) for content in ([answers] if isinstance(answers, str) else answers)))
     served = await endpoint.narrator(narration_settings(tmp_path, narration_model=fixture["model"])).narrate(
         OESCHINEN_ROUTE, assessment, lang
     )

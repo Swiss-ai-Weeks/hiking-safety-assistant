@@ -1,7 +1,11 @@
 {
   "answers": {
-    "en": "{\"hazards\": [{\"id\": \"gusts-hohturli\", \"body\": \"Gusts to {gust} km/h at {place} from {from}. On a difficult mountain path hands are needed for balance and exposed spots remain, so wind costs footing there well before it would lower down.\"}, {\"id\": \"showers-descent\", \"body\": \"Rain from {from}, up to {precip} mm an hour. The grades assume dry ground: wet slabs and steps on the way down, walked tired, are where feet slip.\"}]}",
-    "fr": "{\"hazards\": [{\"id\": \"gusts-hohturli\", \"body\": \"Rafales jusqu’à {gust} km/h au {place} dès {from}. Sur un chemin de montagne difficile, les mains servent à l’équilibre et des passages exposés subsistent : le vent y déséquilibre bien avant qu’en contrebas.\"}, {\"id\": \"showers-descent\", \"body\": \"Jusqu’à 1,2 mm de pluie par heure dès {from}. Les cotations supposent un terrain sec ; en descente, fatigué, les dalles mouillées glissent.\"}]}"
+    "en": [
+      "{\"hazards\": [{\"id\": \"gusts-hohturli\", \"body\": \"Strong wind gusts {gust} km/h at {elevation} m above {place} make balance hard on exposed sections with fixed cables.\"}, {\"id\": \"showers-descent\", \"body\": \"Showers {precip} mm make rock slippery on the descent; hands are needed and a slip carries further.\"}]}"
+    ],
+    "fr": [
+      "{\"hazards\": [{\"id\": \"gusts-hohturli\", \"body\": \"Des vents violents {gust} km/h sont attendus à {place} entre {from} et {to}. La météo change vite en haute montagne {elevation} m; prévoyez une alternative.\"}, {\"id\": \"showers-descent\", \"body\": \"Des pluies {precip} mm sont prévues entre {from} et {to}. Le rocher devient glissant {thresholdMm} mm; la descente est le moment le plus critique.\"}]}"
+    ]
   },
   "hazards": [
     {
@@ -78,15 +82,15 @@
       }
     }
   ],
-  "model": "nvidia/nemotron-3-nano-30b-a3b",
+  "model": "nemotron-3.5-lightning",
   "note": "Hand-written stand-ins for a model's answers until `pytest --record` is run with NARRATION_* set; the fr showers body breaks the no-figures rule on purpose.",
-  "recorded": false,
+  "recorded": true,
   "served": {
     "en": {
       "enabled": true,
       "hazards": [
         {
-          "body": "Gusts to {gust} km/h at {place} from {from}. On a difficult mountain path hands are needed for balance and exposed spots remain, so wind costs footing there well before it would lower down.",
+          "body": "Strong wind gusts {gust} km/h at {elevation} m above {place} make balance hard on exposed sections with fixed cables.",
           "citations": [
             {
               "id": "sac-scale-difficult-mountain-hiking",
@@ -104,7 +108,7 @@
           "id": "gusts-hohturli"
         },
         {
-          "body": "Rain from {from}, up to {precip} mm an hour. The grades assume dry ground: wet slabs and steps on the way down, walked tired, are where feet slip.",
+          "body": "Showers {precip} mm make rock slippery on the descent; hands are needed and a slip carries further.",
           "citations": [
             {
               "id": "wet-rock",
@@ -122,13 +126,13 @@
           "id": "showers-descent"
         }
       ],
-      "model": "nvidia/nemotron-3-nano-30b-a3b"
+      "model": "nemotron-3.5-lightning"
     },
     "fr": {
       "enabled": true,
       "hazards": [
         {
-          "body": "Rafales jusqu’à {gust} km/h au {place} dès {from}. Sur un chemin de montagne difficile, les mains servent à l’équilibre et des passages exposés subsistent : le vent y déséquilibre bien avant qu’en contrebas.",
+          "body": "Des vents violents {gust} km/h sont attendus à {place} entre {from} et {to}. La météo change vite en haute montagne {elevation} m; prévoyez une alternative.",
           "citations": [
             {
               "id": "sac-scale-difficult-mountain-hiking",
@@ -146,6 +150,7 @@
           "id": "gusts-hohturli"
         },
         {
+          "body": "Des pluies {precip} mm sont prévues entre {from} et {to}. Le rocher devient glissant {thresholdMm} mm; la descente est le moment le plus critique.",
           "citations": [
             {
               "id": "wet-rock",
@@ -163,7 +168,7 @@
           "id": "showers-descent"
         }
       ],
-      "model": "nvidia/nemotron-3-nano-30b-a3b"
+      "model": "nemotron-3.5-lightning"
     }
   }
 }

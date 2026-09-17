@@ -18,7 +18,7 @@ from ..guidance import Passage, citations_for
 from ..guidance.cite import terrain_at
 from ..models import AssessmentData, Citation, HazardDef, Lang, NarratedHazard, Narration, Route
 from ..narration.guard import normalise, violations
-from ..narration.prompt import PROMPT_VERSION, RESPONSE_SCHEMA, build_messages, parse_bodies
+from ..narration.prompt import PROMPT_VERSION, RESPONSE_SCHEMA, build_correction, build_messages, parse_bodies
 from .http import USER_AGENT, CacheKey, DiskCache
 
 log = logging.getLogger(__name__)
@@ -42,9 +42,10 @@ def _citation(passage: Passage) -> Citation:
 
 
 def _ground(route: Route, hazard: HazardDef) -> str:
+    """The ground in words only. Given "T3", a model quotes "T3", and a digit is what the guard drops."""
     terrain = terrain_at(route, hazard)
     grade = terrain.grade if terrain else route.grade
-    words = f"{grade} on the SAC scale ({GRADE_WORDS[grade]})"
+    words = f"{GRADE_WORDS[grade]} on the SAC hiking scale"
     return f"{words}, with fixed cables" if terrain and terrain.cables else words
 
 
@@ -94,26 +95,49 @@ class LlmNarrator:
                 self.settings.narration_thinking,
             )
             content = await self._complete(messages)
-            if content is None:
-                return {}
-            try:
-                answered = parse_bodies(content)
-            except ValueError as exc:
-                log.warning("narration answer unreadable (%s): %.200s", exc, content)
-                return {}
-
-            accepted: dict[str, str] = {}
-            for hazard in hazards:
-                if hazard.id not in answered:
-                    log.info("narration: no body for %s", hazard.id)
-                    continue
-                body = normalise(answered[hazard.id])
-                if problems := violations(body, hazard, lang):
-                    log.warning("narration for %s dropped: %s: %r", hazard.id, "; ".join(problems), body)
-                    continue
-                accepted[hazard.id] = body
+            accepted, rejected = self._check(content, hazards, lang)
+            if rejected and content is not None:
+                # One more turn, told exactly which rule each body broke. Its answers face the same guard.
+                follow_up = [
+                    *messages,
+                    {"role": "assistant", "content": content},
+                    {"role": "user", "content": build_correction(rejected)},
+                ]
+                retried = [hazard for hazard in hazards if hazard.id in rejected]
+                fixed, still = self._check(await self._complete(follow_up), retried, lang)
+                accepted |= fixed
+                log.info("narration: corrected %d of %d rejected bodies", len(fixed), len(rejected))
+                for hazard_id, problems in still.items():
+                    log.warning("narration for %s dropped: %s", hazard_id, "; ".join(problems))
             self.cache.write(key, accepted)
             return accepted
+
+    @staticmethod
+    def _check(
+        content: str | None, hazards: list[HazardDef], lang: Lang
+    ) -> tuple[dict[str, str], dict[str, list[str]]]:
+        """Bodies that keep the rules, and for the rest why not. An unreadable answer is neither."""
+        if content is None:
+            return {}, {}
+        try:
+            answered = parse_bodies(content)
+        except ValueError as exc:
+            log.warning("narration answer unreadable (%s): %.200s", exc, content)
+            return {}, {}
+
+        accepted: dict[str, str] = {}
+        rejected: dict[str, list[str]] = {}
+        for hazard in hazards:
+            if hazard.id not in answered:
+                log.info("narration: no body for %s", hazard.id)
+                continue
+            body = normalise(answered[hazard.id])
+            if problems := violations(body, hazard, lang):
+                log.info("narration for %s rejected: %s: %r", hazard.id, "; ".join(problems), body)
+                rejected[hazard.id] = problems
+                continue
+            accepted[hazard.id] = body
+        return accepted, rejected
 
     async def _complete(self, messages: list[dict[str, str]]) -> str | None:
         """The model's answer, or None. Tries structured output first, then plain, then gives up."""
