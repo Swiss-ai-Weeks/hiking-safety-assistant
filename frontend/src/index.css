@@ -148,7 +148,15 @@
   border: 3px solid #fff;
   box-sizing: border-box;
   box-shadow: 0 0 0 0 oklch(0.5 0.12 300 / 0.45);
-  animation: map-walker-pulse 1.4s ease-out infinite;
+  animation:
+    map-walker-in 320ms ease-out both,
+    map-walker-pulse 1.4s ease-out infinite;
+}
+@keyframes map-walker-in {
+  from {
+    opacity: 0;
+    transform: scale(0.6);
+  }
 }
 @keyframes map-walker-pulse {
   to {

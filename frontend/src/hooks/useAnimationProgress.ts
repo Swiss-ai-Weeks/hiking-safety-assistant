@@ -20,9 +20,10 @@ export function usePrefersReducedMotion(): boolean {
  * Progress from 0 to 1 over `durationMs`, restarted whenever `runKey` changes.
  *
  * `finish` jumps to the end (a tap on the animation), `replay` starts it again. With reduced motion,
- * or a zero duration, it is at the end from the first render.
+ * or a zero duration, it is at the end from the first render. `ease` shapes the returned progress;
+ * it must map 0 to 0 and 1 to 1.
  */
-export function useAnimationProgress(durationMs: number, runKey: string) {
+export function useAnimationProgress(durationMs: number, runKey: string, ease?: (p: number) => number) {
   const reduced = usePrefersReducedMotion()
   const instant = reduced || durationMs <= 0
   const [run, setRun] = useState({ key: runKey, replays: 0, finished: false })
@@ -56,6 +57,6 @@ export function useAnimationProgress(durationMs: number, runKey: string) {
     setRun((r) => ({ ...r, replays: r.replays + 1, finished: false }))
   }, [])
 
-  const value = finished ? 1 : progress
+  const value = finished || progress >= 1 ? 1 : ease ? ease(progress) : progress
   return { progress: value, done: value >= 1, finish, replay }
 }

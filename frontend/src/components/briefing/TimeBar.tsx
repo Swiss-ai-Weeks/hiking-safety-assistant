@@ -56,7 +56,7 @@ export function TimeBar({ start, end, now, stops, marks }: Props) {
         {stops.map((at, i) => (
           <span
             key={i}
-            className={`absolute top-1/2 size-1.5 -translate-x-1/2 -translate-y-1/2 rounded-full ${at <= now ? 'bg-white' : 'bg-line'}`}
+            className={`absolute top-1/2 size-1.5 -translate-x-1/2 -translate-y-1/2 rounded-full transition-colors duration-300 ${at <= now ? 'bg-white' : 'bg-line'}`}
             style={{ left: pct(at) }}
           />
         ))}

@@ -34,7 +34,10 @@ export function ElevationProfile({ profile, lengthM, alongM, marks = [] }: Props
   if (!shape) return null
   const clamped = Math.max(0, Math.min(lengthM, alongM))
   const walkerX = shape.x(clamped)
-  const walker = profile.reduce((best, p) => (Math.abs(p.alongM - clamped) < Math.abs(best.alongM - clamped) ? p : best))
+  // Between the two samples either side, so the dot glides up and down rather than stepping.
+  const at = (clamped / lengthM) * (profile.length - 1)
+  const i = Math.min(profile.length - 2, Math.floor(at))
+  const walkerElevationM = profile[i].elevationM + (at - i) * (profile[i + 1].elevationM - profile[i].elevationM)
 
   return (
     <div className="relative">
@@ -62,7 +65,7 @@ export function ElevationProfile({ profile, lengthM, alongM, marks = [] }: Props
             strokeDasharray="2 3"
           />
         ))}
-        <circle cx={walkerX} cy={shape.y(walker.elevationM)} r="5" className="fill-plum stroke-white" strokeWidth="2" />
+        <circle cx={walkerX} cy={shape.y(walkerElevationM)} r="5" className="fill-plum stroke-white" strokeWidth="2" />
       </svg>
       {marks.map((mark) => (
         <span

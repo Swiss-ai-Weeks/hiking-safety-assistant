@@ -5,7 +5,7 @@ import { AskConversation } from '../components/ask/AskConversation'
 import { useAsk } from '../components/ask/useAsk'
 import { BottomAction } from '../components/BottomAction'
 import { Button, ButtonLink, PillButton } from '../components/Button'
-import { useBriefingModel } from '../components/briefing/model'
+import { easeInOut, useBriefingModel } from '../components/briefing/model'
 import { NotAssessablePanel } from '../components/briefing/NotAssessablePanel'
 import { RouteMap } from '../components/briefing/RouteMap'
 import { STEP_COUNT, StepHeader } from '../components/briefing/StepHeader'
@@ -40,14 +40,16 @@ import { usePlan, useTurnaround } from '../store/plan'
 interface StepDef {
   title: MessageKey
   durationMs: number
+  /** How the walk paces itself; a step without one runs linearly. */
+  ease?: (p: number) => number
   map: (context: MapContext) => StepMap
   Panel: ComponentType<StepProps>
 }
 
 const STEPS: StepDef[] = [
-  { title: 'brief.step.route', durationMs: ROUTE_STEP_MS, map: routeStepMap, Panel: RoutePanel },
-  { title: 'brief.step.time', durationMs: TIME_STEP_MS, map: timeStepMap, Panel: TimePanel },
-  { title: 'brief.step.weather', durationMs: WEATHER_STEP_MS, map: weatherStepMap, Panel: WeatherPanel },
+  { title: 'brief.step.route', durationMs: ROUTE_STEP_MS, ease: easeInOut, map: routeStepMap, Panel: RoutePanel },
+  { title: 'brief.step.time', durationMs: TIME_STEP_MS, ease: easeInOut, map: timeStepMap, Panel: TimePanel },
+  { title: 'brief.step.weather', durationMs: WEATHER_STEP_MS, ease: easeInOut, map: weatherStepMap, Panel: WeatherPanel },
   { title: 'brief.step.hazards', durationMs: HAZARD_STEP_MS, map: hazardStepMap, Panel: HazardPanel },
   { title: 'brief.step.plan', durationMs: 0, map: planStepMap, Panel: PlanPanel },
 ]
@@ -92,7 +94,7 @@ function Briefing({ view }: { view: AssessmentView }) {
 
   // The walk replays when what it shows changes: a new pace or start moves every time.
   const durationMs = blocked ? 0 : def.durationMs
-  const { progress, done, finish, replay } = useAnimationProgress(durationMs, `${step}-${start}-${paceAnswer}`)
+  const { progress, done, finish, replay } = useAnimationProgress(durationMs, `${step}-${start}-${paceAnswer}`, def.ease)
 
   const goTo = (next: number) =>
     setParams((current) => {

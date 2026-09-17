@@ -12,10 +12,10 @@ import type { MapContext, StepMap } from './steps/types'
  * panels live in `steps/`; the map stays mounted across steps, so only its inputs change.
  */
 
-export const ROUTE_STEP_MS = 3200
-export const TIME_STEP_MS = 3600
-export const WEATHER_STEP_MS = 3600
-const CHECK_MS = 420
+export const ROUTE_STEP_MS = 6000
+export const TIME_STEP_MS = 6500
+export const WEATHER_STEP_MS = 6500
+const CHECK_MS = 520
 export const HAZARD_STEP_MS = CHECK_MS * (HAZARD_ORDER.length + 1)
 
 export const PACE_OPTIONS: PaceAnswer[] = ['under5', '5to6', 'over7']
@@ -50,7 +50,8 @@ export function routeStepMap({ model, progress, t }: MapContext): StepMap {
   return {
     legPaint: 'plain',
     drawnPath: progress < 1 ? pathUpTo(model.track, alongM) : null,
-    walker: progress < 1 ? (pointAlong(model.track, alongM)?.latLng ?? null) : null,
+    // The walker stays where the walk ends, rather than vanishing the moment it arrives.
+    walker: pointAlong(model.track, alongM)?.latLng ?? null,
     pins,
   }
 }
@@ -71,7 +72,7 @@ export function timeStepMap({ view, model, progress, t, turnaround }: MapContext
       variant: key.role === 'crux' ? 'crux' : '',
     }
   })
-  return { legPaint: 'plain', walker: progress < 1 ? model.walkerAt(minute).latLng : null, pins }
+  return { legPaint: 'plain', walker: model.walkerAt(minute).latLng, pins }
 }
 
 function weatherText(conditions: StopConditions | null, noData: string): string {
@@ -102,7 +103,7 @@ export function weatherStepMap({ view, model, progress, t }: MapContext): StepMa
   })
   return {
     legPaint: 'plain',
-    walker: assessable && progress < 1 ? model.walkerAt(minute).latLng : null,
+    walker: assessable ? model.walkerAt(minute).latLng : null,
     pins,
   }
 }

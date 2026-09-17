@@ -93,6 +93,11 @@ export function legPaintAt(view: AssessmentView, resolvedChecks: number): Record
   return paint
 }
 
+/** Ease-in-out for the walker: it sets off gently and comes to rest rather than stopping dead. */
+export function easeInOut(p: number): number {
+  return -(Math.cos(Math.PI * p) - 1) / 2
+}
+
 /** Ease-out for numbers counting up. */
 export function easeOut(p: number): number {
   return 1 - (1 - p) ** 3
