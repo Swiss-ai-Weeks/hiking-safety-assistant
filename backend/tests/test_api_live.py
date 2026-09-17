@@ -178,6 +178,14 @@ def test_a_route_id_that_was_never_computed_is_404(live_client):
     assert "search for it again" in response.json()["detail"]
 
 
+def test_the_demo_route_resolves_in_live_mode(live_client):
+    # The frontend opens it by default and falls back to it when a computed route has expired.
+    response = live_client.get("/api/routes/oeschinensee-bluemlisalphuette")
+
+    assert response.status_code == 200
+    assert response.json()["id"] == "oeschinensee-bluemlisalphuette"
+
+
 def test_a_computed_route_is_assessed_from_the_recorded_forecast(live_client):
     route = live_client.post("/api/routes", json=BODY).json()
 
