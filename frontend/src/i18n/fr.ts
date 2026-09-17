@@ -275,6 +275,7 @@ export const fr: Messages = {
   'ai.phrasingShort': '{model}…',
   'ask.placeholder': 'Demandez à Nemotron à propos de cette randonnée…',
   'ask.placeholderField': 'Demandez à Nemotron à propos de votre randonnée…',
+  'ask.short': 'Demander',
   'ask.send': 'Envoyer',
   'ask.title': 'Demander à Nemotron',
   'ask.close': 'Retour au briefing',

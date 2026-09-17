@@ -273,6 +273,7 @@ export const en = {
   'ai.phrasingShort': '{model}…',
   'ask.placeholder': 'Ask Nemotron about this hike…',
   'ask.placeholderField': 'Ask Nemotron about your hike…',
+  'ask.short': 'Ask',
   'ask.send': 'Send',
   'ask.title': 'Ask Nemotron',
   'ask.close': 'Back to the briefing',

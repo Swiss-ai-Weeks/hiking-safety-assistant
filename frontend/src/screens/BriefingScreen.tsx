@@ -173,6 +173,7 @@ function Briefing({ view }: { view: AssessmentView }) {
             lastStep={lastStep}
             onSelect={goTo}
             onReplay={done && durationMs > 0 && !reducedMotion ? replay : undefined}
+            onAsk={() => setChatOpen(true)}
           />
           <div className="mt-3.5">
             {blocked ? <NotAssessablePanel view={view} /> : <Panel view={view} model={model} progress={progress} />}
@@ -180,19 +181,15 @@ function Briefing({ view }: { view: AssessmentView }) {
         </div>
         )}
 
-        <div className={`shrink-0 px-[18px] ${chatOpen ? 'pt-2 pb-[max(env(safe-area-inset-bottom),16px)]' : 'pt-2'}`}>
+        {chatOpen ? (
+        <div className="shrink-0 px-[18px] pt-2 pb-[max(env(safe-area-inset-bottom),16px)]">
           <AskComposer
             pending={ask.pending}
             placeholder={t('ask.placeholder')}
-            onFocus={() => setChatOpen(true)}
-            onSend={(question) => {
-              setChatOpen(true)
-              void ask.send(question)
-            }}
+            onSend={(question) => void ask.send(question)}
           />
         </div>
-
-        {!chatOpen && (
+        ) : (
         <BottomAction>
           {step > 1 && step < STEP_COUNT && (
             <Button variant="secondary" className="w-[104px]" onClick={() => goTo(step - 1)}>

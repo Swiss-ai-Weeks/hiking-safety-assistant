@@ -48,10 +48,13 @@ test.describe('the briefing in each outcome state @demo', () => {
 })
 
 test.describe('asking about the hike', () => {
-  test('the composer is always on the briefing, and says when no model is set up @demo', async ({ page }) => {
+  test('the briefing opens the conversation, and says when no model is set up @demo', async ({ page }) => {
     const clean = watchConsole(page)
     await withPlan(page, '/briefing?step=1', {})
 
+    const open = page.getByRole('button', { name: 'Ask' })
+    await expect(open).toBeInViewport()
+    await open.click()
     const composer = page.getByRole('textbox', { name: /Ask Nemotron/ })
     await expect(composer).toBeInViewport()
     await composer.fill('When is it windiest at Hohtürli?')
@@ -70,6 +73,7 @@ test.describe('asking about the hike', () => {
     const clean = watchConsole(page)
     await withPlan(page, '/briefing?step=1', { paceAnswer: '5to6' })
 
+    await page.getByRole('button', { name: 'Ask' }).click()
     const composer = page.getByRole('textbox', { name: /Ask Nemotron/ })
     await composer.fill('Which section is the most exposed?')
     await composer.press('Enter')
