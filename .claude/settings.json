@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(uv run pytest -q)",
+      "Bash(uv run pytest -q tests/*)",
+      "Bash(uv run --directory backend pytest)",
+      "Bash(uv run ruff check app)",
+      "Bash(uv run ruff check app/)",
+      "Bash(uv run ruff check tests)",
+      "Bash(pnpm test)",
+      "Bash(pnpm lint)",
+      "Bash(pnpm exec tsc -b --force)"
+    ]
+  }
+}
