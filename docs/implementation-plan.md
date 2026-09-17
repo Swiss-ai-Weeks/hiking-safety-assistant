@@ -509,7 +509,7 @@ Tests stay offline. The frontend has 41 tests and the backend 339.
   The MCP tools are tested in process over the demo sources, including their errors.
 - A pytest reads `hazardCopy.ts` and fails if the placeholder list drifts from the server's.
 
-## Phase 6 - Ops and verification (~3 h)
+## Phase 6 - Ops and verification (~3 h) - done
 
 - An error taxonomy mapping source failures onto `not_assessable` / `partial` / specific
   gaps, so degradation is honest rather than silent.
@@ -525,6 +525,40 @@ Tests stay offline. The frontend has 41 tests and the backend 339.
 - Record the narration fixture against HP100 (`pytest --record tests/test_narrator.py` with
   `NARRATION_*` set), replacing the hand-written stand-ins, and note how many bodies the guard drops.
 - Playwright end-to-end tests over the built app for the four outcome states.
+
+### What landed
+
+Checked against the code after Phase 5 and the Briefing rewrite, then re-planned. The app is live at
+https://hiking-safety.tail685478.ts.net (systemd on `127.0.0.1:8100`, Tailscale Funnel, live sources).
+`scripts/smoke-live.sh --app <url>` passes on every source, the model and the app. What changed from the
+plan above, and what it did not say:
+
+- **Nemotron is local, not on HP100.** vLLM serves `nemotron-3.5-lightning` on `localhost:8000` on the
+  same VM, which is also why the app listens on 8100.
+- **The live check found a real bug.** On 2026-09-17 the newest ICON-CH1 run on both MeteoSwiss STAC and
+  Open-Meteo was 19 h old and ended before tomorrow's hike, so every leg came back not evaluated.
+  `model_for_day` now checks each model's actual newest run against the day's last hour, and serves the
+  whole day from one model. Once MeteoSwiss published again, the same day went back to CH1.
+- **Error taxonomy** was mostly in place already. An unexpected exception inside an assessment is now
+  `not_assessable` (not cached) instead of a 500. Any other error is JSON with a `source`. The README
+  has the table.
+- **Warm-up** assesses and narrates the showcase route for today and tomorrow in one worker, behind
+  `WARMUP_ENABLED`.
+- **Narration recorded.** The first recording served 0 of 4 bodies, because the prompt gave the grade as
+  "T3" and the guard drops digits. The grade now goes in as words, and a rejected body gets one
+  corrective turn. 30 of 30 bodies were served over 20 requests.
+- **Added at the user's request: questions.** "Ask Nemotron" (`POST /api/routes/{id}/ask`, MCP
+  `ask_about_route`) answers from a briefing whose figures are placeholders with values. An answer may
+  quote only those figures, and gives no verdict. An emergency the model will not answer gets the app's
+  own sentence. Over 40 questions: 30 answered, 5 off topic, 5 emergencies, none dropped. Known limits:
+  a real figure can be pinned to the wrong stop, and directive phrasing outside the banned patterns
+  (e.g. "do not continue") can pass.
+- **UI.** The composer is always visible on the briefing and in field mode, and model text carries a
+  sparkle Nemotron badge. Field mode was rebuilt around a full-screen map with a status bar, SOS, stats
+  and the conversation.
+- **Playwright** targets `/briefing` (the plan's `/assessment` is a redirect now). `pnpm e2e` runs 10
+  demo specs; `E2E_BASE_URL` runs a real model answer against the live app.
+- The test suite no longer reads a deployed `backend/.env`.
 
 ## Order
 
