@@ -39,7 +39,7 @@ from .weather_common import (
     floor_hour,
     lapse_correct,
     local_today,
-    model_for,
+    model_for_day,
     target_time,
     wind_speed_kmh,
 )
@@ -316,14 +316,17 @@ class IconGribSource:
             raise SourceUnavailable(SOURCE, f"STAC lists no {model.name} runs")
         return runs
 
-    async def latest_run(self, day: date | None = None) -> ModelRun:
-        model = model_for(target_time(12 * 60, day or local_today()))
+    async def newest_run(self, model: IconModel) -> ModelRun:
         return ModelRun(model.name, (await self.runs(model))[0], model.horizon_h)
+
+    async def latest_run(self, day: date | None = None) -> ModelRun:
+        _, run = await model_for_day(day or local_today(), self.newest_run)
+        return run
 
     async def forecast_at(self, point: GeoPoint, hour: int, day: date | None = None) -> PointForecast:
         day = day or local_today()
         target = target_time(hour, day)
-        model = model_for(target)
+        model, _ = await model_for_day(day, self.newest_run)
         runs = await self.runs(model)
         self._prune(model, runs)
 

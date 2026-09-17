@@ -11,6 +11,10 @@ from app.config import Settings
 
 FIXTURES = Path(__file__).parent / "fixtures"
 
+# A deployed checkout has a `backend/.env` (live mode, a model endpoint). The suite asserts on the
+# defaults, so it must not see it. Explicit environment variables still apply, as `--record` needs.
+Settings.model_config["env_file"] = None
+
 
 def pytest_addoption(parser):
     parser.addoption(

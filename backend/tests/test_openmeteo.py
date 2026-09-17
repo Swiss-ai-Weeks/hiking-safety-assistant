@@ -1,16 +1,21 @@
 """ICON over Open-Meteo, against a recorded forecast, ensemble and run metadata at Hohtürli."""
 
-from datetime import date, timedelta
+from datetime import UTC, date, datetime, time, timedelta
 
 import httpx
 import pytest
 from conftest import load_fixture, replay_by_url, save_fixture
 
-from app.domain import GeoPoint
+from app.domain import GeoPoint, ModelRun
 from app.errors import SourceUnavailable
 from app.sources.http import CachedHttpClient
 from app.sources.openmeteo import OpenMeteoIconSource, parse_ensemble, parse_forecast, parse_meta
-from app.sources.weather_common import ICON_CH1, local_today
+from app.sources.weather_common import (
+    ICON_CH1,
+    ICON_CH2,
+    local_today,
+    model_for_day,
+)
 
 pytestmark = pytest.mark.anyio
 
@@ -197,3 +202,81 @@ def test_thunder_probability_counts_members_over_the_cape_threshold():
 def test_metadata_without_a_run_time_is_unavailable():
     with pytest.raises(SourceUnavailable, match="last_run_initialisation_time"):
         parse_meta({"data_end_time": 1}, ICON_CH1)
+
+
+async def test_a_day_the_newest_fine_run_does_not_reach_is_served_by_the_coarser_model(settings):
+    """Publication fell behind: CH1's newest run ends before the hike day does, so CH2 serves the day.
+
+    Lead time alone picks CH1 for tomorrow. On 2026-09-17 the newest CH1 run was 18 h old at midday and
+    ended at 04:00Z the next morning, so every hour of tomorrow's hike was missing.
+    """
+    tomorrow = local_today() + timedelta(days=1)
+    stale_ch1 = datetime.combine(tomorrow, time(0), UTC) - timedelta(hours=30)
+    fresh_ch2 = datetime.now(UTC) - timedelta(hours=6)
+    seen: list[str] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        url = str(request.url)
+        seen.append(url)
+        if "meta.json" in url:
+            initialised = stale_ch1 if ICON_CH1.open_meteo + "/" in url else fresh_ch2
+            return httpx.Response(200, json={"last_run_initialisation_time": int(initialised.timestamp())})
+        raise AssertionError(f"unexpected {url}")
+
+    run = await source_with(settings, httpx.MockTransport(handler)).latest_run(tomorrow)
+
+    assert run.model == "ICON-CH2"
+    assert run.reference_time == fresh_ch2.replace(microsecond=0)
+
+
+async def test_model_for_day_falls_back_to_the_finest_answer_when_no_run_reaches_the_day():
+    now = datetime(2026, 9, 17, 11, tzinfo=UTC)
+    day = date(2026, 9, 17)
+    # A week old: even CH2's 120 h stop short of today.
+    old = datetime(2026, 9, 10, tzinfo=UTC)
+
+    async def run_of(model):
+        return ModelRun(model.name, old, model.horizon_h)
+
+    model, run = await model_for_day(day, run_of, now)
+
+    assert model is ICON_CH1
+    assert run.reference_time == old
+
+
+async def test_model_for_day_serves_today_from_the_fine_model_while_its_run_reaches_the_evening():
+    now = datetime(2026, 9, 17, 11, tzinfo=UTC)
+
+    async def run_of(model):
+        return ModelRun(model.name, datetime(2026, 9, 16, 18, tzinfo=UTC), model.horizon_h)
+
+    model, _ = await model_for_day(date(2026, 9, 17), run_of, now)
+
+    assert model is ICON_CH1
+
+
+async def test_model_for_day_skips_a_model_that_cannot_answer():
+    now = datetime(2026, 9, 17, 11, tzinfo=UTC)
+    day = date(2026, 9, 17)
+
+    async def run_of(model):
+        if model is ICON_CH1:
+            raise SourceUnavailable("open-meteo", "down")
+        return ModelRun(model.name, now - timedelta(hours=5), model.horizon_h)
+
+    model, _ = await model_for_day(day, run_of, now)
+
+    assert model is ICON_CH2
+
+
+async def test_model_for_day_uses_one_model_for_a_day_that_lead_time_would_split():
+    now = datetime(2026, 9, 17, 11, tzinfo=UTC)
+    # CH1 reaches 05:00 on the 18th by lead time but not 21:00: the whole day goes to CH2.
+    day = date(2026, 9, 18)
+
+    async def run_of(model):
+        return ModelRun(model.name, now - timedelta(hours=2), model.horizon_h)
+
+    model, _ = await model_for_day(day, run_of, now)
+
+    assert model is ICON_CH2

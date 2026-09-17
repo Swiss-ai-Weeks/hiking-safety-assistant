@@ -23,9 +23,8 @@ from .weather_common import (
     floor_hour,
     fraction_at_least,
     local_today,
-    model_for,
+    model_for_day,
     percentile,
-    target_time,
 )
 
 log = logging.getLogger(__name__)
@@ -141,14 +140,16 @@ class OpenMeteoIconSource:
         )
         return parse_meta(payload, model)
 
+    async def model_for_day(self, day: date) -> tuple[IconModel, ModelRun]:
+        return await model_for_day(day, self.run_of)
+
     async def latest_run(self, day: date | None = None) -> ModelRun:
-        day = day or local_today()
-        return await self.run_of(model_for(target_time(12 * 60, day)))
+        _, run = await self.model_for_day(day or local_today())
+        return run
 
     async def forecast_at(self, point: GeoPoint, hour: int, day: date | None = None) -> PointForecast:
         day = day or local_today()
-        model = model_for(target_time(hour, day))
-        run = await self.run_of(model)
+        model, run = await self.model_for_day(day)
 
         # One request per stop per day, keyed by run: every other hour of the same stop is a hit,
         # and a new run is a miss without waiting for a TTL.
@@ -172,9 +173,8 @@ class OpenMeteoIconSource:
         the absence as a reason to be partial rather than confident.
         """
         day = day or local_today()
-        model = model_for(target_time(hour, day))
         try:
-            run = await self.run_of(model)
+            model, run = await self.model_for_day(day)
             payload = await self.client.get_json(
                 f"{self.settings.open_meteo_ensemble_url}/ensemble",
                 key=CacheKey(

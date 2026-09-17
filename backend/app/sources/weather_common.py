@@ -6,13 +6,19 @@ disagree about which hour "11:00" means on the day the clocks change.
 """
 
 import math
+from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 from datetime import UTC, date, datetime, timedelta
 from zoneinfo import ZoneInfo
 
+from ..domain import ModelRun
 from ..errors import SourceUnavailable
 
 SWISS_TIME = ZoneInfo("Europe/Zurich")
+# The hours of a day the hazard engine reads (`hazards.engine.DAY_START` / `DAY_END`), as local minutes.
+# A model serves a day only if its run reaches the last of them.
+DAY_FIRST_HOUR = 5 * 60
+DAY_LAST_HOUR = 21 * 60
 
 MS_TO_KMH = 3.6
 KELVIN = 273.15
@@ -73,17 +79,62 @@ def target_time(minutes: int, day: date | None = None, now: datetime | None = No
     return local.astimezone(UTC)
 
 
-def model_for(target: datetime, now: datetime | None = None) -> IconModel:
-    """The finest model that still reaches `target`. The past is CH1's, and so is the next day."""
+def models_reaching(target: datetime, now: datetime | None = None) -> list[IconModel]:
+    """Every model that should reach `target` by its usual publication delay, finest first."""
     now = now or datetime.now(UTC)
     lead_h = (target - now).total_seconds() / 3600
-    for model in MODELS:
-        if lead_h <= model.horizon_h - model.latency_h:
-            return model
+    return [model for model in MODELS if lead_h <= model.horizon_h - model.latency_h]
+
+
+def model_for(target: datetime, now: datetime | None = None) -> IconModel:
+    """The finest model that still reaches `target`. The past is CH1's, and so is the next day."""
+    if reaching := models_reaching(target, now):
+        return reaching[0]
+    now = now or datetime.now(UTC)
+    lead_h = (target - now).total_seconds() / 3600
     raise SourceUnavailable(
         "weather",
         f"{target:%Y-%m-%d %H:%MZ} is {lead_h:.0f} h ahead, beyond ICON-CH2's {ICON_CH2.horizon_h} h horizon",
     )
+
+
+async def model_for_day(
+    day: date,
+    run_of: Callable[[IconModel], Awaitable[ModelRun]],
+    now: datetime | None = None,
+) -> tuple[IconModel, ModelRun]:
+    """The finest model whose newest *published* run reaches the whole hike day, and that run.
+
+    Choosing by lead time alone assumes each run is published on schedule. When publication falls
+    behind (on 2026-09-17 both MeteoSwiss and Open-Meteo still had yesterday's 18Z ICON-CH1 run at
+    midday), the newest CH1 run ends before tomorrow's hike starts, and every stop would go
+    unevaluated although CH2 covers the day. So each candidate's actual run is checked, and one model
+    serves the whole day: a briefing never mixes models between hours.
+
+    A candidate that cannot answer is skipped. If none covers the day, the finest run that answered
+    is used and the hours it misses are reported as gaps, as before.
+    """
+    start, end = target_time(DAY_FIRST_HOUR, day, now), target_time(DAY_LAST_HOUR, day, now)
+    candidates = models_reaching(end, now) or models_reaching(start, now)
+    if not candidates:
+        model_for(start, now)  # raises, with the horizon in the message
+    fallback: tuple[IconModel, ModelRun] | None = None
+    failure: SourceUnavailable | None = None
+    for model in candidates:
+        try:
+            run = await run_of(model)
+        except SourceUnavailable as exc:
+            failure = exc
+            continue
+        # Only the far end matters: a run started after the day is over still carries its hours
+        # (Open-Meteo serves them), and it is the finest model for a day being looked back on.
+        if run.reference_time + timedelta(hours=run.horizon_h) >= end:
+            return model, run
+        fallback = fallback or (model, run)
+    if fallback is not None:
+        return fallback
+    assert failure is not None
+    raise failure
 
 
 def wind_speed_kmh(u_ms: float, v_ms: float) -> float:
