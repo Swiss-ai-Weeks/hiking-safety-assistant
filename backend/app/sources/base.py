@@ -10,9 +10,10 @@ from typing import Protocol, runtime_checkable
 
 from ..domain import ElevationProfile, GeoPoint, ModelRun, PlaceHit, PointForecast, Warning
 from ..errors import SourceUnavailable
-from ..models import AssessmentData, Lang, Narration, Route, RouteRequest, Scenario
+from ..models import Answer, AskRequest, AssessmentData, Lang, Narration, Route, RouteRequest, Scenario
 
 __all__ = [
+    "Asker",
     "Assessor",
     "ElevationSource",
     "Narrator",
@@ -87,6 +88,18 @@ class Narrator(Protocol):
     async def narrate(self, route: Route, assessment: AssessmentData, lang: Lang) -> Narration: ...
 
 
+@runtime_checkable
+class Asker(Protocol):
+    """Answers a hiker's question about a route on a day from its assessment. Never decides anything.
+
+    Must not fail: without a model, or when the model misbehaves, `reason` says why there is no text.
+    """
+
+    async def ask(
+        self, route: Route, assessment: AssessmentData, request: AskRequest, day: date, lang: Lang
+    ) -> Answer: ...
+
+
 @dataclass(frozen=True, slots=True)
 class Sources:
     """Everything the API layer is allowed to know about where data comes from."""
@@ -98,3 +111,5 @@ class Sources:
     warnings: WarningSource
     assessor: Assessor
     narrator: Narrator
+    # Optional so a `Sources` built by hand (tests, tools) needs no model; the API then says "disabled".
+    asker: Asker | None = None

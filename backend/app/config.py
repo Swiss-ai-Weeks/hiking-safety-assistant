@@ -83,6 +83,9 @@ class Settings(BaseSettings):
     narration_thinking: bool = False
     narration_timeout_s: float = 60.0
     cache_ttl_narration_s: int = 30 * MINUTE_S
+    # Questions to the same model (`POST /api/routes/{id}/ask`), per client per minute, per worker. The
+    # endpoint is public and every question is a GPU call.
+    ask_per_minute: int = 10
 
     # Serve the MCP server over streamable HTTP at `/mcp`, next to the REST API.
     mcp_http: bool = True

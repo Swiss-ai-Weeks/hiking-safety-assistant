@@ -20,13 +20,25 @@ from pydantic import BaseModel
 from .domain import GeoPoint
 from .errors import SourceUnavailable
 from .guidance import search
-from .models import HazardKind, Lang, PlaceRef, RouteRequest, Scenario, Schema
+from .models import (
+    QUESTION_MAX_CHARS,
+    Answer,
+    AskRequest,
+    HazardKind,
+    Lang,
+    PlaceRef,
+    RouteRequest,
+    Scenario,
+    Schema,
+)
 from .sources import Sources, get_sources
+from .sources.weather_common import local_today
 
 INSTRUCTIONS = """Plan and check day hikes on the official Swiss trail network.
 
 Typical flow: search_places for each end, create_route between two results, then assess_route for
-a date. Every time is minutes since local midnight in Europe/Zurich (07:30 is 450).
+a date. ask_about_route answers a hiker's question in plain language from that same assessment.
+Every time is minutes since local midnight in Europe/Zurich (07:30 is 450).
 
 An assessment is decision support, not a verdict. Each hazard gives, per stop, the intervals of the
 day at which it is `mod` or `high`; look up the hiker's arrival time at that stop to know what
@@ -140,6 +152,32 @@ def build_server(sources: Sources | None = None) -> MCPServer:
         assessment = await sources.assessor.assess(route, scenario, date)
         narration = await sources.narrator.narrate(route, assessment, lang)
         return {"assessment": _dump(assessment), "narration": _dump(narration)}
+
+    @server.tool()
+    async def ask_about_route(
+        route_id: str,
+        question: str,
+        date: Date | None = None,
+        lang: Lang = "en",
+        scenario: Scenario = "assessed",
+    ) -> dict[str, Any]:
+        """Ask a question about hiking `route_id` on `date` (default today), in plain language.
+
+        Answered by the app's language model from the same assessment `assess_route` returns: every figure
+        in `text` is the engine's, and it never gives a go/no-go verdict. `reason` is `ok`, `off_topic`,
+        `dropped` (the answer broke the app's copy rules), `disabled` (no model configured) or
+        `unavailable` (the model did not answer). `citations` are the guidance passages it used.
+        """
+        route = await route_or_error(route_id)
+        sources = current()
+        if len(question) > QUESTION_MAX_CHARS:
+            raise ToolError(f"question is longer than {QUESTION_MAX_CHARS} characters")
+        day = date or local_today()
+        assessment = await sources.assessor.assess(route, scenario, day)
+        if sources.asker is None:
+            return _dump(Answer(enabled=False, reason="disabled", citations=[]))
+        answer = await sources.asker.ask(route, assessment, AskRequest(question=question), day, lang)
+        return _dump(answer)
 
     @server.tool()
     async def search_guidance(query: str, kind: HazardKind | None = None, limit: int = 3) -> list[dict[str, Any]]:

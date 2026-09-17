@@ -21,7 +21,24 @@ async def mcp(tmp_path):
 
 async def test_the_tools_an_agent_needs_are_listed(mcp):
     tools = {tool.name for tool in (await mcp.list_tools()).tools}
-    assert tools == {"search_places", "create_route", "get_route", "forecast_at", "assess_route", "search_guidance"}
+    assert tools == {
+        "search_places",
+        "create_route",
+        "get_route",
+        "forecast_at",
+        "assess_route",
+        "ask_about_route",
+        "search_guidance",
+    }
+
+
+async def test_ask_about_route_says_when_no_model_is_configured(mcp):
+    result = await mcp.call_tool(
+        "ask_about_route", {"route_id": "oeschinensee-bluemlisalphuette", "question": "When is it windiest?"}
+    )
+
+    assert not result.is_error
+    assert result.structured_content == {"enabled": False, "reason": "disabled", "citations": []}
 
 
 async def test_search_places_answers_like_the_api(mcp):

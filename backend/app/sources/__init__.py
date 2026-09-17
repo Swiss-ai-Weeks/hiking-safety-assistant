@@ -5,8 +5,10 @@ import logging
 from functools import lru_cache
 
 from ..config import Settings, get_settings
+from .asker import LlmAsker
 from .assessor import EngineAssessor
 from .base import (
+    Asker,
     Assessor,
     ElevationSource,
     Narrator,
@@ -31,6 +33,7 @@ from .warnings_app import AppWarningSource
 log = logging.getLogger(__name__)
 
 __all__ = [
+    "Asker",
     "Assessor",
     "ElevationSource",
     "Narrator",
@@ -54,6 +57,7 @@ def build_sources(settings: Settings) -> Sources:
             warnings=DemoWarningSource(),
             assessor=GroundedAssessor(DemoAssessor()),
             narrator=LlmNarrator(settings, DiskCache(settings.cache_dir)),
+            asker=LlmAsker(settings, DiskCache(settings.cache_dir)),
         )
 
     client = CachedHttpClient(settings)
@@ -78,6 +82,7 @@ def build_sources(settings: Settings) -> Sources:
         warnings=warnings,
         assessor=GroundedAssessor(EngineAssessor(settings, client, weather, warnings)),
         narrator=LlmNarrator(settings, client.cache),
+        asker=LlmAsker(settings, client.cache),
     )
     log.warning(
         "SOURCE_MODE=live: routes, elevation, weather (%s) and the hazard engine are live. App warnings are %s.",

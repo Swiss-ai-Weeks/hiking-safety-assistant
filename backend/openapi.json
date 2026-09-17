@@ -49,6 +49,126 @@
         "title": "AltRoute",
         "type": "object"
       },
+      "Answer": {
+        "description": "A language model's answer to a question about one route on one day, or why there is none.\n\n`text` is already filled in: the model wrote placeholders for every figure and the server put the\nengine's values there, after checking the rest carried no figure and no verdict. Absent unless\n`reason` is `ok`.",
+        "properties": {
+          "citations": {
+            "items": {
+              "$ref": "#/components/schemas/Citation"
+            },
+            "title": "Citations",
+            "type": "array"
+          },
+          "enabled": {
+            "title": "Enabled",
+            "type": "boolean"
+          },
+          "model": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model"
+          },
+          "reason": {
+            "enum": [
+              "ok",
+              "dropped",
+              "off_topic",
+              "disabled",
+              "unavailable"
+            ],
+            "title": "Reason",
+            "type": "string"
+          },
+          "text": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Text"
+          }
+        },
+        "required": [
+          "enabled",
+          "reason",
+          "citations"
+        ],
+        "title": "Answer",
+        "type": "object"
+      },
+      "AskRequest": {
+        "properties": {
+          "history": {
+            "items": {
+              "$ref": "#/components/schemas/AskTurn"
+            },
+            "maxItems": 4,
+            "title": "History",
+            "type": "array"
+          },
+          "live": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/LiveContext"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "plan": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PlanContext"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "question": {
+            "maxLength": 300,
+            "minLength": 1,
+            "title": "Question",
+            "type": "string"
+          }
+        },
+        "required": [
+          "question"
+        ],
+        "title": "AskRequest",
+        "type": "object"
+      },
+      "AskTurn": {
+        "description": "One earlier exchange, as the client showed it (answers already filled in).",
+        "properties": {
+          "answer": {
+            "maxLength": 2000,
+            "title": "Answer",
+            "type": "string"
+          },
+          "question": {
+            "maxLength": 300,
+            "title": "Question",
+            "type": "string"
+          }
+        },
+        "required": [
+          "question",
+          "answer"
+        ],
+        "title": "AskTurn",
+        "type": "object"
+      },
       "AssessmentData": {
         "properties": {
           "alternatives": {
@@ -558,6 +678,71 @@
         "title": "Leg",
         "type": "object"
       },
+      "LiveContext": {
+        "description": "Where the hiker is right now, during a hike, as field mode computes it.",
+        "properties": {
+          "cloud": {
+            "anyOf": [
+              {
+                "enum": [
+                  "above",
+                  "touching",
+                  "below"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cloud"
+          },
+          "eta": {
+            "title": "Eta",
+            "type": "integer"
+          },
+          "nextStopId": {
+            "title": "Nextstopid",
+            "type": "string"
+          },
+          "now": {
+            "title": "Now",
+            "type": "integer"
+          },
+          "offRoute": {
+            "default": false,
+            "title": "Offroute",
+            "type": "boolean"
+          },
+          "remainingAscentM": {
+            "title": "Remainingascentm",
+            "type": "integer"
+          },
+          "remainingKm": {
+            "title": "Remainingkm",
+            "type": "number"
+          },
+          "status": {
+            "enum": [
+              "ahead",
+              "behind",
+              "pastCrux"
+            ],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "now",
+          "status",
+          "nextStopId",
+          "eta",
+          "remainingKm",
+          "remainingAscentM"
+        ],
+        "title": "LiveContext",
+        "type": "object"
+      },
       "NarratedHazard": {
         "description": "The phrased explanation of one hazard, and what grounds it.\n\n`body` carries the same placeholders as the hazard copy (`{gust}`, `{place}`, …) and never a\nfigure: the client fills them from `HazardDef.facts`, so every number shown is the engine's.\nAbsent when narration is off, failed, or broke a copy rule; the client then shows its template.",
         "properties": {
@@ -713,6 +898,32 @@
           "rank"
         ],
         "title": "PlaceResult",
+        "type": "object"
+      },
+      "PlanContext": {
+        "description": "The hiker's own plan, computed client-side at their pace: when they reach each stop.",
+        "properties": {
+          "arrivals": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "title": "Arrivals",
+            "type": "object"
+          },
+          "start": {
+            "title": "Start",
+            "type": "integer"
+          },
+          "turnaround": {
+            "title": "Turnaround",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "start",
+          "turnaround"
+        ],
+        "title": "PlanContext",
         "type": "object"
       },
       "RetryResult": {
@@ -1357,6 +1568,103 @@
           }
         },
         "summary": "Get Route"
+      }
+    },
+    "/api/routes/{route_id}/ask": {
+      "post": {
+        "description": "A question about the hike on `date`, answered by a language model from the assessment and the plan.\n\nEvery figure in the answer is the engine's or the plan's, filled in by the server; the model decides\nnothing. `live` makes it about this minute of a hike under way. Never fails on the model's account:\n`reason` says why an answer has no text.",
+        "operationId": "ask_about_route_api_routes__route_id__ask_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "route_id",
+            "required": true,
+            "schema": {
+              "title": "Route Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "scenario",
+            "required": false,
+            "schema": {
+              "default": "assessed",
+              "enum": [
+                "assessed",
+                "partial",
+                "not_assessable",
+                "stale"
+              ],
+              "title": "Scenario",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "date",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Date"
+            }
+          },
+          {
+            "in": "query",
+            "name": "lang",
+            "required": false,
+            "schema": {
+              "default": "en",
+              "enum": [
+                "en",
+                "fr"
+              ],
+              "title": "Lang",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AskRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Answer"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Ask About Route"
       }
     },
     "/api/routes/{route_id}/assessment": {

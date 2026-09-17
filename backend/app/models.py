@@ -276,3 +276,64 @@ class Narration(Schema):
     enabled: bool
     model: str | None = None
     hazards: list[NarratedHazard]
+
+
+AnswerReason = Literal["ok", "dropped", "off_topic", "disabled", "unavailable"]
+FieldStatus = Literal["ahead", "behind", "pastCrux"]
+CloudAnswer = Literal["above", "touching", "below"]
+
+# Long enough for a real question, short enough that a request cannot carry an essay to the model.
+QUESTION_MAX_CHARS = 300
+HISTORY_MAX_TURNS = 4
+
+
+class AskTurn(Schema):
+    """One earlier exchange, as the client showed it (answers already filled in)."""
+
+    question: str = Field(max_length=QUESTION_MAX_CHARS)
+    answer: str = Field(max_length=2000)
+
+
+class PlanContext(Schema):
+    """The hiker's own plan, computed client-side at their pace: when they reach each stop."""
+
+    start: Minutes
+    turnaround: Minutes
+    # Stop id -> arrival, in local minutes.
+    arrivals: dict[str, Minutes] = Field(default_factory=dict)
+
+
+class LiveContext(Schema):
+    """Where the hiker is right now, during a hike, as field mode computes it."""
+
+    now: Minutes
+    status: FieldStatus
+    # The stop being walked towards, and when they get there at their pace.
+    next_stop_id: str
+    eta: Minutes
+    remaining_km: float
+    remaining_ascent_m: int
+    off_route: bool = False
+    cloud: CloudAnswer | None = None
+
+
+class AskRequest(Schema):
+    question: str = Field(min_length=1, max_length=QUESTION_MAX_CHARS)
+    history: list[AskTurn] = Field(default_factory=list, max_length=HISTORY_MAX_TURNS)
+    plan: PlanContext | None = None
+    live: LiveContext | None = None
+
+
+class Answer(Schema):
+    """A language model's answer to a question about one route on one day, or why there is none.
+
+    `text` is already filled in: the model wrote placeholders for every figure and the server put the
+    engine's values there, after checking the rest carried no figure and no verdict. Absent unless
+    `reason` is `ok`.
+    """
+
+    enabled: bool
+    model: str | None = None
+    reason: AnswerReason
+    text: str | None = None
+    citations: list[Citation]

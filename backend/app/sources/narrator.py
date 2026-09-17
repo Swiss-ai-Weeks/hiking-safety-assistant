@@ -9,7 +9,6 @@ import asyncio
 import hashlib
 import json
 import logging
-from typing import Any
 
 import httpx
 
@@ -19,7 +18,8 @@ from ..guidance.cite import terrain_at
 from ..models import AssessmentData, Citation, HazardDef, Lang, NarratedHazard, Narration, Route
 from ..narration.guard import normalise, violations
 from ..narration.prompt import PROMPT_VERSION, RESPONSE_SCHEMA, build_correction, build_messages, parse_bodies
-from .http import USER_AGENT, CacheKey, DiskCache
+from . import chat
+from .http import CacheKey, DiskCache
 
 log = logging.getLogger(__name__)
 
@@ -141,56 +141,12 @@ class LlmNarrator:
 
     async def _complete(self, messages: list[dict[str, str]]) -> str | None:
         """The model's answer, or None. Tries structured output first, then plain, then gives up."""
-        settings = self.settings
-        payload: dict[str, Any] = {
-            "model": settings.narration_model,
-            "messages": messages,
-            "temperature": TEMPERATURE,
-            "max_tokens": MAX_TOKENS,
-        }
-        extras: dict[str, Any] = {
-            "response_format": {
-                "type": "json_schema",
-                "json_schema": {"name": "narration", "schema": RESPONSE_SCHEMA, "strict": True},
-            },
-            # vLLM's switch for templates with a reasoning mode. Servers that do not know it may reject
-            # the request, which is what the plain retry below is for.
-            "chat_template_kwargs": {"enable_thinking": settings.narration_thinking},
-        }
-        headers = {"User-Agent": USER_AGENT}
-        if settings.narration_api_key:
-            headers["Authorization"] = f"Bearer {settings.narration_api_key}"
-        url = f"{settings.narration_base_url.rstrip('/')}/chat/completions"
-
-        async with httpx.AsyncClient(
-            timeout=settings.narration_timeout_s, transport=self._transport, headers=headers
-        ) as client:
-            body = payload | extras
-            retried = False
-            # At most: structured, then plain, then plain once more after a transient failure.
-            for _ in range(3):
-                try:
-                    response = await client.post(url, json=body)
-                except httpx.TransportError as exc:
-                    log.warning("narration request failed: %s", exc)
-                    if retried:
-                        return None
-                    retried = True
-                    continue
-                if response.status_code in (400, 422) and body is not payload:
-                    # The server rejects an extra it does not support: ask plainly instead.
-                    log.info("narration endpoint rejected structured output (HTTP %s)", response.status_code)
-                    body = payload
-                    continue
-                if response.status_code >= 500 and not retried:
-                    retried = True
-                    continue
-                if response.status_code >= 400:
-                    log.warning("narration endpoint answered HTTP %s: %.200s", response.status_code, response.text)
-                    return None
-                try:
-                    return response.json()["choices"][0]["message"]["content"] or None
-                except (ValueError, KeyError, IndexError, TypeError):
-                    log.warning("narration endpoint answered an unexpected body: %.200s", response.text)
-                    return None
-        return None
+        return await chat.complete(
+            self.settings,
+            messages,
+            schema_name="narration",
+            schema=RESPONSE_SCHEMA,
+            max_tokens=MAX_TOKENS,
+            temperature=TEMPERATURE,
+            transport=self._transport,
+        )

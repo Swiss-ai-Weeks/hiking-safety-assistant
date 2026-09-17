@@ -166,7 +166,7 @@ async def test_the_demo_source_stays_down_when_asked_again():
     assert await DEMO.assessor.recheck() is False
 
 
-@pytest.mark.parametrize("package", ["routing", "hazards", "guidance", "narration"])
+@pytest.mark.parametrize("package", ["routing", "hazards", "guidance", "narration", "ask"])
 def test_pure_layers_import_nothing_from_sources(package):
     """`routing/`, `hazards/`, `guidance/` and `narration/` decide; `sources/` fetches. The import graph keeps it so."""
     root = Path(app.__file__).parent / package

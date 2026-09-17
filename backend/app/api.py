@@ -1,10 +1,24 @@
+import time
+from collections import defaultdict, deque
 from datetime import date, datetime
 from typing import Annotated
 from zoneinfo import ZoneInfo
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 
-from .models import AssessmentData, Lang, Narration, PlaceResult, RetryResult, Route, RouteRequest, Scenario
+from .config import get_settings
+from .models import (
+    Answer,
+    AskRequest,
+    AssessmentData,
+    Lang,
+    Narration,
+    PlaceResult,
+    RetryResult,
+    Route,
+    RouteRequest,
+    Scenario,
+)
 from .sources import Sources, get_sources
 
 router = APIRouter(prefix="/api")
@@ -77,6 +91,56 @@ async def get_route_narration(
     route = await find_route(route_id, sources)
     assessment = await sources.assessor.assess(route, scenario, date)
     return await sources.narrator.narrate(route, assessment, lang)
+
+
+class RateLimit:
+    """At most `per_minute` requests per client over a sliding minute. In memory, per worker: a brake on
+    one client hammering a GPU endpoint, not an accounting system."""
+
+    def __init__(self) -> None:
+        self.seen: dict[str, deque[float]] = defaultdict(deque)
+
+    def allow(self, client: str, per_minute: int) -> bool:
+        now = time.monotonic()
+        stamps = self.seen[client]
+        while stamps and now - stamps[0] > 60:
+            stamps.popleft()
+        if len(stamps) >= per_minute:
+            return False
+        stamps.append(now)
+        if len(self.seen) > 10_000:
+            self.seen = defaultdict(deque, {k: v for k, v in self.seen.items() if v and now - v[-1] <= 60})
+        return True
+
+
+ask_limit = RateLimit()
+
+
+@router.post("/routes/{route_id}/ask", response_model_exclude_none=True)
+async def ask_about_route(
+    route_id: str,
+    body: AskRequest,
+    request: Request,
+    sources: SourcesDep,
+    scenario: Scenario = "assessed",
+    date: date | None = None,
+    lang: Lang = "en",
+) -> Answer:
+    """A question about the hike on `date`, answered by a language model from the assessment and the plan.
+
+    Every figure in the answer is the engine's or the plan's, filled in by the server; the model decides
+    nothing. `live` makes it about this minute of a hike under way. Never fails on the model's account:
+    `reason` says why an answer has no text.
+    """
+    client = request.client.host if request.client else "unknown"
+    if not ask_limit.allow(client, get_settings().ask_per_minute):
+        raise HTTPException(status_code=429, detail="Too many questions; try again in a minute.")
+    route = await find_route(route_id, sources)
+    day = date or datetime.now(SWISS_TIME).date()
+    assessment = await sources.assessor.assess(route, scenario, day)
+    if sources.asker is None:
+        return Answer(enabled=False, reason="disabled", citations=[])
+    return await sources.asker.ask(route, assessment, body, day, lang)
 
 
 @router.post("/forecast/retry")

@@ -98,6 +98,30 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/routes/{route_id}/ask": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Ask About Route
+         * @description A question about the hike on `date`, answered by a language model from the assessment and the plan.
+         *
+         *     Every figure in the answer is the engine's or the plan's, filled in by the server; the model decides
+         *     nothing. `live` makes it about this minute of a hike under way. Never fails on the model's account:
+         *     `reason` says why an answer has no text.
+         */
+        post: operations["ask_about_route_api_routes__route_id__ask_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/routes/{route_id}/assessment": {
         parameters: {
             query?: never;
@@ -168,6 +192,48 @@ export interface components {
             place: string;
             /** Stopid */
             stopId: string;
+        };
+        /**
+         * Answer
+         * @description A language model's answer to a question about one route on one day, or why there is none.
+         *
+         *     `text` is already filled in: the model wrote placeholders for every figure and the server put the
+         *     engine's values there, after checking the rest carried no figure and no verdict. Absent unless
+         *     `reason` is `ok`.
+         */
+        Answer: {
+            /** Citations */
+            citations: components["schemas"]["Citation"][];
+            /** Enabled */
+            enabled: boolean;
+            /** Model */
+            model?: string | null;
+            /**
+             * Reason
+             * @enum {string}
+             */
+            reason: "ok" | "dropped" | "off_topic" | "disabled" | "unavailable";
+            /** Text */
+            text?: string | null;
+        };
+        /** AskRequest */
+        AskRequest: {
+            /** History */
+            history?: components["schemas"]["AskTurn"][];
+            live?: components["schemas"]["LiveContext"] | null;
+            plan?: components["schemas"]["PlanContext"] | null;
+            /** Question */
+            question: string;
+        };
+        /**
+         * AskTurn
+         * @description One earlier exchange, as the client showed it (answers already filled in).
+         */
+        AskTurn: {
+            /** Answer */
+            answer: string;
+            /** Question */
+            question: string;
         };
         /** AssessmentData */
         AssessmentData: {
@@ -320,6 +386,34 @@ export interface components {
             toStop: string;
         };
         /**
+         * LiveContext
+         * @description Where the hiker is right now, during a hike, as field mode computes it.
+         */
+        LiveContext: {
+            /** Cloud */
+            cloud?: ("above" | "touching" | "below") | null;
+            /** Eta */
+            eta: number;
+            /** Nextstopid */
+            nextStopId: string;
+            /** Now */
+            now: number;
+            /**
+             * Offroute
+             * @default false
+             */
+            offRoute: boolean;
+            /** Remainingascentm */
+            remainingAscentM: number;
+            /** Remainingkm */
+            remainingKm: number;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "ahead" | "behind" | "pastCrux";
+        };
+        /**
          * NarratedHazard
          * @description The phrased explanation of one hazard, and what grounds it.
          *
@@ -384,6 +478,20 @@ export interface components {
             name: string;
             /** Rank */
             rank: number;
+        };
+        /**
+         * PlanContext
+         * @description The hiker's own plan, computed client-side at their pace: when they reach each stop.
+         */
+        PlanContext: {
+            /** Arrivals */
+            arrivals?: {
+                [key: string]: number;
+            };
+            /** Start */
+            start: number;
+            /** Turnaround */
+            turnaround: number;
         };
         /** RetryResult */
         RetryResult: {
@@ -681,6 +789,45 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Route"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    ask_about_route_api_routes__route_id__ask_post: {
+        parameters: {
+            query?: {
+                scenario?: "assessed" | "partial" | "not_assessable" | "stale";
+                date?: string | null;
+                lang?: "en" | "fr";
+            };
+            header?: never;
+            path: {
+                route_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AskRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Answer"];
                 };
             };
             /** @description Validation Error */
