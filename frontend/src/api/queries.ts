@@ -1,5 +1,5 @@
 import { queryOptions } from '@tanstack/react-query'
-import type { AssessmentData, Minutes, PlaceResult, Route, RouteRequest, Scenario } from '../domain/types'
+import type { AssessmentData, Lang, Minutes, Narration, PlaceResult, Route, RouteRequest, Scenario } from '../domain/types'
 import { api } from './client'
 
 export const routeQuery = (routeId: string) =>
@@ -16,6 +16,23 @@ export const assessmentQuery = (routeId: string, scenario: Scenario, date: strin
       api<AssessmentData>(
         `/routes/${encodeURIComponent(routeId)}/assessment?scenario=${scenario}&date=${encodeURIComponent(date)}`,
       ),
+  })
+
+/**
+ * The same hazards phrased by a language model, with the guidance each is grounded in.
+ *
+ * Never on the critical path: the cards render from the assessment and its templates first, and a
+ * failed or slow narration leaves them as they are. Not retried, for the same reason.
+ */
+export const narrationQuery = (routeId: string, scenario: Scenario, date: string, lang: Lang) =>
+  queryOptions({
+    queryKey: ['narration', routeId, scenario, date, lang],
+    queryFn: () =>
+      api<Narration>(
+        `/routes/${encodeURIComponent(routeId)}/narration?scenario=${scenario}&date=${encodeURIComponent(date)}&lang=${lang}`,
+      ),
+    retry: false,
+    staleTime: 5 * 60_000,
   })
 
 /** "Try again" on the not-assessable screen: asks the forecast source whether it answers now. */

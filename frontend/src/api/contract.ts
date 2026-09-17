@@ -12,10 +12,14 @@
 import type {
   Alternative,
   AssessmentData,
+  Citation,
   Forecast,
   HazardDef,
   HazardFacts,
+  Lang,
   Leg,
+  NarratedHazard,
+  Narration,
   NotEvaluated,
   PlaceRef,
   PlaceResult,
@@ -75,6 +79,9 @@ export type _HazardFactsKeys = Expect<Exact<keyof HazardFacts, keyof Schemas['Ha
 export type _StopConditionsKeys = Expect<Exact<keyof StopConditions, keyof Schemas['StopConditions']>>
 export type _PlaceResultKeys = Expect<Exact<keyof PlaceResult, keyof Schemas['PlaceResult']>>
 export type _PlaceRefKeys = Expect<Exact<keyof PlaceRef, keyof Schemas['PlaceRef']>>
+export type _CitationKeys = Expect<Exact<keyof Citation, keyof Schemas['Citation']>>
+export type _NarratedHazardKeys = Expect<Exact<keyof NarratedHazard, keyof Schemas['NarratedHazard']>>
+export type _NarrationKeys = Expect<Exact<keyof Narration, keyof Schemas['Narration']>>
 
 // Field types. This is the assertion a retype breaks (Minutes -> string, a widened enum, a
 // tuple becoming a list).
@@ -88,6 +95,9 @@ export type _StopConditions = Expect<Assignable<Wire<'StopConditions'>, StopCond
 export type _Forecast = Expect<Assignable<Wire<'Forecast'>, Forecast>>
 export type _Assessment = Expect<Assignable<Wire<'AssessmentData'>, AssessmentData>>
 export type _HazardFacts = Expect<Assignable<Wire<'HazardFacts'>, HazardFacts>>
+export type _Citation = Expect<Assignable<Wire<'Citation'>, Citation>>
+export type _NarratedHazard = Expect<Assignable<Wire<'NarratedHazard'>, NarratedHazard>>
+export type _Narration = Expect<Assignable<Wire<'Narration'>, Narration>>
 export type _Alternative = Expect<Assignable<Wire<'StartEarlier'> | Wire<'AltRoute'>, Alternative>>
 
 // The endpoints as `api/queries.ts` actually calls them: the cast in each `queryFn` is checked
@@ -97,6 +107,9 @@ export type _RouteEndpoint = Expect<
 >
 export type _AssessmentEndpoint = Expect<
   Assignable<Json<paths['/api/routes/{route_id}/assessment']['get']['responses'][200]>, AssessmentData>
+>
+export type _NarrationEndpoint = Expect<
+  Assignable<Json<paths['/api/routes/{route_id}/narration']['get']['responses'][200]>, Narration>
 >
 export type _RetryEndpoint = Expect<
   Assignable<
@@ -121,3 +134,8 @@ type ScenarioQuery = NonNullable<
 >['scenario']
 
 export type _ScenarioParam = Expect<Exact<Scenario, NonNullable<ScenarioQuery>>>
+
+// `?lang=` is exactly the languages the UI has.
+type NarrationQuery = NonNullable<paths['/api/routes/{route_id}/narration']['get']['parameters']['query']>
+
+export type _LangParam = Expect<Exact<Lang, NonNullable<NarrationQuery['lang']>>>

@@ -10,11 +10,12 @@ from typing import Protocol, runtime_checkable
 
 from ..domain import ElevationProfile, GeoPoint, ModelRun, PlaceHit, PointForecast, Warning
 from ..errors import SourceUnavailable
-from ..models import AssessmentData, Route, RouteRequest, Scenario
+from ..models import AssessmentData, Lang, Narration, Route, RouteRequest, Scenario
 
 __all__ = [
     "Assessor",
     "ElevationSource",
+    "Narrator",
     "RouteSource",
     "SourceUnavailable",
     "Sources",
@@ -76,6 +77,16 @@ class Assessor(Protocol):
         ...
 
 
+@runtime_checkable
+class Narrator(Protocol):
+    """Phrases an assessment's hazards and cites what grounds them. Never decides anything.
+
+    Must not fail: without a model, or when the model misbehaves, a hazard simply has no body.
+    """
+
+    async def narrate(self, route: Route, assessment: AssessmentData, lang: Lang) -> Narration: ...
+
+
 @dataclass(frozen=True, slots=True)
 class Sources:
     """Everything the API layer is allowed to know about where data comes from."""
@@ -86,3 +97,4 @@ class Sources:
     weather: WeatherSource
     warnings: WarningSource
     assessor: Assessor
+    narrator: Narrator

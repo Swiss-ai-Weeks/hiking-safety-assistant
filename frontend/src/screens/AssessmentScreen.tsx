@@ -1,4 +1,4 @@
-import { useQueryClient } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useNavigate } from 'react-router'
 import { AlternativeCard } from '../components/AlternativeCard'
@@ -11,7 +11,7 @@ import { HazardCard, NotEvaluatedCard } from '../components/HazardCard'
 import { OutcomeLine } from '../components/OutcomeLine'
 import { ScreenHeader } from '../components/ScreenHeader'
 import { Timeline } from '../components/Timeline'
-import { retryForecast } from '../api/queries'
+import { narrationQuery, retryForecast } from '../api/queries'
 import { conditionsAt, gustAt, nothingFlaggedRange } from '../domain/assessment'
 import { computeArrivals, formatArrival, formatClock } from '../domain/timing'
 import { useAssessmentView, type AssessmentView } from '../hooks/useAssessmentView'
@@ -50,7 +50,9 @@ function Assessed({ view }: { view: AssessmentView }) {
   const setStart = usePlan((s) => s.setStart)
   const ready = useDelayed(STREAM_DELAY_MS)
 
-  const { route, data, arrivals, evaluation, start, paceAnswer, search } = view
+  const { route, data, arrivals, evaluation, start, paceAnswer, search, scenario } = view
+  // Not suspended and not blocking: until (or unless) it answers, the cards keep their templates.
+  const narration = useQuery(narrationQuery(route.id, scenario, date, lang)).data
   const forecastTime = formatClock(data.forecast.issuedAt)
   const mapTo = { pathname: '/assessment/map', search }
 
@@ -106,7 +108,11 @@ function Assessed({ view }: { view: AssessmentView }) {
             <section className="flex flex-col gap-2.5">
               <SectionTitle>{t('flagged.title')}</SectionTitle>
               {evaluation.flagged.map((flagged) => (
-                <HazardCard key={flagged.hazard.id} flagged={flagged} />
+                <HazardCard
+                  key={flagged.hazard.id}
+                  flagged={flagged}
+                  narrated={narration?.hazards.find((h) => h.id === flagged.hazard.id)}
+                />
               ))}
               {evaluation.notEvaluatedLegs.length > 0 && (
                 <NotEvaluatedCard range={legsRange(route, evaluation.notEvaluatedLegs, t)} />

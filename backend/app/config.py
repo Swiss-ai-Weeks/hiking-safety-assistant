@@ -71,6 +71,26 @@ class Settings(BaseSettings):
     # None of the sources need a key today. Kept so adding one is configuration, not code.
     open_meteo_api_key: str | None = None
 
+    # Hazard narration: a language model rephrases the computed hazards, under the copy rules. Any
+    # OpenAI-compatible chat completions endpoint (vLLM, NVIDIA NIM, …) works. Off, or without a
+    # base URL, the app shows its templated copy and nothing else changes.
+    narration_enabled: bool = False
+    # Up to and including `/v1`, e.g. `https://…/v1`; `/chat/completions` is appended.
+    narration_base_url: str | None = None
+    narration_api_key: str | None = None
+    narration_model: str = "nvidia/nemotron-3-nano-30b-a3b"
+    # Reasoning models think before they answer. Phrasing needs none of it, and it costs latency.
+    narration_thinking: bool = False
+    narration_timeout_s: float = 60.0
+    cache_ttl_narration_s: int = 30 * MINUTE_S
+
+    # Serve the MCP server over streamable HTTP at `/mcp`, next to the REST API.
+    mcp_http: bool = True
+
+    @property
+    def narration_configured(self) -> bool:
+        return self.narration_enabled and bool(self.narration_base_url)
+
     @property
     def grib_dir(self) -> Path:
         return self.grib_cache_dir or self.cache_dir / "grib"

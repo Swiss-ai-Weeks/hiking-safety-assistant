@@ -9,6 +9,7 @@ from .assessor import EngineAssessor
 from .base import (
     Assessor,
     ElevationSource,
+    Narrator,
     RouteSource,
     Sources,
     SourceUnavailable,
@@ -16,9 +17,11 @@ from .base import (
     WeatherSource,
 )
 from .demo import DemoAssessor, DemoElevationSource, DemoRouteSource, DemoWarningSource, DemoWeatherSource
-from .http import CachedHttpClient
+from .grounded import GroundedAssessor
+from .http import CachedHttpClient, DiskCache
 from .icon_grib import IconGribSource
 from .names import SwissNamesSource
+from .narrator import LlmNarrator
 from .openmeteo import OpenMeteoIconSource
 from .osm import OverpassGradeSource
 from .swissalti import SwissAltiElevationSource
@@ -30,6 +33,7 @@ log = logging.getLogger(__name__)
 __all__ = [
     "Assessor",
     "ElevationSource",
+    "Narrator",
     "RouteSource",
     "SourceUnavailable",
     "Sources",
@@ -48,7 +52,8 @@ def build_sources(settings: Settings) -> Sources:
             elevation=DemoElevationSource(),
             weather=DemoWeatherSource(),
             warnings=DemoWarningSource(),
-            assessor=DemoAssessor(),
+            assessor=GroundedAssessor(DemoAssessor()),
+            narrator=LlmNarrator(settings, DiskCache(settings.cache_dir)),
         )
 
     client = CachedHttpClient(settings)
@@ -71,13 +76,16 @@ def build_sources(settings: Settings) -> Sources:
         elevation=elevation,
         weather=weather,
         warnings=warnings,
-        assessor=EngineAssessor(settings, client, weather, warnings),
+        assessor=GroundedAssessor(EngineAssessor(settings, client, weather, warnings)),
+        narrator=LlmNarrator(settings, client.cache),
     )
     log.warning(
         "SOURCE_MODE=live: routes, elevation, weather (%s) and the hazard engine are live. App warnings are %s.",
         settings.weather_source,
         "on" if settings.meteoswiss_app_warnings else "off",
     )
+    if settings.narration_enabled and not settings.narration_base_url:
+        log.warning("NARRATION_ENABLED=true but NARRATION_BASE_URL is unset: hazards keep their templated copy")
     if settings.weather_source == "grib" and importlib.util.find_spec("eccodes") is None:
         log.warning(
             "WEATHER_SOURCE=grib but eccodes is not installed, so every forecast will fail: "

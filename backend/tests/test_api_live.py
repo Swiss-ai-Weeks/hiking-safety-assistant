@@ -16,8 +16,10 @@ from app.main import create_app
 from app.sources import get_sources
 from app.sources.assessor import EngineAssessor
 from app.sources.base import Sources
+from app.sources.grounded import GroundedAssessor
 from app.sources.http import CachedHttpClient
 from app.sources.names import SwissNamesSource
+from app.sources.narrator import LlmNarrator
 from app.sources.openmeteo import OpenMeteoIconSource
 from app.sources.osm import OverpassGradeSource
 from app.sources.swissalti import SwissAltiElevationSource
@@ -68,7 +70,8 @@ def live_sources(settings: Settings, client: CachedHttpClient) -> Sources:
         elevation=elevation,
         weather=weather,
         warnings=warnings,
-        assessor=EngineAssessor(settings, client, weather, warnings, now=recorded_now),
+        assessor=GroundedAssessor(EngineAssessor(settings, client, weather, warnings, now=recorded_now)),
+        narrator=LlmNarrator(settings, client.cache),
     )
 
 

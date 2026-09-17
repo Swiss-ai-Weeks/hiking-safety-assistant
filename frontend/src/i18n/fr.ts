@@ -81,6 +81,8 @@ export const fr: Messages = {
   'flagged.nothingOn': 'Rien de signalé sur {range} selon les données de {time}.',
   'flagged.nothingAll': 'Rien de signalé sur cette randonnée selon les données de {time}.',
   'flagged.liftsIf': 'Levé si',
+  'flagged.narrated': 'Formulé par un modèle de langage. Chiffres, heures et niveaux viennent des règles de prévision.',
+  'flagged.guidance': 'Références :',
   'flagged.notEvaluated': 'Non évalué : {range}',
   'flagged.notEvaluatedBody':
     'Pas de données de rafales au-dessus de 2 600 m pour ce tronçon. Les suggestions qui en dépendent sont masquées.',

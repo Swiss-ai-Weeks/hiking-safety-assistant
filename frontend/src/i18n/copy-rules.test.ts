@@ -1,13 +1,20 @@
 import { describe, expect, it } from 'vitest'
 import { en, type MessageKey } from './en'
 import { fr } from './fr'
-import { BASE_PLACEHOLDERS, FACT_PLACEHOLDERS } from './hazardCopy'
+import type { HazardDef, Lang, Narration } from '../domain/types'
+import { BANNED, verdictsIn } from './copyRules'
+import { BASE_PLACEHOLDERS, FACT_PLACEHOLDERS, hazardParams, narratedBody } from './hazardCopy'
 
-/** The UI never gives a verdict: no "safe", "fine", "clear to" (spec copy rules). */
-const BANNED: Record<'en' | 'fr', RegExp[]> = {
-  en: [/\bsafe(ly)?\b/i, /\bfine\b/i, /\bclear to\b/i, /\bgood to go\b/i, /\bgo ahead\b/i],
-  fr: [/(^|[^\p{L}])sûre?s?(?=[^\p{L}]|$)/iu, /sans danger/i, /en sécurité/i, /vous pouvez y aller/i],
-}
+/**
+ * What the backend serves as narration for the demo hazards, in both languages: model answers put
+ * through its parser and guard (`backend/tests/test_narrator.py` checks the `served` part is exactly
+ * what they produce). `pytest --record` replaces the answers with a real model's.
+ */
+type NarrationFixture = { recorded: boolean; hazards: HazardDef[]; served: Record<Lang, Narration> }
+const narrationFixtures = import.meta.glob<NarrationFixture>('../../../backend/tests/fixtures/narration_*.json', {
+  eager: true,
+  import: 'default',
+})
 
 const PLACE_NAMES = ['Oeschinensee', 'Oberbärgli', 'Hohtürli', 'Blüemlisalphütte', 'Hütte']
 
@@ -70,5 +77,39 @@ describe('copy rules', () => {
       )
       expect(genericNeedingFacts).toEqual([])
     })
+  })
+
+  describe('generated hazard copy', () => {
+    const fixtures = Object.entries(narrationFixtures)
+
+    it('has served narration to check', () => {
+      expect(fixtures.length).toBeGreaterThan(0)
+      for (const [, fixture] of fixtures) {
+        const bodies = (['en', 'fr'] as const).flatMap((lang) => fixture.served[lang].hazards.filter((h) => h.body))
+        expect(bodies.length).toBeGreaterThan(0)
+      }
+    })
+
+    for (const lang of ['en', 'fr'] as const) {
+      it(`${lang}: every served body carries no figures, only fillable placeholders and no verdict`, () => {
+        const problems = fixtures.flatMap(([file, fixture]) =>
+          fixture.served[lang].hazards.flatMap(({ id, body }) => {
+            if (!body) return []
+            const hazard = fixture.hazards.find((h) => h.id === id)
+            if (!hazard) return [`${file} ${id}: no such hazard`]
+            const params = hazardParams(hazard, lang)
+            return [
+              ...(/\d/.test(body) ? [`${id}: figure in "${body}"`] : []),
+              ...placeholders(body)
+                .filter((name) => !(name in params))
+                .map((name) => `${id}: {${name}} unfillable`),
+              ...verdictsIn(body, lang).map((pattern) => `${id} ${pattern}: ${body}`),
+              ...(narratedBody(lang, hazard, body) === null ? [`${id}: refused at display: ${body}`] : []),
+            ]
+          }),
+        )
+        expect(problems).toEqual([])
+      })
+    }
   })
 })

@@ -12,14 +12,21 @@ Type=simple
 User=hiker
 WorkingDirectory=/opt/hiking-safety-assistant/backend
 Environment=PYTHONUNBUFFERED=1
-# Which sources the service uses. `live` routes and forecasts for real; the hazard engine is not
-# implemented yet and fails loudly when called. `/api/health` reports the active mode.
+# Which sources the service uses. `live` routes, forecasts and assesses for real. `/api/health`
+# reports the active mode.
 Environment=SOURCE_MODE=demo
 # `grib` needs `uv sync --directory backend --no-dev --frozen --group grib` (on Linux the `eccodeslib`
 # wheel supplies the C library). `open-meteo` needs nothing and serves the same ICON model.
 #Environment=WEATHER_SOURCE=grib
 # Opt in to MeteoSwiss warnings from the app's undocumented API. Off, warnings are a reported gap.
 #Environment=METEOSWISS_APP_WARNINGS=false
+# Hazard narration through any OpenAI-compatible endpoint. Off, or without a URL, hazards keep their
+# templated copy. Put the key in a drop-in (`systemctl edit`), not in this file.
+#Environment=NARRATION_ENABLED=true
+#Environment=NARRATION_BASE_URL=https://…/v1
+#Environment=NARRATION_MODEL=nvidia/nemotron-3-nano-30b-a3b
+# The MCP server at /mcp, next to the API. Unauthenticated, like the API.
+#Environment=MCP_HTTP=true
 Environment=CACHE_DIR=/opt/hiking-safety-assistant/backend/.cache
 ExecStart=/opt/hiking-safety-assistant/backend/.venv/bin/uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers 2
 Restart=on-failure

@@ -28,7 +28,7 @@ Switch between demo states (assessed, partially assessed, not assessable, stale 
 
 The backend reads its settings from the environment, or a `backend/.env` file — see [backend/app/config.py](backend/app/config.py) for every field and its default.
 
-`SOURCE_MODE` picks where data comes from. `demo` (the default) serves the hand-authored Oeschinensee data. `live` routes over the real swisstopo trail network and reads real MeteoSwiss forecasts; the hazard engine still fails with a 503 naming the phase that implements it. `/api/health` reports the active mode.
+`SOURCE_MODE` picks where data comes from. `demo` (the default) serves the hand-authored Oeschinensee data. `live` routes over the real swisstopo trail network, reads real MeteoSwiss forecasts and runs the hazard engine over them. `/api/health` reports the active mode.
 
 ### Weather data
 
@@ -45,6 +45,35 @@ Under `SOURCE_MODE=live`, `WEATHER_SOURCE` picks one of two implementations of t
 Ensemble spread (10th and 90th percentile of gusts and precipitation, and thunderstorm potential from CAPE) comes from Open-Meteo's ensemble API for both sources. As GRIB it would be ten times the download.
 
 MeteoSwiss publishes no weather warnings as open data. `METEOSWISS_APP_WARNINGS=true` reads them from the undocumented API behind the MeteoSwiss app, and marks each one unofficial. Off (the default), warnings stay a reported gap rather than an empty all-clear.
+
+### AI layer
+
+The rules engine decides every hazard. The AI layer grounds, phrases and exposes those decisions. It never makes one.
+
+**Guidance and citations.** [backend/app/guidance/corpus/](backend/app/guidance/corpus/) holds 18 short passages in our own words, each paraphrasing a page it links to: the SAC Mountain and Alpine Hiking Scale, SAC and Suisse Rando safety advice, MeteoSwiss and the federal danger levels. BM25 retrieval, boosted by each passage's hazard-kind and grade tags, picks the passages for each hazard. The top one is appended to its `provenance`, and all of them come back from `/narration` as links. This needs no model and no key.
+
+**Narration.** Off by default. Any OpenAI-compatible chat completions endpoint works (vLLM, NVIDIA NIM, …):
+
+```sh
+NARRATION_ENABLED=true
+NARRATION_BASE_URL=https://…/v1        # `/chat/completions` is appended
+NARRATION_API_KEY=…
+NARRATION_MODEL=nvidia/nemotron-3-nano-30b-a3b
+NARRATION_THINKING=false               # sends /no_think and enable_thinking=false
+```
+
+The model rewrites each hazard's body using the retrieved passages. It may quote a figure only as a placeholder (`{gust} km/h`), and the client fills those from the engine's `facts`, so a narrated body may not contain a digit at all. [backend/app/narration/guard.py](backend/app/narration/guard.py) drops any body that has a digit or a placeholder the hazard cannot fill, or that uses verdict wording (the UI's banned words plus a stricter list for generated text). The client checks it again before showing it. A dropped body, a timeout or a bad key cost that phrasing only: the card shows its template. A narrated card says it was worded by a language model. One request covers every hazard in an assessment, per language, and the result is cached for 30 minutes.
+
+`pytest --record` with those variables set re-records `backend/tests/fixtures/narration_oeschinensee.json` from the real model. `copy-rules.test.ts` holds what it serves to the same rules as the templates. Until it is recorded, the fixture holds hand-written stand-ins and says so (`"recorded": false`).
+
+**MCP server.** The engine as tools for any agent: `search_places`, `create_route`, `get_route`, `forecast_at`, `assess_route` (assessment plus citations and narration) and `search_guidance`. They call the same sources in process, so the caches are shared and the shapes match `/api`.
+
+```sh
+claude mcp add hiking-safety -- uv run --directory "$PWD/backend" python -m app.mcp_server   # stdio
+claude mcp add --transport http hiking-safety http://localhost:8000/mcp                     # the running app
+```
+
+The running app serves `/mcp` unless `MCP_HTTP=false`. It has no authentication, like the rest of the API.
 
 ### Trail data
 
@@ -81,8 +110,9 @@ A rename then fails `pytest` (the schema snapshot is stale) and `tsc -b` (the as
 | POST | `/api/routes` | Routes `{from, to, via?}` over swissTLM3D. The id it returns is a digest of the request, so the same search is always the same route |
 | GET | `/api/routes/{routeId}` | Route geometry, stops and legs |
 | GET | `/api/routes/{routeId}/assessment?scenario=assessed` | Forecast, hazards, gaps and alternatives (`assessed`, `partial`, `not_assessable`, `stale`) |
-| GET | `/api/recent-routes` | Recently checked routes |
+| GET | `/api/routes/{routeId}/narration?scenario=&date=&lang=en` | The assessment's hazards phrased by a language model (when configured), and the guidance each is grounded in |
 | POST | `/api/forecast/retry` | Re-checks the forecast source |
+| POST | `/mcp` | The MCP server over streamable HTTP (see [AI layer](#ai-layer)) |
 
 Interactive docs are at `/docs` while the backend runs.
 

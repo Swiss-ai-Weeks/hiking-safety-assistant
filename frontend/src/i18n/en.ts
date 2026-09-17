@@ -78,6 +78,8 @@ export const en = {
   'flagged.nothingOn': 'Nothing flagged on {range} given data as of {time}.',
   'flagged.nothingAll': 'Nothing flagged on this hike given data as of {time}.',
   'flagged.liftsIf': 'Lifts if',
+  'flagged.narrated': 'Worded by a language model. The figures, times and severity come from the forecast rules.',
+  'flagged.guidance': 'Guidance:',
   'flagged.notEvaluated': 'Not evaluated: {range}',
   'flagged.notEvaluatedBody':
     'No gust data above 2 600 m for this section. Suggestions that depend on it are hidden.',

@@ -118,6 +118,29 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/routes/{route_id}/narration": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Route Narration
+         * @description The assessment's hazards phrased in `lang`, with the guidance each is grounded in.
+         *
+         *     Separate from the assessment so a slow model never holds it up. Never fails on the model's
+         *     account: a hazard without a `body` keeps its templated copy.
+         */
+        get: operations["get_route_narration_api_routes__route_id__narration_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -168,6 +191,20 @@ export interface components {
             outcome: "assessed" | "partial" | "not_assessable";
             /** Stale */
             stale: boolean;
+        };
+        /**
+         * Citation
+         * @description A guidance passage a hazard is grounded in: `guidance/corpus/<id>.md`, and the page it paraphrases.
+         */
+        Citation: {
+            /** Id */
+            id: string;
+            /** Publisher */
+            publisher: string;
+            /** Title */
+            title: string;
+            /** Url */
+            url: string;
         };
         /** Forecast */
         Forecast: {
@@ -281,6 +318,31 @@ export interface components {
             toIndex?: number | null;
             /** Tostop */
             toStop: string;
+        };
+        /**
+         * NarratedHazard
+         * @description The phrased explanation of one hazard, and what grounds it.
+         *
+         *     `body` carries the same placeholders as the hazard copy (`{gust}`, `{place}`, …) and never a
+         *     figure: the client fills them from `HazardDef.facts`, so every number shown is the engine's.
+         *     Absent when narration is off, failed, or broke a copy rule; the client then shows its template.
+         */
+        NarratedHazard: {
+            /** Body */
+            body?: string | null;
+            /** Citations */
+            citations: components["schemas"]["Citation"][];
+            /** Id */
+            id: string;
+        };
+        /** Narration */
+        Narration: {
+            /** Enabled */
+            enabled: boolean;
+            /** Hazards */
+            hazards: components["schemas"]["NarratedHazard"][];
+            /** Model */
+            model?: string | null;
         };
         /** NotEvaluated */
         NotEvaluated: {
@@ -653,6 +715,41 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["AssessmentData"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_route_narration_api_routes__route_id__narration_get: {
+        parameters: {
+            query?: {
+                scenario?: "assessed" | "partial" | "not_assessable" | "stale";
+                date?: string | null;
+                lang?: "en" | "fr";
+            };
+            header?: never;
+            path: {
+                route_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Narration"];
                 };
             };
             /** @description Validation Error */

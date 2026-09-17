@@ -15,11 +15,13 @@ from app.sources.assessor import EngineAssessor
 from app.sources.base import (
     Assessor,
     ElevationSource,
+    Narrator,
     RouteSource,
     SourceUnavailable,
     WarningSource,
     WeatherSource,
 )
+from app.sources.grounded import GroundedAssessor
 from app.sources.icon_grib import IconGribSource
 from app.sources.openmeteo import OpenMeteoIconSource
 from app.sources.swissalti import SwissAltiElevationSource
@@ -39,6 +41,7 @@ def test_demo_sources_satisfy_the_protocols():
     assert isinstance(DEMO.weather, WeatherSource)
     assert isinstance(DEMO.warnings, WarningSource)
     assert isinstance(DEMO.assessor, Assessor)
+    assert isinstance(DEMO.narrator, Narrator)
 
 
 async def test_demo_route_source_serves_the_showcase_route():
@@ -48,7 +51,15 @@ async def test_demo_route_source_serves_the_showcase_route():
 
 @pytest.mark.parametrize("scenario", SCENARIOS)
 async def test_demo_assessor_still_serves_every_scenario(scenario):
-    assert await DEMO.assessor.assess(OESCHINEN_ROUTE, scenario) == get_assessment(scenario)
+    served = await DEMO.assessor.assess(OESCHINEN_ROUTE, scenario)
+    authored = get_assessment(scenario)
+
+    # Identical but for the guidance each hazard now cites at the end of its provenance.
+    uncited = []
+    for hazard, original in zip(served.hazards, authored.hazards, strict=True):
+        assert hazard.provenance.startswith(f"{original.provenance} · ")
+        uncited.append(hazard.model_copy(update={"provenance": original.provenance}))
+    assert served.model_copy(update={"hazards": uncited}) == authored
 
 
 async def test_demo_search_matches_waypoints_by_name():
@@ -143,19 +154,21 @@ async def test_live_warnings_are_a_gap_unless_the_app_feed_is_enabled():
 def test_live_mode_runs_the_hazard_engine_over_the_configured_weather():
     live = build_sources(Settings(source_mode="live", weather_source="open-meteo"))
 
-    assert isinstance(live.assessor, EngineAssessor)
+    assert isinstance(live.assessor, GroundedAssessor)
     assert isinstance(live.assessor, Assessor)
-    assert live.assessor.weather is live.weather
-    assert live.assessor.warnings is live.warnings
+    engine = live.assessor.inner
+    assert isinstance(engine, EngineAssessor)
+    assert engine.weather is live.weather
+    assert engine.warnings is live.warnings
 
 
 async def test_the_demo_source_stays_down_when_asked_again():
     assert await DEMO.assessor.recheck() is False
 
 
-@pytest.mark.parametrize("package", ["routing", "hazards"])
+@pytest.mark.parametrize("package", ["routing", "hazards", "guidance", "narration"])
 def test_pure_layers_import_nothing_from_sources(package):
-    """`routing/` and `hazards/` decide; `sources/` fetches. The import graph keeps it that way."""
+    """`routing/`, `hazards/`, `guidance/` and `narration/` decide; `sources/` fetches. The import graph keeps it so."""
     root = Path(app.__file__).parent / package
     offending = []
     for path in root.glob("*.py"):

@@ -134,3 +134,48 @@ def test_serves_frontend_with_spa_fallback(tmp_path):
     missing_api = client.get("/api/nope")
     assert missing_api.status_code == 404
     assert missing_api.headers["content-type"] == "application/json"
+
+
+def test_hazard_provenance_cites_the_guidance_it_is_grounded_in(client):
+    gusts, showers = assessment(client, "assessed")["hazards"]
+    assert gusts["provenance"].endswith(" · SAC hiking scale")
+    assert showers["provenance"].endswith(" · SAC hiking scale")
+
+
+def test_narration_without_a_model_still_cites_its_guidance(client):
+    response = client.get(f"/api/routes/{ROUTE_ID}/narration", params={"lang": "fr"})
+
+    assert response.status_code == 200
+    narration = response.json()
+    assert narration["enabled"] is False and "model" not in narration
+    assert [h["id"] for h in narration["hazards"]] == ["gusts-hohturli", "showers-descent"]
+    assert all("body" not in h for h in narration["hazards"])
+    assert narration["hazards"][0]["citations"][0]["url"].startswith("https://www.sac-cas.ch/")
+
+
+def test_narration_follows_the_scenario_and_the_route(client):
+    assert client.get(f"/api/routes/{ROUTE_ID}/narration", params={"scenario": "not_assessable"}).json() == {
+        "enabled": False,
+        "hazards": [],
+    }
+    assert client.get("/api/routes/nope/narration").status_code == 404
+    assert client.get(f"/api/routes/{ROUTE_ID}/narration", params={"lang": "de"}).status_code == 422
+
+
+def test_the_mcp_server_answers_at_mcp_next_to_the_frontend(tmp_path):
+    (tmp_path / "index.html").write_text("<html></html>")
+    headers = {"Accept": "application/json, text/event-stream", "Content-Type": "application/json"}
+    hello = {
+        "jsonrpc": "2.0",
+        "id": 1,
+        "method": "initialize",
+        "params": {"protocolVersion": "2025-06-18", "capabilities": {}, "clientInfo": {"name": "test", "version": "1"}},
+    }
+    # As a context manager, so the lifespan runs the MCP session manager.
+    with TestClient(create_app(frontend_dist=tmp_path)) as served:
+        response = served.post("/mcp", headers=headers, json=hello)
+        assert response.status_code == 200
+        assert '"name":"hiking-safety-assistant"' in response.text
+        # Not swallowed by the frontend's client-side routing fallback.
+        assert served.get("/mcp/anything").status_code == 404
+        assert served.get("/some/page").status_code == 200

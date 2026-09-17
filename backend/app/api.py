@@ -4,7 +4,7 @@ from zoneinfo import ZoneInfo
 
 from fastapi import APIRouter, Depends, HTTPException
 
-from .models import AssessmentData, PlaceResult, RetryResult, Route, RouteRequest, Scenario
+from .models import AssessmentData, Lang, Narration, PlaceResult, RetryResult, Route, RouteRequest, Scenario
 from .sources import Sources, get_sources
 
 router = APIRouter(prefix="/api")
@@ -59,6 +59,24 @@ async def get_route_assessment(
     """Hazards for the hike on `date` (default: today in Switzerland), evaluated client-side at arrival."""
     route = await find_route(route_id, sources)
     return await sources.assessor.assess(route, scenario, date)
+
+
+@router.get("/routes/{route_id}/narration", response_model_exclude_none=True)
+async def get_route_narration(
+    route_id: str,
+    sources: SourcesDep,
+    scenario: Scenario = "assessed",
+    date: date | None = None,
+    lang: Lang = "en",
+) -> Narration:
+    """The assessment's hazards phrased in `lang`, with the guidance each is grounded in.
+
+    Separate from the assessment so a slow model never holds it up. Never fails on the model's
+    account: a hazard without a `body` keeps its templated copy.
+    """
+    route = await find_route(route_id, sources)
+    assessment = await sources.assessor.assess(route, scenario, date)
+    return await sources.narrator.narrate(route, assessment, lang)
 
 
 @router.post("/forecast/retry")

@@ -18,6 +18,7 @@ GapKind = Literal["warnings", "snowline", "pace"]
 # Why there is no assessment: the forecast source failed, or the day is further ahead than any
 # model reaches. Said apart, because "unavailable since" is untrue of a day nobody forecasts yet.
 UnavailableReason = Literal["source", "beyond_horizon"]
+Lang = Literal["en", "fr"]
 
 
 class Schema(BaseModel):
@@ -245,3 +246,33 @@ class AssessmentData(Schema):
 class RetryResult(Schema):
     available: bool
     checked_at: Minutes
+
+
+class Citation(Schema):
+    """A guidance passage a hazard is grounded in: `guidance/corpus/<id>.md`, and the page it paraphrases."""
+
+    id: str
+    title: str
+    publisher: str
+    url: str
+
+
+class NarratedHazard(Schema):
+    """The phrased explanation of one hazard, and what grounds it.
+
+    `body` carries the same placeholders as the hazard copy (`{gust}`, `{place}`, …) and never a
+    figure: the client fills them from `HazardDef.facts`, so every number shown is the engine's.
+    Absent when narration is off, failed, or broke a copy rule; the client then shows its template.
+    """
+
+    id: str
+    body: str | None = None
+    citations: list[Citation]
+
+
+class Narration(Schema):
+    # Whether a language model is configured to phrase the hazards at all. Citations come from
+    # retrieval, which needs no model, and are present either way.
+    enabled: bool
+    model: str | None = None
+    hazards: list[NarratedHazard]

@@ -1,6 +1,7 @@
 import { formatClock } from '../domain/timing'
 import type { HazardDef, HazardFacts, HazardKind, Lang } from '../domain/types'
 import { formatInt, formatKm, formatTemp } from '../lib/format'
+import { verdictsIn } from './copyRules'
 import { en, type MessageKey } from './en'
 import { translate } from './index'
 
@@ -67,4 +68,19 @@ export function hazardText(lang: Lang, hazard: HazardDef, part: HazardPart): str
   const params = hazardParams(hazard, lang)
   const key = hazardKey(hazard.kind, part, params)
   return key === null ? null : translate(lang, key, params)
+}
+
+/**
+ * A body a language model phrased, with its placeholders filled from the hazard's facts in `lang`.
+ *
+ * `null` means show the template instead: no body, a digit (every figure has to come from the facts),
+ * a placeholder this hazard has no value for, a stray brace, or verdict wording. The server applies
+ * the same rules before it sends a body; this is the second look, at the point of display.
+ */
+export function narratedBody(lang: Lang, hazard: HazardDef, body: string | undefined): string | null {
+  if (!body || /\d/.test(body) || verdictsIn(body, lang).length > 0) return null
+  const params = hazardParams(hazard, lang)
+  if (!placeholdersOf(body).every((name) => name in params)) return null
+  if (/[{}]/.test(body.replace(/\{\w+\}/g, ''))) return null
+  return body.replace(/\{(\w+)\}/g, (_, name: string) => params[name])
 }

@@ -413,7 +413,7 @@ and what it did not say:
 Not done: there are still no component or screen tests (vitest runs in `node`). The browser check above
 was scripted by hand rather than added to the suite. Phase 6's Playwright tests are where it belongs.
 
-## Phase 5 - The AI layer (~6 h)
+## Phase 5 - The AI layer (~6 h) - done
 
 1. **MCP server** (`backend/app/mcp_server.py`, FastMCP) exposing `search_route`,
    `get_route`, `forecast_at`, `assess_route`, so any agent can drive the same engine.
@@ -425,6 +425,90 @@ was scripted by hand rather than added to the suite. Phase 6's Playwright tests 
    copy-rules test is extended to cover generated text. The rules engine decides; the
    model only phrases. Behind a flag, so a missing key degrades to templated copy.
 
+### What landed
+
+All three parts are in, and all three were checked against running processes: the built app under
+uvicorn, a stand-in OpenAI-compatible endpoint, an MCP client over `/mcp`, and the stdio entry point
+launched as a subprocess. The Nemotron endpoint itself has not been called yet. See the last point.
+What changed from the plan above, and what it did not say:
+
+- **The model is Nemotron, over any OpenAI-compatible endpoint.** The hackathon provides NVIDIA
+  Nemotron (~30B) for free, so there is no vendor SDK. `sources/narrator.py` posts to
+  `{NARRATION_BASE_URL}/chat/completions` with httpx.
+  - **It is hosted on the HP100 instance.** `NARRATION_BASE_URL` points there, and the exact model id
+    is whatever that server's `/v1/models` lists. The URL and key are configuration and are not in
+    the repo.
+  - It asks for JSON-schema output and sends `chat_template_kwargs.enable_thinking=false` plus a
+    `/no_think` line, because phrasing needs no reasoning trace.
+  - A server that rejects either extra with a 400 or 422 is asked again plainly. A 5xx or a transport
+    error is retried once.
+  - A `<think>` block or a code fence around the JSON is tolerated.
+- **"Numbers come from `facts`" is enforced by a placeholder contract, not by the prompt.**
+  - A narrated body may quote a figure only as `{gust}`, `{place}`, `{from}` and so on, and the client
+    fills it with the same `hazardParams` the templates use. A body therefore may not contain a digit
+    at all, and "never generated" becomes something a regex can check.
+  - `narration/guard.py` drops a body that has a digit, a placeholder the hazard has no value for, a
+    stray brace, verdict wording or more than 320 characters. Nothing is repaired.
+  - Generated text is held to a stricter list than the templates: reassurance in other words ("no real
+    risk", "aucun risque") and telling the hiker whether to go.
+  - The client checks every body again (`narratedBody` in `i18n/hazardCopy.ts`) with the patterns now
+    shared in `i18n/copyRules.ts`.
+  - Only the body is narrated. Titles, short lines, "lifts if" and the share text stay templated,
+    because they are compact and quote times.
+- **Narration is its own endpoint.** `GET /api/routes/{id}/narration?lang=` returns bodies and
+  citations, and the assessment request is unchanged. The model never slows the assessment down, a
+  failure never touches it, and moving the start time still needs no request. The cards render with
+  their templates and swap in a narrated body when one arrives. A narrated card says it was worded by
+  a language model.
+  - One request covers all of an assessment's hazards in one language. It is cached for 30 minutes
+    under the hazards' digest, the language, the model and `PROMPT_VERSION`, with a lock so that the
+    web app and an agent asking at once make one call.
+- **RAG is 18 hand-written passages and BM25 with tag boosts. There are no embeddings.**
+  - Each passage paraphrases a page that was fetched and read while writing it, and links to it. That
+    covers the SAC hiking scale PDF, the SAC hiking-safety tips, Suisse Rando's storm and safety pages,
+    MeteoSwiss's wind chill and thunderstorm entries, and the federal danger levels.
+  - The MeteoSwiss and natural-hazards pages render client-side, so their text could not be read, only
+    confirmed to exist. Their passages stick to general meteorology.
+  - Two early drafts attributed claims their source does not make (a daylight turnaround rule, and
+    summer snow advice pinned on the SLF bulletin). They were rewritten to cite the SAC scale and SAC
+    tips, which do say those things.
+  - Tags are boosted by specificity: a passage about one hazard outranks one tagged with five.
+    Without that, gusts cited the thunderstorm page first.
+- **Citations reach `provenance` through a wrapper, not the engine.** `GroundedAssessor` wraps both the
+  demo assessor and the engine and appends the top passage's short `cite` ("SAC hiking scale").
+  `ENGINE_VERSION`, the engine's cache and its exact-provenance tests are untouched. Citations need no
+  model, so they are on whether narration is or not.
+- **Layering.** `guidance/` and `narration/` are pure and join `routing/` and `hazards/` in the
+  import-graph test. The one piece that calls out, `LlmNarrator`, lives in `sources/` behind a new
+  `Narrator` protocol on `Sources`.
+- **MCP.** The `mcp` package is 2.x, where FastMCP is now `MCPServer`.
+  - The plan's `search_route` became two tools, `search_places` and `create_route`, because a route
+    needs two resolved places and an agent should choose between the hits.
+  - `search_guidance` was added.
+  - `assess_route` returns the assessment together with its narration.
+  - The HTTP transport is the SDK's route added to the FastAPI app at exactly `/mcp`, before the
+    frontend's catch-all. A mount would match only `/mcp/…` and hand the bare path to the SPA.
+  - `host="0.0.0.0"` turns off the SDK's localhost-only Host check, which would reject every request
+    that reaches the VM by address.
+  - The SDK calls `logging.basicConfig` when a server is built. It is built at WARNING so the service
+    log keeps showing what it showed before.
+- **Not done: the narration fixture is not a recording yet.** `tests/fixtures/narration_oeschinensee.json`
+  holds hand-written stand-in answers, marked `"recorded": false`. The French showers body carries a
+  figure on purpose, so the fixture shows the guard dropping it. `pytest --record` with `NARRATION_*`
+  set replaces them with the real model's answers. `copy-rules.test.ts` then holds those to the copy
+  rules, and `test_narrator.py` checks the fixture's `served` part is exactly what the answers produce.
+  Until that runs, how often Nemotron keeps to the no-digit rule is unknown. Every body it breaks costs
+  only the phrasing.
+
+Tests stay offline. The frontend has 41 tests and the backend 339.
+- Backend: the corpus and retrieval for every hazard kind on every grade; the guard, including French
+  word boundaries; the prompt and answer parsing; and the narrator over a scripted endpoint (success,
+  a dropped body, reasoning and fences, unreadable answers, 401, timeout, structured output rejected,
+  a retried 503, caching, no endpoint, no hazards).
+- The API test covers citations in provenance, the narration endpoint and `/mcp` beside the frontend.
+  The MCP tools are tested in process over the demo sources, including their errors.
+- A pytest reads `hazardCopy.ts` and fails if the placeholder list drifts from the server's.
+
 ## Phase 6 - Ops and verification (~3 h)
 
 - An error taxonomy mapping source failures onto `not_assessable` / `partial` / specific
@@ -432,9 +516,14 @@ was scripted by hand rather than added to the suite. Phase 6's Playwright tests 
 - Warm the cache for the showcase routes at startup: insurance against a slow GRIB pull
   on stage.
 - `scripts/smoke-live.sh` - hits every real source once from the VM and prints what is
-  reachable. The only place the blocked-egress gap closes.
+  reachable. The only place the blocked-egress gap closes. That includes the Nemotron endpoint on the
+  HP100 instance (`/v1/models`, then one tiny chat completion): the app VM reaching HP100 is a network
+  path of its own, and nothing else tests it.
 - New env vars in `deploy/hiking-safety-assistant.service`; document the eccodes system
-  dependency.
+  dependency. `NARRATION_BASE_URL` / `NARRATION_MODEL` point at HP100, and the key goes in a
+  `systemctl edit` drop-in.
+- Record the narration fixture against HP100 (`pytest --record tests/test_narrator.py` with
+  `NARRATION_*` set), replacing the hand-written stand-ins, and note how many bodies the guard drops.
 - Playwright end-to-end tests over the built app for the four outcome states.
 
 ## Order

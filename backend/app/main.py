@@ -1,5 +1,7 @@
 import logging
 import os
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
 from pathlib import Path
 
 from fastapi import FastAPI, HTTPException, Request
@@ -7,6 +9,7 @@ from fastapi.responses import FileResponse, JSONResponse
 
 from .api import router
 from .config import get_settings
+from .mcp_server import build_server
 from .sources import SourceUnavailable
 
 DEFAULT_FRONTEND_DIST = Path(__file__).resolve().parents[2] / "frontend" / "dist"
@@ -15,11 +18,25 @@ log = logging.getLogger(__name__)
 
 
 def create_app(frontend_dist: Path | None = None) -> FastAPI:
-    app = FastAPI(title="Hiking safety assistant API")
+    settings = get_settings()
+    # One MCP server per app: its session manager runs once, for the life of the app.
+    mcp = build_server() if settings.mcp_http else None
+
+    @asynccontextmanager
+    async def lifespan(_: FastAPI) -> AsyncIterator[None]:
+        if mcp is None:
+            yield
+            return
+        async with mcp.session_manager.run():
+            yield
+
+    app = FastAPI(title="Hiking safety assistant API", lifespan=lifespan)
     app.include_router(router)
     app.add_exception_handler(SourceUnavailable, source_unavailable_handler)
+    if mcp is not None:
+        mount_mcp(app, mcp)
 
-    log.info("source mode: %s", get_settings().source_mode)
+    log.info("source mode: %s", settings.source_mode)
 
     dist = frontend_dist or Path(os.environ.get("FRONTEND_DIST", DEFAULT_FRONTEND_DIST))
     if (dist / "index.html").is_file():
@@ -34,12 +51,24 @@ async def source_unavailable_handler(request: Request, exc: Exception) -> JSONRe
     return JSONResponse(status_code=503, content={"detail": str(exc), "source": exc.source})
 
 
+def mount_mcp(app: FastAPI, mcp) -> None:
+    """Streamable HTTP at exactly `/mcp`, registered before the frontend's catch-all.
+
+    Its route is taken out of the Starlette app the SDK builds rather than mounting that app: a mount
+    at `/mcp` matches only `/mcp/…`, and the bare `/mcp` clients use would fall through to the
+    frontend. `host="0.0.0.0"` turns off the SDK's localhost-only Host check, which would otherwise
+    reject every request that reaches the VM by its address.
+    """
+    http = mcp.streamable_http_app(streamable_http_path="/mcp", host="0.0.0.0")
+    app.router.routes.extend(http.routes)
+
+
 def mount_frontend(app: FastAPI, dist: Path) -> None:
     """Serve the built frontend, falling back to index.html for client-side routes."""
 
     @app.get("/{path:path}", include_in_schema=False)
     def frontend(path: str) -> FileResponse:
-        if path == "api" or path.startswith("api/"):
+        if path in ("api", "mcp") or path.startswith(("api/", "mcp/")):
             raise HTTPException(status_code=404)
         file = (dist / path).resolve()
         if path and file.is_relative_to(dist) and file.is_file():

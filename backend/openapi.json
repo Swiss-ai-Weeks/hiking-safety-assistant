@@ -138,6 +138,35 @@
         "title": "AssessmentData",
         "type": "object"
       },
+      "Citation": {
+        "description": "A guidance passage a hazard is grounded in: `guidance/corpus/<id>.md`, and the page it paraphrases.",
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "publisher": {
+            "title": "Publisher",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "url": {
+            "title": "Url",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "publisher",
+          "url"
+        ],
+        "title": "Citation",
+        "type": "object"
+      },
       "Forecast": {
         "properties": {
           "checkedAt": {
@@ -527,6 +556,71 @@
           "grade"
         ],
         "title": "Leg",
+        "type": "object"
+      },
+      "NarratedHazard": {
+        "description": "The phrased explanation of one hazard, and what grounds it.\n\n`body` carries the same placeholders as the hazard copy (`{gust}`, `{place}`, …) and never a\nfigure: the client fills them from `HazardDef.facts`, so every number shown is the engine's.\nAbsent when narration is off, failed, or broke a copy rule; the client then shows its template.",
+        "properties": {
+          "body": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Body"
+          },
+          "citations": {
+            "items": {
+              "$ref": "#/components/schemas/Citation"
+            },
+            "title": "Citations",
+            "type": "array"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "citations"
+        ],
+        "title": "NarratedHazard",
+        "type": "object"
+      },
+      "Narration": {
+        "properties": {
+          "enabled": {
+            "title": "Enabled",
+            "type": "boolean"
+          },
+          "hazards": {
+            "items": {
+              "$ref": "#/components/schemas/NarratedHazard"
+            },
+            "title": "Hazards",
+            "type": "array"
+          },
+          "model": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model"
+          }
+        },
+        "required": [
+          "enabled",
+          "hazards"
+        ],
+        "title": "Narration",
         "type": "object"
       },
       "NotEvaluated": {
@@ -1336,6 +1430,93 @@
           }
         },
         "summary": "Get Route Assessment"
+      }
+    },
+    "/api/routes/{route_id}/narration": {
+      "get": {
+        "description": "The assessment's hazards phrased in `lang`, with the guidance each is grounded in.\n\nSeparate from the assessment so a slow model never holds it up. Never fails on the model's\naccount: a hazard without a `body` keeps its templated copy.",
+        "operationId": "get_route_narration_api_routes__route_id__narration_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "route_id",
+            "required": true,
+            "schema": {
+              "title": "Route Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "scenario",
+            "required": false,
+            "schema": {
+              "default": "assessed",
+              "enum": [
+                "assessed",
+                "partial",
+                "not_assessable",
+                "stale"
+              ],
+              "title": "Scenario",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "date",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Date"
+            }
+          },
+          {
+            "in": "query",
+            "name": "lang",
+            "required": false,
+            "schema": {
+              "default": "en",
+              "enum": [
+                "en",
+                "fr"
+              ],
+              "title": "Lang",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Narration"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Route Narration"
       }
     }
   }

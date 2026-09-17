@@ -12,6 +12,8 @@ dependencies = [
     "networkx>=3.4",
     "pyproj>=3.7",
     "shapely>=2.1",
+    # Phase 5, the MCP server. 2.x: FastMCP is `MCPServer` there, and the imports differ from 1.x.
+    "mcp>=2.2.0",
 ]
 
 [dependency-groups]

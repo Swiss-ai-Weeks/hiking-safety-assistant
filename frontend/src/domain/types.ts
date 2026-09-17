@@ -192,6 +192,34 @@ export interface AssessmentData {
   conditions: Record<string, StopConditions[]>
 }
 
+/** A guidance passage a hazard is grounded in, and the page it paraphrases. */
+export interface Citation {
+  id: string
+  title: string
+  publisher: string
+  url: string
+}
+
+/**
+ * One hazard's explanation as a language model phrased it, and the guidance behind it.
+ *
+ * `body` uses the same placeholders as the hazard copy and never a figure; `narratedBody` in
+ * `i18n/hazardCopy.ts` fills it from the hazard's facts, or refuses it. Absent when narration is
+ * off or the text broke a copy rule: the template is shown instead.
+ */
+export interface NarratedHazard {
+  id: string
+  body?: string
+  citations: Citation[]
+}
+
+export interface Narration {
+  /** Whether a language model phrases hazards on this server at all. */
+  enabled: boolean
+  model?: string
+  hazards: NarratedHazard[]
+}
+
 /** A route this device picked or opened, most recent first. Kept locally: the server has no users. */
 export interface RecentRoute {
   id: string
