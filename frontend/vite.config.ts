@@ -12,5 +12,7 @@ export default defineConfig({
   preview: { proxy: api },
   test: {
     environment: 'node',
+    // `e2e/` is Playwright's.
+    include: ['src/**/*.test.ts'],
   },
 })
