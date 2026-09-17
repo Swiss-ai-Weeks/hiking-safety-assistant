@@ -57,6 +57,7 @@ def test_without_a_plan_or_a_hike_there_are_no_arrival_or_live_figures():
     briefing = build_briefing(OESCHINEN_ROUTE, ASSESSED, DAY)
 
     assert not any(name.startswith(("arrive.", "wx.", "now", "eta")) for name in briefing.facts)
+    assert briefing.facts["turnBy"] == "11:30", "the route default rule still applies"
     assert "RIGHT NOW" not in briefing.text
 
 
@@ -301,3 +302,21 @@ def test_one_client_is_held_to_its_questions_per_minute(client):
 
     assert statuses[:10] == [200] * 10
     assert statuses[10:] == [429, 429]
+
+
+@pytest.mark.parametrize(("question", "lang"), [("My friend twisted an ankle", "en"), ("Je suis perdu", "fr")])
+async def test_an_emergency_the_model_will_not_answer_gets_the_apps_own_sentence(tmp_path, question, lang):
+    endpoint = Endpoint(completion(None, "off_topic"))
+
+    answer = await endpoint.asker(tmp_path).ask(
+        OESCHINEN_ROUTE, ASSESSED, AskRequest(question=question), DAY, lang
+    )
+
+    assert answer.reason == "emergency"
+    assert "1414 (Rega)" in answer.text and "Oberbärgli" in answer.text
+
+
+async def test_a_question_that_is_not_an_emergency_stays_off_topic(tmp_path):
+    answer = await ask(Endpoint(completion(None, "off_topic")).asker(tmp_path), question="Write a poem about cats")
+
+    assert answer.reason == "off_topic"

@@ -278,7 +278,9 @@ class Narration(Schema):
     hazards: list[NarratedHazard]
 
 
-AnswerReason = Literal["ok", "dropped", "off_topic", "disabled", "unavailable"]
+# `emergency`: the question was about someone hurt, lost or in danger and the model gave no usable answer, so
+# `text` is the app's own fixed sentence (call the emergency number, the bail-out), not the model's.
+AnswerReason = Literal["ok", "dropped", "off_topic", "disabled", "unavailable", "emergency"]
 FieldStatus = Literal["ahead", "behind", "pastCrux"]
 CloudAnswer = Literal["above", "touching", "below"]
 

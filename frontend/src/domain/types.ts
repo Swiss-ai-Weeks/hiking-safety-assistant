@@ -220,8 +220,11 @@ export interface Narration {
   hazards: NarratedHazard[]
 }
 
-/** Why an answer has no text, or `ok`. */
-export type AnswerReason = 'ok' | 'dropped' | 'off_topic' | 'disabled' | 'unavailable'
+/**
+ * Why an answer has no text, or `ok`. `emergency` has text, but the app's own fixed sentence (call the
+ * emergency number, the bail-out) rather than the model's: shown as an alert, without the model's badge.
+ */
+export type AnswerReason = 'ok' | 'dropped' | 'off_topic' | 'disabled' | 'unavailable' | 'emergency'
 
 /**
  * A language model's answer to a question about the hike. `text` arrives filled in: every figure in it

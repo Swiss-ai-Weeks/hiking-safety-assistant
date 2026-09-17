@@ -212,7 +212,7 @@ export interface components {
              * Reason
              * @enum {string}
              */
-            reason: "ok" | "dropped" | "off_topic" | "disabled" | "unavailable";
+            reason: "ok" | "dropped" | "off_topic" | "disabled" | "unavailable" | "emergency";
             /** Text */
             text?: string | null;
         };

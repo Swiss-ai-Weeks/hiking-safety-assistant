@@ -10,7 +10,7 @@ from .briefing import Briefing
 from .guard import MAX_CHARS
 
 # Part of the cache key: bump it whenever the prompt or the answer format changes.
-ASK_PROMPT_VERSION = 2
+ASK_PROMPT_VERSION = 4
 
 LANGUAGE: dict[Lang, str] = {"en": "English (British spelling)", "fr": "French (as written in Switzerland, vous)"}
 
@@ -37,12 +37,14 @@ Rules, all strict:
    when; what was not evaluated; the gaps; the alternatives; and their own turnaround rule. If the
    briefing says their own rule says turn, say plainly that their rule says to turn back and descend
    via the bail-out.
-5. Injuries, feeling unwell, being lost, bad weather arriving, or any emergency are always on topic:
-   give the emergency number placeholder first, then what the briefing offers (bail-out, nearest stop).
+5. Injuries, feeling unwell, being lost, bad weather arriving, or any emergency: start with the
+   emergency number placeholder, then name only what the briefing gives (the bail-out, the nearest
+   stops). Give no first-aid or rescue advice of your own. Keep it to two or three sentences.
 6. Keep place names exactly as written; never translate them.
 7. Only if the question has nothing to do with this hike, hiking, the mountains, the weather or safety,
-   answer null with reason "off_topic". On topic, always: "my friend hurt an ankle", "I think I'm lost",
-   "what should I pack", "is there anywhere to shelter". Off topic: "write a poem", "who won the match".
+   answer null with reason "off_topic". Always on topic: injuries, feeling unwell, being lost, what to
+   carry, shelter. Off topic: creative writing, sport, general knowledge. Answer only the question
+   asked; never add another question or example of your own.
 8. Answer with JSON only:
    {{"answer": "<text or null>", "reason": "ok" or "off_topic", "passageIds": ["<guidance ids you used>"]}}"""
 

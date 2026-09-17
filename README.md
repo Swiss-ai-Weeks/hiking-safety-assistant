@@ -1,6 +1,8 @@
 # Hiking safety assistant
 
-A mobile-first assistant built from the UI spec in [docs/design/](docs/design/hiking-safety-assistant-spec.html). The React frontend (Vite, TypeScript, Tailwind v4) reads everything from a FastAPI backend, which currently serves mock data for the Oeschinensee → Blüemlisalphütte route. The UI is in English and French.
+A mobile-first assistant built from the UI spec in [docs/design/](docs/design/hiking-safety-assistant-spec.html). The React frontend (Vite, TypeScript, Tailwind v4) reads everything from a FastAPI backend that routes over swisstopo's trail network, reads MeteoSwiss ICON forecasts, runs a hazard engine over them and lets you ask Nemotron about the hike. The UI is in English and French.
+
+**Live:** https://hiking-safety.tail685478.ts.net
 
 | Folder | Contents |
 |---|---|
@@ -22,7 +24,7 @@ pnpm start    # production build served by the backend on http://localhost:8000
 
 In dev, Vite proxies `/api` to the backend. In production the backend serves the built frontend and the API from one port.
 
-Switch between demo states (assessed, partially assessed, not assessable, stale forecast) in Settings, or with `?outcome=partial`, `?outcome=not_assessable` or `?stale=1` on `/assessment`.
+Under `SOURCE_MODE=demo`, switch between demo states (assessed, partially assessed, not assessable, stale forecast) in Settings, or with `?outcome=partial`, `?outcome=not_assessable` or `?stale=1` on `/briefing`.
 
 ### Configuration
 
@@ -64,9 +66,13 @@ NARRATION_THINKING=false               # sends /no_think and enable_thinking=fal
 
 The model rewrites each hazard's body using the retrieved passages. It may quote a figure only as a placeholder (`{gust} km/h`), and the client fills those from the engine's `facts`, so a narrated body may not contain a digit at all. [backend/app/narration/guard.py](backend/app/narration/guard.py) drops any body that has a digit or a placeholder the hazard cannot fill, or that uses verdict wording (the UI's banned words plus a stricter list for generated text). The client checks it again before showing it. A dropped body, a timeout or a bad key cost that phrasing only: the card shows its template. A narrated card says it was worded by a language model. One request covers every hazard in an assessment, per language, and the result is cached for 30 minutes.
 
-`pytest --record` with those variables set re-records `backend/tests/fixtures/narration_oeschinensee.json` from the real model. `copy-rules.test.ts` holds what it serves to the same rules as the templates. Until it is recorded, the fixture holds hand-written stand-ins and says so (`"recorded": false`).
+`pytest --record` with those variables set re-records `backend/tests/fixtures/narration_oeschinensee.json` from the real model; it is recorded from Nemotron 3.5 Lightning. `copy-rules.test.ts` holds what it serves to the same rules as the templates. A body the guard rejects is sent back once with its reasons; over 20 fresh requests 30 of 30 bodies were served.
 
-**MCP server.** The engine as tools for any agent: `search_places`, `create_route`, `get_route`, `forecast_at`, `assess_route` (assessment plus citations and narration) and `search_guidance`. They call the same sources in process, so the caches are shared and the shapes match `/api`.
+**Questions ("Ask Nemotron").** A text field is always on screen in the briefing and in field mode. A question is answered from a briefing the server writes out of the assessment, the hiker's plan (arrival at each stop at their pace) and, on the trail, where they are and what their rule says, plus the guidance passages retrieved for the question. Every figure in that briefing is a placeholder with its value and unit (`{wx.hohturli.gust} = 40 km/h`). An answer may quote a figure only as such a placeholder or as that exact value with that unit, so no number in it is the model's own; it may give no verdict (the same banned wording as narration) and is sent back once with its reasons if it breaks a rule. Up to four earlier exchanges ride along. Planning questions are cached for 30 minutes, questions during a hike never; each client gets 10 a minute. Against Nemotron 3.5 Lightning, 40 test questions gave 35 answers, 5 correct off-topic refusals and no dropped answers. Known limit: a real figure can still be attributed to the wrong stop or hour.
+
+Anything a model wrote carries a sparkle **Nemotron** badge in its own colour, which is neither a severity nor the action colour.
+
+**MCP server.** The engine as tools for any agent: `search_places`, `create_route`, `get_route`, `forecast_at`, `assess_route` (assessment plus citations and narration), `ask_about_route` and `search_guidance`. They call the same sources in process, so the caches are shared and the shapes match `/api`.
 
 ```sh
 claude mcp add hiking-safety -- uv run --directory "$PWD/backend" python -m app.mcp_server   # stdio
@@ -111,6 +117,7 @@ A rename then fails `pytest` (the schema snapshot is stale) and `tsc -b` (the as
 | GET | `/api/routes/{routeId}` | Route geometry, stops and legs |
 | GET | `/api/routes/{routeId}/assessment?scenario=assessed` | Forecast, hazards, gaps and alternatives (`assessed`, `partial`, `not_assessable`, `stale`) |
 | GET | `/api/routes/{routeId}/narration?scenario=&date=&lang=en` | The assessment's hazards phrased by a language model (when configured), and the guidance each is grounded in |
+| POST | `/api/routes/{routeId}/ask?scenario=&date=&lang=` | `{question, history?, plan?, live?}` → a language model's answer from the assessment, the plan and (during a hike) where you are. Figures are filled in by the server; `reason` says why there is no text |
 | POST | `/api/forecast/retry` | Re-checks the forecast source |
 | POST | `/mcp` | The MCP server over streamable HTTP (see [AI layer](#ai-layer)) |
 
@@ -140,7 +147,7 @@ Walking time is the SAC / DIN 33466 estimate (`backend/app/routing/timing.py`): 
 
 ### Deploy to the VM
 
-The app runs as one systemd service: uvicorn serves the API and the built frontend over plain HTTP on port 8000.
+The live app is **https://hiking-safety.tail685478.ts.net**: one systemd service (uvicorn serving the API, the built frontend and `/mcp`) on `127.0.0.1:8100`, published over HTTPS with Tailscale Funnel. Port 8000 on the same machine is vLLM serving Nemotron, which the app calls for narration and questions.
 
 First-time setup, as the user that will run the service (the unit assumes user `hiker` and `/opt/hiking-safety-assistant`; edit [deploy/hiking-safety-assistant.service](deploy/hiking-safety-assistant.service) if yours differ):
 
@@ -153,17 +160,50 @@ git clone https://github.com/Swiss-ai-Weeks/hiking-safety-assistant.git /opt/hik
 cd /opt/hiking-safety-assistant
 pnpm install --frozen-lockfile
 pnpm build
-uv sync --directory backend --no-dev --frozen   # add `--group grib` for WEATHER_SOURCE=grib
+uv sync --directory backend --no-dev --frozen   # add `--group grib` for WEATHER_SOURCE=grib (needs eccodes, see Weather data)
+# the trail graph, once (see Trail data)
 
 sudo cp deploy/hiking-safety-assistant.service /etc/systemd/system/
 sudo systemctl daemon-reload
 sudo systemctl enable --now hiking-safety-assistant
-sudo ufw allow 8000/tcp   # or the equivalent for your firewall / security group
+sudo tailscale funnel --bg 8100   # public HTTPS; or put any reverse proxy in front of :8100
 ```
 
-The app is then at `http://<vm-ip>:8000`.
+Then check that the VM reaches every source, the model and the app itself:
 
-To deploy a new version, run `./scripts/deploy.sh` on the VM. It pulls, rebuilds, syncs dependencies and restarts the service. Logs: `journalctl -u hiking-safety-assistant -f`.
+```bash
+./scripts/smoke-live.sh --app https://hiking-safety.tail685478.ts.net
+```
+
+It prints one line per check (swisstopo search, elevation, names and tiles; Overpass; Open-Meteo and MeteoSwiss STAC runs with **their age and whether they reach tomorrow's hike**; an SMN station; app warnings; the model's `/models` and a one-line completion; the app's health, assessment, narration, questions and MCP) and exits non-zero if a required one fails.
+
+To deploy a new version, run `./scripts/deploy.sh` on the VM. It pulls, rebuilds, syncs dependencies and restarts the service. Logs: `journalctl -u hiking-safety-assistant -f`; warm-up lines appear there after a restart.
+
+### How failures degrade
+
+Nothing a source does can take a page down. Each failure costs what it has to and says so:
+
+| What fails | What the hiker sees |
+|---|---|
+| Place search, trail graph, elevation (routing) | 503 naming the source; the picker says which ("no marked trail connects these", or an outage) |
+| OSM grades, swissNAMES3D | The route still computes; grades fall back to the official class (`gradeEstimated`), stops are named generically |
+| Forecast run unavailable | `not_assessable` / `source`, with the official links and a retry |
+| Day beyond every model's reach | `not_assessable` / `beyond_horizon` |
+| Newest fine model run published late | The coarser model serves the whole day rather than leaving hours out |
+| One stop's forecast, or a wide ensemble spread there | `partial`: those legs are "not evaluated", never shown as clear |
+| Warnings feed | A `warnings` gap, never an empty all-clear |
+| Any other error inside an assessment | `not_assessable`, logged with a stack trace, not cached |
+| The language model (narration) | The hazard card keeps its template |
+| The language model (questions) | A fixed sentence for `unavailable`, `dropped` or `disabled` |
+
+### End-to-end tests
+
+```bash
+pnpm e2e                                                    # build, then Playwright over a demo-mode server
+E2E_BASE_URL=https://hiking-safety.tail685478.ts.net pnpm -C frontend exec playwright test   # the live app
+```
+
+The first run needs `pnpm -C frontend exec playwright install chromium`.
 
 ---
 

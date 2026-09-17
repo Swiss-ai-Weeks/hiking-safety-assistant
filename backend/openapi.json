@@ -80,7 +80,8 @@
               "dropped",
               "off_topic",
               "disabled",
-              "unavailable"
+              "unavailable",
+              "emergency"
             ],
             "title": "Reason",
             "type": "string"

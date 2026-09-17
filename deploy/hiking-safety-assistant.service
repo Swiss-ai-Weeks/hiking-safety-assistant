@@ -1,10 +1,13 @@
 # Install: sudo cp deploy/hiking-safety-assistant.service /etc/systemd/system/
 #          sudo systemctl daemon-reload && sudo systemctl enable --now hiking-safety-assistant
 # Edit User and the /opt/hiking-safety-assistant paths if the repo lives elsewhere.
+#
+# Settings can also live in backend/.env, which the app reads too; the environment here wins.
+# Check what the VM can reach before and after a deploy: ./scripts/smoke-live.sh --app <public URL>
 
 [Unit]
 Description=Hiking safety assistant (FastAPI API + built frontend)
-After=network-online.target
+After=network-online.target docker.service
 Wants=network-online.target
 
 [Service]
@@ -12,23 +15,31 @@ Type=simple
 User=hiker
 WorkingDirectory=/opt/hiking-safety-assistant/backend
 Environment=PYTHONUNBUFFERED=1
-# Which sources the service uses. `live` routes, forecasts and assesses for real. `/api/health`
+# `live` routes, forecasts and assesses for real; `demo` serves the hand-authored showcase. `/api/health`
 # reports the active mode.
-Environment=SOURCE_MODE=demo
-# `grib` needs `uv sync --directory backend --no-dev --frozen --group grib` (on Linux the `eccodeslib`
-# wheel supplies the C library). `open-meteo` needs nothing and serves the same ICON model.
-#Environment=WEATHER_SOURCE=grib
-# Opt in to MeteoSwiss warnings from the app's undocumented API. Off, warnings are a reported gap.
-#Environment=METEOSWISS_APP_WARNINGS=false
-# Hazard narration through any OpenAI-compatible endpoint. Off, or without a URL, hazards keep their
-# templated copy. Put the key in a drop-in (`systemctl edit`), not in this file.
-#Environment=NARRATION_ENABLED=true
-#Environment=NARRATION_BASE_URL=https://…/v1
-#Environment=NARRATION_MODEL=nvidia/nemotron-3-nano-30b-a3b
+Environment=SOURCE_MODE=live
+# `open-meteo` serves MeteoSwiss ICON over JSON with nothing to install. `grib` reads MeteoSwiss' own
+# files and needs eccodes: `uv sync --directory backend --no-dev --frozen --group grib` (the `eccodeslib`
+# wheel supplies the C library on Linux x86_64 and aarch64; macOS needs `brew install eccodes`).
+Environment=WEATHER_SOURCE=open-meteo
+# MeteoSwiss warnings from the app's undocumented API, marked unofficial. Off, warnings are a reported gap.
+Environment=METEOSWISS_APP_WARNINGS=true
+# Hazard narration and questions ("Ask Nemotron") through any OpenAI-compatible endpoint. Here, Nemotron
+# served by vLLM on the same machine (`docker ps`: vllm-lightning on :8000). A key, if the endpoint needs
+# one, goes in a drop-in (`sudo systemctl edit hiking-safety-assistant`), not in this file.
+Environment=NARRATION_ENABLED=true
+Environment=NARRATION_BASE_URL=http://localhost:8000/v1
+Environment=NARRATION_MODEL=nemotron-3.5-lightning
+# Questions per client per minute, per worker: every one is a GPU call.
+#Environment=ASK_PER_MINUTE=10
+# Assess and narrate the showcase route for today and tomorrow at startup, in one worker.
+Environment=WARMUP_ENABLED=true
 # The MCP server at /mcp, next to the API. Unauthenticated, like the API.
-#Environment=MCP_HTTP=true
+Environment=MCP_HTTP=true
 Environment=CACHE_DIR=/opt/hiking-safety-assistant/backend/.cache
-ExecStart=/opt/hiking-safety-assistant/backend/.venv/bin/uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers 2
+# Loopback only, on 8100 because vLLM holds 8000. The public HTTPS entry is Tailscale Funnel:
+#   sudo tailscale funnel --bg 8100
+ExecStart=/opt/hiking-safety-assistant/backend/.venv/bin/uvicorn app.main:app --host 127.0.0.1 --port 8100 --workers 2
 Restart=on-failure
 RestartSec=3
 

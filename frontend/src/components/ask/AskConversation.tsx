@@ -24,6 +24,16 @@ interface Props {
 
 function Answer({ message, dark }: { message: ChatMessage; dark: boolean }) {
   const { t, lang } = useT()
+  if (message.reason === 'emergency' && message.text) {
+    return (
+      <div role="alert" className="flex max-w-[92%] flex-col gap-2 self-start rounded-2xl rounded-tl-md border-2 border-sev-high px-3.5 py-2.5">
+        <p className="text-[15px] leading-normal font-semibold">{message.text}</p>
+        <a href="tel:1414" className="self-start rounded-full bg-sev-high px-3.5 py-1.5 text-sm font-semibold text-white no-underline hover:text-white">
+          {t('field.emergency')}
+        </a>
+      </div>
+    )
+  }
   // The server already refused verdict wording; checked again before it is shown, as narration is.
   const text = message.reason === 'ok' && message.text && verdictsIn(message.text, lang).length === 0 ? message.text : null
   const muted = dark ? 'text-field-muted' : 'text-muted'
@@ -33,7 +43,7 @@ function Answer({ message, dark }: { message: ChatMessage; dark: boolean }) {
       {text ? (
         <p className="text-[15px] leading-normal whitespace-pre-line">{text}</p>
       ) : (
-        <p className={`text-[15px] leading-normal ${muted}`}>{t(`ask.reason.${message.reason === 'ok' || !message.reason ? 'dropped' : message.reason}` as const)}</p>
+        <p className={`text-[15px] leading-normal ${muted}`}>{t(`ask.reason.${message.reason === 'ok' || message.reason === 'emergency' || !message.reason ? 'dropped' : message.reason}` as const)}</p>
       )}
       {text && message.citations && message.citations.length > 0 && (
         <p className={`text-xs ${muted}`}>

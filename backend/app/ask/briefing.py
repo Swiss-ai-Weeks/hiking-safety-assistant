@@ -265,7 +265,14 @@ def build_briefing(
                 f"({GRADE_WORDS[alternative.grade]})."
             )
 
-    if plan is not None:
+    if plan is None:
+        out.append("")
+        out.append("TURNAROUND RULE (the route's default; you have not set your own plan here)")
+        out.append(
+            f"If not at {crux} by {b.put('turnBy', clock(route.turnaround_default))}, or if the cloud base is below "
+            f"the ridge, descend via {route.bailout_name}."
+        )
+    else:
         out.append("")
         out.append("YOUR PLAN")
         out.append(

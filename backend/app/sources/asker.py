@@ -9,6 +9,7 @@ import asyncio
 import hashlib
 import json
 import logging
+import re
 from datetime import date
 
 import httpx
@@ -29,6 +30,26 @@ TEMPERATURE = 0.3
 # Retrieved for the question itself, then one per flagged hazard, capped.
 QUESTION_PASSAGES = 3
 MAX_PASSAGES = 6
+
+
+# Someone hurt, lost or in danger, in either language. Deliberately broad: a false positive costs one
+# sentence telling the hiker the emergency number, a false negative leaves them with "off topic".
+EMERGENCY = re.compile(
+    r"\b(hurt|injur\w*|twist\w*|sprain\w*|broke\w*|bleed\w*|fell|fallen|falling|lost|unconscious|accident|"
+    r"emergency|rescue|help|sick|faint\w*|stuck|bless[ée]\w*|perdu\w*|urgence|secours|tomb[ée]\w*|malaise|"
+    r"coinc[ée]\w*|entors\w*|saign\w*|aide)\b",
+    re.IGNORECASE,
+)
+EMERGENCY_TEXT: dict[Lang, str] = {
+    "en": "If anyone is hurt, lost or in danger, call {emergency} now. The bail-out on this route is {bailout}.",
+    "fr": "Si quelqu'un est blessé, perdu ou en danger, appelez le {emergency} maintenant. "
+    "La sortie de secours sur cet itinéraire est {bailout}.",
+}
+
+
+def emergency_answer(route: Route, facts: dict[str, str], lang: Lang, model: str) -> Answer:
+    text = EMERGENCY_TEXT[lang].format(emergency=facts["emergency"], bailout=route.bailout_name)
+    return Answer(enabled=True, model=model, reason="emergency", text=text, citations=[])
 
 
 def _citation(passage: Passage) -> Citation:
@@ -60,14 +81,18 @@ class LlmAsker:
         # A question asked during a hike is about this minute: never answered from the cache.
         key = None if request.live is not None else self._key(route, day, lang, request, briefing.text)
         if key is None:
-            return await self._answer(briefing, passages, request, lang)
-        async with self._locks.setdefault(key.digest(), asyncio.Lock()):
-            if (cached := self.cache.read(key, self.settings.cache_ttl_narration_s)) is not None:
-                return Answer.model_validate(cached)
             answer = await self._answer(briefing, passages, request, lang)
-            if answer.reason != "unavailable":
-                self.cache.write(key, answer.model_dump(mode="json", by_alias=True, exclude_none=True))
-            return answer
+        else:
+            async with self._locks.setdefault(key.digest(), asyncio.Lock()):
+                if (cached := self.cache.read(key, self.settings.cache_ttl_narration_s)) is not None:
+                    return Answer.model_validate(cached)
+                answer = await self._answer(briefing, passages, request, lang)
+                if answer.reason != "unavailable":
+                    self.cache.write(key, answer.model_dump(mode="json", by_alias=True, exclude_none=True))
+        # Never "off topic" or silence for someone hurt or lost: the app's own sentence instead.
+        if answer.reason != "ok" and EMERGENCY.search(request.question):
+            return emergency_answer(route, briefing.facts, lang, self.settings.narration_model)
+        return answer
 
     def _key(self, route: Route, day: date, lang: Lang, request: AskRequest, briefing: str) -> CacheKey:
         conversation = [turn.model_dump(mode="json") for turn in request.history]
