@@ -7,10 +7,11 @@ from pathlib import Path
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import FileResponse, JSONResponse
 
+from . import warmup
 from .api import router
 from .config import get_settings
 from .mcp_server import build_server
-from .sources import SourceUnavailable
+from .sources import SourceUnavailable, get_sources
 
 DEFAULT_FRONTEND_DIST = Path(__file__).resolve().parents[2] / "frontend" / "dist"
 
@@ -24,15 +25,21 @@ def create_app(frontend_dist: Path | None = None) -> FastAPI:
 
     @asynccontextmanager
     async def lifespan(_: FastAPI) -> AsyncIterator[None]:
-        if mcp is None:
-            yield
-            return
-        async with mcp.session_manager.run():
-            yield
+        warming = warmup.start(settings, get_sources()) if settings.warmup_enabled else None
+        try:
+            if mcp is None:
+                yield
+            else:
+                async with mcp.session_manager.run():
+                    yield
+        finally:
+            if warming is not None and not warming.done():
+                warming.cancel()
 
     app = FastAPI(title="Hiking safety assistant API", lifespan=lifespan)
     app.include_router(router)
     app.add_exception_handler(SourceUnavailable, source_unavailable_handler)
+    app.add_exception_handler(Exception, unexpected_error_handler)
     if mcp is not None:
         mount_mcp(app, mcp)
 
@@ -49,6 +56,12 @@ async def source_unavailable_handler(request: Request, exc: Exception) -> JSONRe
     assert isinstance(exc, SourceUnavailable)
     log.warning("source unavailable: %s", exc)
     return JSONResponse(status_code=503, content={"detail": str(exc), "source": exc.source})
+
+
+async def unexpected_error_handler(request: Request, exc: Exception) -> JSONResponse:
+    """Anything else is still JSON with a `source`, so the client's `ApiError` always has a shape."""
+    log.exception("unhandled error on %s %s", request.method, request.url.path, exc_info=exc)
+    return JSONResponse(status_code=500, content={"detail": "Internal error", "source": "internal"})
 
 
 def mount_mcp(app: FastAPI, mcp) -> None:

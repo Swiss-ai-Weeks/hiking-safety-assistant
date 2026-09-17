@@ -352,6 +352,23 @@ async def test_a_failed_stop_costs_that_stop(make_assessor):
     assert data.not_evaluated[0].leg_ids == ["hohturli-hutte"]
 
 
+class BrokenWeather(FakeWeather):
+    """A source with a bug: raises something other than `SourceUnavailable`."""
+
+    async def latest_run(self, day=None):
+        raise KeyError("last_run_initialisation_time")
+
+
+async def test_an_unexpected_error_is_not_assessable_rather_than_a_crash(make_assessor):
+    assessor = make_assessor(BrokenWeather(day_of()))
+
+    data = await assessor.assess(ROUTE, "assessed", SUMMER)
+
+    assert data.outcome == "not_assessable"
+    assert data.forecast.unavailable_reason == "source"
+    assert await assessor.recheck(SUMMER) is False
+
+
 async def test_no_model_run_is_not_assessable_because_of_the_source(make_assessor):
     data = await make_assessor(FakeWeather(day_of(), fail_run=True)).assess(ROUTE, "assessed", SUMMER)
 

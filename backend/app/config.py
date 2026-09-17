@@ -87,6 +87,12 @@ class Settings(BaseSettings):
     # Serve the MCP server over streamable HTTP at `/mcp`, next to the REST API.
     mcp_http: bool = True
 
+    # Assess (and narrate, in both languages) these routes for today and tomorrow when the service
+    # starts, in the background, so the first visitor after a restart does not wait on a cold cache.
+    # Live mode only; off by default so tests and `pnpm dev` stay quiet.
+    warmup_enabled: bool = False
+    warmup_routes: list[str] = ["oeschinensee-bluemlisalphuette"]
+
     @property
     def narration_configured(self) -> bool:
         return self.narration_enabled and bool(self.narration_base_url)

@@ -1,7 +1,10 @@
+from dataclasses import replace
+
 import pytest
 from fastapi.testclient import TestClient
 
 from app.main import create_app
+from app.sources import get_sources
 
 ROUTE_ID = "oeschinensee-bluemlisalphuette"
 
@@ -179,3 +182,20 @@ def test_the_mcp_server_answers_at_mcp_next_to_the_frontend(tmp_path):
         # Not swallowed by the frontend's client-side routing fallback.
         assert served.get("/mcp/anything").status_code == 404
         assert served.get("/some/page").status_code == 200
+
+
+def test_an_unexpected_error_is_json_with_a_source(tmp_path):
+    """Whatever breaks, the client gets the shape its `ApiError` reads, never an HTML page."""
+
+    class Broken:
+        async def search(self, q):
+            raise RuntimeError("bug")
+
+    app = create_app(frontend_dist=tmp_path)
+    sources = get_sources()
+    app.dependency_overrides[get_sources] = lambda: replace(sources, routes=Broken())
+    with TestClient(app, raise_server_exceptions=False) as client:
+        response = client.get("/api/routes/search", params={"q": "x"})
+
+    assert response.status_code == 500
+    assert response.json() == {"detail": "Internal error", "source": "internal"}

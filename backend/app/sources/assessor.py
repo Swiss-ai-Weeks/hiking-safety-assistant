@@ -48,6 +48,15 @@ class EngineAssessor:
         """`scenario` is a demo-mode control; the outcome here is derived, so it is ignored."""
         now = self.now()
         day = day or local_today(now)
+        try:
+            return await self._assess(route, day, now)
+        except Exception:
+            # A bug or an unexpected payload is still "we could not assess this", said as such, never a
+            # 500 the briefing cannot render. Not cached, so the next request tries again.
+            log.exception("assessment for %s on %s failed unexpectedly", route.id, day)
+            return engine.not_assessable("source", now)
+
+    async def _assess(self, route: Route, day: date, now: datetime) -> AssessmentData:
 
         try:
             model_for(target_time(engine.DAY_START, day), now)
@@ -86,6 +95,9 @@ class EngineAssessor:
             await self.weather.forecast_at(PROBE_POINT, 12 * 60, day)
         except SourceUnavailable as exc:
             log.info("forecast still unavailable: %s", exc)
+            return False
+        except Exception:
+            log.exception("forecast recheck failed unexpectedly")
             return False
         return True
 
