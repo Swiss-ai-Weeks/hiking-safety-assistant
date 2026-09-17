@@ -220,6 +220,64 @@ export interface Narration {
   hazards: NarratedHazard[]
 }
 
+/** Why an answer has no text, or `ok`. */
+export type AnswerReason = 'ok' | 'dropped' | 'off_topic' | 'disabled' | 'unavailable'
+
+/**
+ * A language model's answer to a question about the hike. `text` arrives filled in: every figure in it
+ * is the engine's or the plan's, and the server refused it otherwise.
+ */
+export interface Answer {
+  enabled: boolean
+  model?: string
+  reason: AnswerReason
+  text?: string
+  citations: Citation[]
+}
+
+export interface AskTurn {
+  question: string
+  answer: string
+}
+
+/** The hiker's plan at their pace, so answers can say when they reach each stop. */
+export interface PlanContext {
+  start: Minutes
+  turnaround: Minutes
+  arrivals: Record<string, Minutes>
+}
+
+/** Where the hiker is right now, during a hike. */
+export interface LiveContext {
+  now: Minutes
+  status: 'ahead' | 'behind' | 'pastCrux'
+  nextStopId: string
+  eta: Minutes
+  remainingKm: number
+  remainingAscentM: number
+  offRoute: boolean
+  cloud?: CloudAnswer | null
+}
+
+export interface AskRequest {
+  question: string
+  history: AskTurn[]
+  plan?: PlanContext | null
+  live?: LiveContext | null
+}
+
+/** One message of the conversation about a hike, as the device keeps it. */
+export interface ChatMessage {
+  id: string
+  role: 'user' | 'assistant'
+  /** Epoch milliseconds. */
+  at: number
+  text?: string
+  reason?: AnswerReason
+  model?: string
+  citations?: Citation[]
+}
+
 /** A route this device picked or opened, most recent first. Kept locally: the server has no users. */
 export interface RecentRoute {
   id: string

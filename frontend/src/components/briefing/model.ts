@@ -21,7 +21,7 @@ export interface KeyStop {
 }
 
 /** Everything the steps share: the walked track, where each stop sits on it, and the points worth naming. */
-export function useBriefingModel(view: AssessmentView) {
+export function useBriefingModel(view: Pick<AssessmentView, 'route' | 'arrivals' | 'start'>) {
   const { route, arrivals, start } = view
   const track = useMemo(() => trackOf(route), [route])
   const stopAlong = useMemo(() => stopAlongM(track, route.stops.length), [track, route.stops.length])

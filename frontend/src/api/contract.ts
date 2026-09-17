@@ -11,6 +11,8 @@
 
 import type {
   Alternative,
+  Answer,
+  AskRequest,
   AssessmentData,
   Citation,
   Forecast,
@@ -98,6 +100,7 @@ export type _HazardFacts = Expect<Assignable<Wire<'HazardFacts'>, HazardFacts>>
 export type _Citation = Expect<Assignable<Wire<'Citation'>, Citation>>
 export type _NarratedHazard = Expect<Assignable<Wire<'NarratedHazard'>, NarratedHazard>>
 export type _Narration = Expect<Assignable<Wire<'Narration'>, Narration>>
+export type _Answer = Expect<Assignable<Wire<'Answer'>, Answer>>
 export type _Alternative = Expect<Assignable<Wire<'StartEarlier'> | Wire<'AltRoute'>, Alternative>>
 
 // The endpoints as `api/queries.ts` actually calls them: the cast in each `queryFn` is checked
@@ -111,6 +114,10 @@ export type _AssessmentEndpoint = Expect<
 export type _NarrationEndpoint = Expect<
   Assignable<Json<paths['/api/routes/{route_id}/narration']['get']['responses'][200]>, Narration>
 >
+export type _AskEndpoint = Expect<
+  Assignable<Json<paths['/api/routes/{route_id}/ask']['post']['responses'][200]>, Answer>
+>
+export type _AskBody = Expect<Assignable<AskRequest, Body<paths['/api/routes/{route_id}/ask']['post']>>>
 export type _RetryEndpoint = Expect<
   Assignable<
     Json<paths['/api/forecast/retry']['post']['responses'][200]>,

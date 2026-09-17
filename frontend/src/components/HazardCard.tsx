@@ -2,15 +2,25 @@ import type { FlaggedHazard } from '../domain/assessment'
 import type { NarratedHazard } from '../domain/types'
 import { useT } from '../i18n'
 import { hazardText, narratedBody } from '../i18n/hazardCopy'
+import { AiBadge } from './AiBadge'
 import { SeverityDot } from './Severity'
 
 /**
  * Severity dot, place + time title, body, optional "Lifts if", provenance footnote.
  *
  * The body is the template until `narrated` arrives with one that passes the copy rules; then it is
- * that, labelled as worded by a model. Its citations are linked whether or not there is a body.
+ * that, marked with the model's sparkle badge. Its citations are linked whether or not there is a body.
  */
-export function HazardCard({ flagged, narrated }: { flagged: FlaggedHazard; narrated?: NarratedHazard }) {
+export function HazardCard({
+  flagged,
+  narrated,
+  model,
+}: {
+  flagged: FlaggedHazard
+  narrated?: NarratedHazard
+  /** The model that worded `narrated`, for its badge. */
+  model?: string
+}) {
   const { t, lang } = useT()
   const { hazard, severity } = flagged
   const liftsIf = hazard.hasLiftsIf ? hazardText(lang, hazard, 'liftsIf') : null
@@ -21,7 +31,10 @@ export function HazardCard({ flagged, narrated }: { flagged: FlaggedHazard; narr
     <article className="flex gap-3 rounded-card border border-line bg-card p-4">
       <SeverityDot severity={severity} className="mt-1.5" />
       <div className="flex min-w-0 flex-col gap-1.5">
-        <h3 className="text-base leading-[1.3] font-semibold">{hazardText(lang, hazard, 'title')}</h3>
+        <div className="flex items-start justify-between gap-2">
+          <h3 className="text-base leading-[1.3] font-semibold">{hazardText(lang, hazard, 'title')}</h3>
+          {phrased && <AiBadge model={model} className="mt-0.5" />}
+        </div>
         <p className="text-sm leading-normal text-ink-2">{phrased ?? hazardText(lang, hazard, 'body')}</p>
         {liftsIf && (
           <p className="text-[13px] leading-normal text-muted">
@@ -30,7 +43,6 @@ export function HazardCard({ flagged, narrated }: { flagged: FlaggedHazard; narr
           </p>
         )}
         <p className="text-xs text-faint">{hazard.provenance}</p>
-        {phrased && <p className="text-xs text-faint">{t('flagged.narrated')}</p>}
         {citations.length > 0 && (
           <p className="text-xs text-faint">
             {t('flagged.guidance')}{' '}

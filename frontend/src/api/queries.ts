@@ -1,5 +1,16 @@
 import { queryOptions } from '@tanstack/react-query'
-import type { AssessmentData, Lang, Minutes, Narration, PlaceResult, Route, RouteRequest, Scenario } from '../domain/types'
+import type {
+  Answer,
+  AskRequest,
+  AssessmentData,
+  Lang,
+  Minutes,
+  Narration,
+  PlaceResult,
+  Route,
+  RouteRequest,
+  Scenario,
+} from '../domain/types'
 import { api } from './client'
 
 export const routeQuery = (routeId: string) =>
@@ -34,6 +45,17 @@ export const narrationQuery = (routeId: string, scenario: Scenario, date: string
     retry: false,
     staleTime: 5 * 60_000,
   })
+
+/**
+ * A question about the hike, answered by the language model from the assessment and the plan. Never
+ * throws on the model's account: `reason` says why there is no text. A 429 means too many questions.
+ */
+export function askRoute(routeId: string, scenario: Scenario, date: string, lang: Lang, body: AskRequest) {
+  return api<Answer>(
+    `/routes/${encodeURIComponent(routeId)}/ask?scenario=${scenario}&date=${encodeURIComponent(date)}&lang=${lang}`,
+    { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) },
+  )
+}
 
 /** "Try again" on the not-assessable screen: asks the forecast source whether it answers now. */
 export function retryForecast(date: string) {

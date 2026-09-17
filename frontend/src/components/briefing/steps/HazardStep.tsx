@@ -8,6 +8,7 @@ import { useT } from '../../../i18n'
 import { hazardText } from '../../../i18n/hazardCopy'
 import { legsRange } from '../../../lib/route'
 import { usePlan } from '../../../store/plan'
+import { AiBadge } from '../../AiBadge'
 import { ChevronRight } from '../../icons'
 import { GapsList } from '../../GapsList'
 import { HazardCard, NotEvaluatedCard } from '../../HazardCard'
@@ -32,7 +33,8 @@ export function HazardPanel({ view, progress }: StepProps) {
   const [open, setOpen] = useState<HazardKind | null>(null)
   const { route, data, evaluation, paceAnswer, scenario } = view
   // Not blocking: until (or unless) it answers, the cards keep their templates.
-  const narration = useQuery(narrationQuery(route.id, scenario, date, lang)).data
+  const narrationResult = useQuery(narrationQuery(route.id, scenario, date, lang))
+  const narration = narrationResult.data
   const resolved = resolvedChecks(progress)
   const done = resolved >= HAZARD_ORDER.length
   const gaps = data.gaps.filter((gap) => !(gap === 'pace' && paceAnswer))
@@ -79,8 +81,13 @@ export function HazardPanel({ view, progress }: StepProps) {
                 </div>
               )}
               {expanded && (
-                <div className="pb-3">
-                  <HazardCard flagged={flagged} narrated={narration?.hazards.find((h) => h.id === flagged.hazard.id)} />
+                <div className="flex flex-col gap-1.5 pb-3">
+                  {narrationResult.isPending && <AiBadge state="pending" model="nemotron" className="self-end" />}
+                  <HazardCard
+                    flagged={flagged}
+                    narrated={narration?.hazards.find((h) => h.id === flagged.hazard.id)}
+                    model={narration?.model}
+                  />
                 </div>
               )}
             </li>

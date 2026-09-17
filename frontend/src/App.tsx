@@ -1,7 +1,6 @@
 import { lazy, Suspense } from 'react'
 import { createBrowserRouter, Navigate, RouterProvider, useLocation } from 'react-router'
 import { AppShell } from './components/AppShell'
-import { FieldScreen } from './screens/FieldScreen'
 import { PlanScreen } from './screens/PlanScreen'
 import { RoutePickerScreen } from './screens/RoutePickerScreen'
 import { SettingsScreen } from './screens/SettingsScreen'
@@ -9,6 +8,7 @@ import { ShareScreen } from './screens/ShareScreen'
 
 // Leaflet is only needed on the screens with a map.
 const BriefingScreen = lazy(() => import('./screens/BriefingScreen').then((m) => ({ default: m.BriefingScreen })))
+const FieldScreen = lazy(() => import('./screens/FieldScreen').then((m) => ({ default: m.FieldScreen })))
 const RouteMapScreen = lazy(() => import('./screens/RouteMapScreen').then((m) => ({ default: m.RouteMapScreen })))
 
 const mapFallback = <div className="flex-1 animate-pulse bg-subtle" />
@@ -48,7 +48,14 @@ const router = createBrowserRouter([
       { path: 'assessment', element: <ToBriefing /> },
       { path: 'assessment/map', element: <Navigate to="/map" replace /> },
       { path: 'preflight', element: <ToBriefing step={5} /> },
-      { path: 'field', element: <FieldScreen /> },
+      {
+        path: 'field',
+        element: (
+          <Suspense fallback={mapFallback}>
+            <FieldScreen />
+          </Suspense>
+        ),
+      },
       { path: 'share', element: <ShareScreen /> },
       { path: 'settings', element: <SettingsScreen /> },
       { path: '*', element: <Navigate to="/" replace /> },

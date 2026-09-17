@@ -1,7 +1,7 @@
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import { Fragment, useEffect, useMemo, type ReactNode } from 'react'
-import { MapContainer, Marker, Polyline, TileLayer, useMap } from 'react-leaflet'
+import { MapContainer, Marker, Polyline, TileLayer, useMap, useMapEvents } from 'react-leaflet'
 import type { LatLng, Leg, Route, StopSeverity } from '../../domain/types'
 import { stopWaypoint } from '../../lib/route'
 import { SEVERITY_STROKE } from '../../lib/ui'
@@ -84,6 +84,12 @@ function PanTo({ target }: { target: LatLng | null | undefined }) {
   return null
 }
 
+/** Tells the owner when the hiker moves the map themselves, so it stops following them. */
+function OnUserPan({ onPan }: { onPan: () => void }) {
+  useMapEvents({ dragstart: onPan })
+  return null
+}
+
 interface Props {
   route: Route
   /** Legs by paint. `'plain'` for all of them draws the route in ink. */
@@ -94,8 +100,12 @@ interface Props {
   walker?: LatLng | null
   me?: LatLng | null
   focus?: LatLng | null
-  /** Extra room at the bottom of the fitted bounds, for an overlay. */
+  /** The part of the route already walked, drawn over the legs in a faded ink. */
+  trail?: LatLng[] | null
+  /** Extra room at the top and bottom of the fitted bounds, for overlays. */
+  padTop?: number
   padBottom?: number
+  onUserPan?: () => void
   onTap?: () => void
   children?: ReactNode
   className?: string
@@ -109,7 +119,10 @@ export function RouteMap({
   walker = null,
   me = null,
   focus = null,
+  trail = null,
+  padTop = 48,
   padBottom = 24,
+  onUserPan,
   onTap,
   children,
   className = '',
@@ -128,7 +141,7 @@ export function RouteMap({
     <div className={`relative isolate ${className}`} onClick={onTap}>
       <MapContainer
         bounds={bounds}
-        boundsOptions={{ paddingTopLeft: [40, 48], paddingBottomRight: [40, padBottom] }}
+        boundsOptions={{ paddingTopLeft: [40, padTop], paddingBottomRight: [40, padBottom] }}
         zoomControl={false}
         attributionControl
         className="route-map absolute inset-0 h-full w-full"
@@ -171,6 +184,9 @@ export function RouteMap({
             <Polyline positions={drawnPath} pathOptions={{ color: PLAIN_STROKE, weight: 5 }} />
           </>
         )}
+        {trail && trail.length > 1 && (
+          <Polyline positions={trail} pathOptions={{ color: '#fff', weight: 7, opacity: 0.75, dashArray: '1 9', lineCap: 'round' }} />
+        )}
         {route.waypoints.map((w) => (
           <Marker key={w.id} position={w.latLng} icon={dotIcon} interactive={false} keyboard={false} />
         ))}
@@ -186,6 +202,7 @@ export function RouteMap({
         {walker && <Marker position={walker} icon={walkerIcon} interactive={false} keyboard={false} zIndexOffset={1000} />}
         {me && <Marker position={me} icon={youIcon} />}
         <PanTo target={focus} />
+        {onUserPan && <OnUserPan onPan={onUserPan} />}
       </MapContainer>
       {children}
     </div>

@@ -2,7 +2,7 @@ import { useSuspenseQuery } from '@tanstack/react-query'
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { routeQuery } from '../api/queries'
-import type { CloudAnswer, Lang, Minutes, PaceAnswer, RecentRoute, Route, SavedPlan, Scenario } from '../domain/types'
+import type { ChatMessage, CloudAnswer, Lang, Minutes, PaceAnswer, RecentRoute, Route, SavedPlan, Scenario } from '../domain/types'
 
 export function nextSaturdayISO(from: Date = new Date()): string {
   const d = new Date(from.getFullYear(), from.getMonth(), from.getDate())
@@ -21,6 +21,14 @@ export function nextSaturdayISO(from: Date = new Date()): string {
 export const DEFAULT_ROUTE_ID = 'oeschinensee-bluemlisalphuette'
 const DEFAULT_START: Minutes = 7 * 60 + 30
 const MAX_RECENT = 5
+/** Messages kept per conversation, and conversations kept on the device. */
+const MAX_MESSAGES = 40
+const MAX_CONVERSATIONS = 10
+
+/** One conversation per route and day: a question about Saturday means nothing on Sunday. */
+export function conversationKey(routeId: string, date: string): string {
+  return `${routeId}|${date}`
+}
 
 interface PlanData {
   lang: Lang
@@ -42,6 +50,8 @@ interface PlanData {
   saved: SavedPlan[]
   /** Routes picked on this device, most recent first. The server keeps no history. */
   recentRoutes: RecentRoute[]
+  /** Questions to the model and its answers, by `conversationKey`. Only on this device. */
+  conversations: Record<string, ChatMessage[]>
 }
 
 interface PlanActions {
@@ -63,6 +73,8 @@ interface PlanActions {
   observeCloud: (answer: CloudAnswer) => void
   savePlan: (route: Route) => void
   reopenPlan: (plan: SavedPlan) => void
+  addMessage: (key: string, message: ChatMessage) => void
+  clearConversation: (key: string) => void
   resetDemo: () => void
 }
 
@@ -84,6 +96,7 @@ const initialData = (): PlanData => ({
   cloudObservation: null,
   saved: [],
   recentRoutes: [],
+  conversations: {},
 })
 
 export const usePlan = create<PlanState>()(
@@ -144,16 +157,30 @@ export const usePlan = create<PlanState>()(
         },
         reopenPlan: (plan) =>
           edit({ routeId: plan.routeId, date: plan.date, start: plan.start, originalStart: plan.start, planAccepted: false }),
+        addMessage: (key, message) => {
+          const conversations = { ...get().conversations }
+          conversations[key] = [...(conversations[key] ?? []), message].slice(-MAX_MESSAGES)
+          // Keep the most recently used conversations: the key just written moves to the end.
+          const { [key]: current, ...rest } = conversations
+          const kept = Object.entries(rest).slice(-(MAX_CONVERSATIONS - 1))
+          set({ conversations: { ...Object.fromEntries(kept), [key]: current } })
+        },
+        clearConversation: (key) => {
+          set({ conversations: Object.fromEntries(Object.entries(get().conversations).filter(([k]) => k !== key)) })
+        },
         resetDemo: () => set({ ...initialData(), lang: get().lang }),
       }
     },
     {
       name: 'hsa-plan',
-      version: 2,
+      version: 3,
       // v2 keeps recent routes on the device, now that the server no longer invents a list.
+      // v3 keeps the conversation with the model about each hike.
       migrate: (persisted, version) => {
-        const state = persisted as Partial<PlanData>
-        return version < 2 ? { ...state, recentRoutes: [] } : state
+        let state = persisted as Partial<PlanData>
+        if (version < 2) state = { ...state, recentRoutes: [] }
+        if (version < 3) state = { ...state, conversations: {} }
+        return state
       },
     },
   ),

@@ -1,5 +1,8 @@
-import type { ComponentType } from 'react'
+import { useState, type ComponentType } from 'react'
 import { useNavigate, useSearchParams } from 'react-router'
+import { AskComposer } from '../components/ask/AskComposer'
+import { AskConversation } from '../components/ask/AskConversation'
+import { useAsk } from '../components/ask/useAsk'
 import { BottomAction } from '../components/BottomAction'
 import { Button, ButtonLink, PillButton } from '../components/Button'
 import { useBriefingModel } from '../components/briefing/model'
@@ -23,6 +26,7 @@ import { RoutePanel } from '../components/briefing/steps/RouteStep'
 import { TimePanel } from '../components/briefing/steps/TimeStep'
 import type { MapContext, StepMap, StepProps } from '../components/briefing/steps/types'
 import { WeatherPanel } from '../components/briefing/steps/WeatherStep'
+import { CloseIcon } from '../components/icons'
 import { ScreenHeader } from '../components/ScreenHeader'
 import { SeverityLegend } from '../components/Severity'
 import { formatClock } from '../domain/timing'
@@ -30,7 +34,7 @@ import { useAnimationProgress, usePrefersReducedMotion } from '../hooks/useAnima
 import { useAssessmentView, type AssessmentView } from '../hooks/useAssessmentView'
 import { useT, type MessageKey } from '../i18n'
 import { formatShortDate } from '../lib/format'
-import { routeName } from '../lib/route'
+import { routeName, stopWaypoint } from '../lib/route'
 import { usePlan, useTurnaround } from '../store/plan'
 
 interface StepDef {
@@ -71,6 +75,13 @@ function Briefing({ view }: { view: AssessmentView }) {
   const reducedMotion = usePrefersReducedMotion()
 
   const { route, data, start, paceAnswer } = view
+  // Talking to the model about this briefing. Open, the conversation takes the place of the step.
+  const [chatOpen, setChatOpen] = useState(false)
+  const ask = useAsk({
+    route,
+    scenario: view.scenario,
+    context: () => ({ plan: { start, turnaround, arrivals: view.arrivals }, live: null }),
+  })
   const assessable = data.outcome !== 'not_assessable'
   // Without a forecast the story stops at the weather: no checks, and no plan built on nothing.
   const lastStep = assessable ? STEP_COUNT : 3
@@ -130,6 +141,29 @@ function Briefing({ view }: { view: AssessmentView }) {
       </RouteMap>
 
       <section className="relative z-10 -mt-4 flex min-h-0 flex-1 flex-col rounded-t-sheet border-t border-line bg-canvas shadow-[0_-6px_20px_rgba(0,0,0,0.08)]">
+        {chatOpen ? (
+          <div className="min-h-0 flex-1 overflow-y-auto px-[18px] pt-3 pb-3">
+            <div className="mb-3 flex items-center justify-between gap-2">
+              <h2 className="text-[17px] font-semibold">{t('ask.title')}</h2>
+              <button
+                type="button"
+                onClick={() => setChatOpen(false)}
+                aria-label={t('ask.close')}
+                className="flex size-9 items-center justify-center rounded-full text-muted hover:bg-subtle"
+              >
+                <CloseIcon />
+              </button>
+            </div>
+            <AskConversation
+              ask={ask}
+              suggestions={[
+                t('ask.suggest.brief.wind', { crux: stopWaypoint(route, route.cruxStopId).name }),
+                t('ask.suggest.brief.later'),
+                t('ask.suggest.brief.exposed'),
+              ]}
+            />
+          </div>
+        ) : (
         <div key={step} className="step-enter min-h-0 flex-1 overflow-y-auto px-[18px] pt-4 pb-4">
           <StepHeader
             step={step}
@@ -142,7 +176,21 @@ function Briefing({ view }: { view: AssessmentView }) {
             {blocked ? <NotAssessablePanel view={view} /> : <Panel view={view} model={model} progress={progress} />}
           </div>
         </div>
+        )}
 
+        <div className={`shrink-0 px-[18px] ${chatOpen ? 'pt-2 pb-[max(env(safe-area-inset-bottom),16px)]' : 'pt-2'}`}>
+          <AskComposer
+            pending={ask.pending}
+            placeholder={t('ask.placeholder')}
+            onFocus={() => setChatOpen(true)}
+            onSend={(question) => {
+              setChatOpen(true)
+              void ask.send(question)
+            }}
+          />
+        </div>
+
+        {!chatOpen && (
         <BottomAction>
           {step > 1 && step < STEP_COUNT && (
             <Button variant="secondary" className="w-[104px]" onClick={() => goTo(step - 1)}>
@@ -173,6 +221,7 @@ function Briefing({ view }: { view: AssessmentView }) {
             </>
           )}
         </BottomAction>
+        )}
       </section>
     </div>
   )

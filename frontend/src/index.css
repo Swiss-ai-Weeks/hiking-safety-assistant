@@ -47,6 +47,13 @@
   --color-field-muted: oklch(0.7 0.02 75);
   --color-field-hint: oklch(0.65 0.02 75);
 
+  /* Language model: its own hue, never a severity and never the action plum */
+  --color-ai: oklch(0.5 0.15 265);
+  --color-ai-soft: oklch(0.95 0.025 265);
+  --color-ai-line: oklch(0.86 0.06 265);
+  --color-ai-dark: oklch(0.8 0.1 265);
+  --color-ai-dark-soft: oklch(0.29 0.05 265);
+
   --radius-control: 12px;
   --radius-button: 14px;
   --radius-card: 16px;
@@ -176,6 +183,20 @@
   .map-walker,
   .check-resolve,
   .step-enter {
+    animation: none;
+  }
+}
+
+/* Language-model marks */
+@keyframes ai-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.45; transform: scale(0.85); }
+}
+.ai-pulse {
+  animation: ai-pulse 1.2s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .ai-pulse {
     animation: none;
   }
 }
