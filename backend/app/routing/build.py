@@ -19,9 +19,6 @@ from .timing import GRADE_ORDER, din_minutes
 
 log = logging.getLogger(__name__)
 
-# The boat off Oeschinensee and its equivalents are not in any dataset we read. The field stays in
-# the model because the UI shows it; until there is a timetable source it is the end of the day.
-DEFAULT_LAST_SERVICE_MIN = 18 * 60
 # Turn around by this time unless the hiker moves it. Late enough to reach a hut, early enough to
 # get down in daylight.
 DEFAULT_TURNAROUND_MIN = 11 * 60 + 30
@@ -175,7 +172,6 @@ def build_route(
         crux_stop_id=crux_stop.id,
         bailout_name=bailout[1] if bailout else waypoints[0].name,
         bailout_stop_id=bailout[0].id if bailout else None,
-        last_boat=DEFAULT_LAST_SERVICE_MIN,
         turnaround_default=DEFAULT_TURNAROUND_MIN,
         geometry=[(round(v.point.lat, 6), round(v.point.lng, 6)) for v in vertices],
         elevations=[round(v.point.elevation_m or 0) for v in vertices],

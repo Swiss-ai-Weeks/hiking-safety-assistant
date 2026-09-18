@@ -78,7 +78,6 @@ OESCHINEN_ROUTE = Route(
     ],
     crux_stop_id="hohturli",
     bailout_name="Oberbärgli",
-    last_boat=16 * 60 + 10,
     turnaround_default=11 * 60 + 30,
 )
 

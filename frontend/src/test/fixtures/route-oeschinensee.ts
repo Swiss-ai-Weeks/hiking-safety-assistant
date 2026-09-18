@@ -36,7 +36,6 @@ export const oeschinenRoute: Route = {
   ],
   cruxStopId: 'hohturli',
   bailoutName: 'Oberbärgli',
-  lastBoat: 16 * 60 + 10,
   turnaroundDefault: 11 * 60 + 30,
 }
 

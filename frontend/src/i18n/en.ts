@@ -75,9 +75,7 @@ export const en = {
   'brief.start': 'Start',
   'brief.backAt': 'Back',
   'brief.breaksIncluded': 'breaks included',
-  'brief.lastBoat': 'Last boat {time}',
   'brief.lateCrux': 'You would reach {place} after your turnaround time.',
-  'brief.lateBoat': 'You would be back after the last boat.',
   'brief.noData': 'no data',
   'brief.when': 'Time',
   'brief.where': 'Place',
@@ -97,7 +95,7 @@ export const en = {
   'brief.ruleEyebrow': 'Your turnaround rule',
   'brief.ruleBig': 'At {place} by {time}',
   'brief.ruleElse': 'If not, or if cloud sits below the ridge: turn back via {bailout}.',
-  'brief.ruleWhy': 'Keeps the {boat} last boat and the easy way down.',
+  'brief.ruleWhy': 'Leaves you the easy way down.',
   'brief.undo': 'Undo',
   'brief.adjust': 'Adjust times and group',
 
@@ -182,7 +180,7 @@ export const en = {
   'alts.applied': 'Start moved to {start}. Times and flags updated.',
   'alt.startEarlier.title': 'Start at {start} instead',
   'alt.startEarlier.body':
-    'Puts you on {place} at {time}, before the gusts build. You keep the hut lunch and the {boat} last boat.',
+    'Puts you on {place} at {time}, before the gusts build.',
   'alt.bailout.title': 'Or: turn back at {place}, {grade}',
   'alt.bailout.body':
     'Come back down the way you went up, before the exposed section. Nothing rated high on this shorter day for {day}, data as of {time}.',
@@ -296,7 +294,7 @@ export const en = {
 
   'share.title': 'Our plan for {day}',
   'share.eyebrow': '{date} · {count} people',
-  'share.meta': '{grade} · {km} km · start {start} · back for the {boat} boat',
+  'share.meta': '{grade} · {km} km · start {start}',
   'share.turnIf': 'We turn around if',
   'share.turnRule': 'Not at {place} by {time}, or cloud base below the ridge. Then: descend via {bailout}.',
   'share.watchFor': 'Watch for',

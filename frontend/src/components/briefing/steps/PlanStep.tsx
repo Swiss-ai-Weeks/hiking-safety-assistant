@@ -55,7 +55,7 @@ export function PlanPanel({ view, model }: StepProps) {
   const tiles = [
     { label: t('brief.start'), value: formatClock(start) },
     { label: crux.name, value: formatArrival(arrivals[route.cruxStopId]), warn: arrivals[route.cruxStopId] > turnaround },
-    { label: t('brief.backAt'), value: formatArrival(model.end), warn: model.end > route.lastBoat },
+    { label: t('brief.backAt'), value: formatArrival(model.end) },
   ]
 
   return (
@@ -83,7 +83,7 @@ export function PlanPanel({ view, model }: StepProps) {
           ))}
         </dl>
         <p className="text-[13px] leading-normal text-crux-muted">
-          {t('brief.ruleWhy', { boat: formatClock(route.lastBoat) })}
+          {t('brief.ruleWhy')}
         </p>
       </section>
 
@@ -119,7 +119,6 @@ export function PlanPanel({ view, model }: StepProps) {
               body={t('alt.startEarlier.body', {
                 place: crux.name,
                 time: formatArrival(computeArrivals(route, startAlt.start, paceAnswer)[route.cruxStopId]),
-                boat: formatClock(route.lastBoat),
               })}
               badge={<span className="shrink-0 text-xs font-semibold text-plum">{t('alts.suggested')}</span>}
               onSelect={hikeStarted ? undefined : () => setStart(startAlt.start)}

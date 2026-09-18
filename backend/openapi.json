@@ -1043,10 +1043,6 @@
             "title": "Id",
             "type": "string"
           },
-          "lastBoat": {
-            "title": "Lastboat",
-            "type": "integer"
-          },
           "legs": {
             "items": {
               "$ref": "#/components/schemas/Leg"
@@ -1089,7 +1085,6 @@
           "legs",
           "cruxStopId",
           "bailoutName",
-          "lastBoat",
           "turnaroundDefault"
         ],
         "title": "Route",

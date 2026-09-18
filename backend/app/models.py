@@ -91,7 +91,6 @@ class Route(Schema):
     legs: list[Leg]
     crux_stop_id: str
     bailout_name: str
-    last_boat: Minutes
     turnaround_default: Minutes
     descent_m: int | None = None
     # Which stop the bail-out is, so the map can place its label. `bailout_name` alone cannot be

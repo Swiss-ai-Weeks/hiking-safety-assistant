@@ -77,9 +77,7 @@ export const fr: Messages = {
   'brief.start': 'Départ',
   'brief.backAt': 'Retour',
   'brief.breaksIncluded': 'pauses comprises',
-  'brief.lastBoat': 'Dernier bateau {time}',
   'brief.lateCrux': 'Vous atteindriez {place} après votre heure de demi-tour.',
-  'brief.lateBoat': 'Vous seriez de retour après le dernier bateau.',
   'brief.noData': 'pas de données',
   'brief.when': 'Heure',
   'brief.where': 'Lieu',
@@ -99,7 +97,7 @@ export const fr: Messages = {
   'brief.ruleEyebrow': 'Votre règle de demi-tour',
   'brief.ruleBig': 'Au {place} à {time}',
   'brief.ruleElse': 'Sinon, ou si les nuages sont sous l’arête : demi-tour par {bailout}.',
-  'brief.ruleWhy': 'Garde le dernier bateau de {boat} et la descente facile.',
+  'brief.ruleWhy': 'Vous laisse la descente facile.',
   'brief.undo': 'Annuler',
   'brief.adjust': 'Ajuster horaires et groupe',
 
@@ -184,7 +182,7 @@ export const fr: Messages = {
   'alts.applied': 'Départ déplacé à {start}. Horaires et signalements mis à jour.',
   'alt.startEarlier.title': 'Partir plutôt à {start}',
   'alt.startEarlier.body':
-    'Vous êtes au {place} à {time}, avant que les rafales ne forcissent. Vous gardez le repas à la cabane et le dernier bateau de {boat}.',
+    'Vous êtes au {place} à {time}, avant que les rafales ne forcissent.',
   'alt.bailout.title': 'Ou : faire demi-tour à {place}, {grade}',
   'alt.bailout.body':
     'Redescendre par le même chemin, avant le passage exposé. Rien d’élevé signalé sur cette journée plus courte pour {day}, selon les données de {time}.',
@@ -298,7 +296,7 @@ export const fr: Messages = {
 
   'share.title': 'Notre plan pour {day}',
   'share.eyebrow': '{date} · {count} personnes',
-  'share.meta': '{grade} · {km} km · départ {start} · retour pour le bateau de {boat}',
+  'share.meta': '{grade} · {km} km · départ {start}',
   'share.turnIf': 'Nous faisons demi-tour si',
   'share.turnRule': 'Pas au {place} à {time}, ou nuages sous l’arête. Alors : redescendre par {bailout}.',
   'share.watchFor': 'Attention à',

@@ -86,7 +86,6 @@ export function ShareScreen() {
                   grade: route.grade,
                   km: formatKm(route.distanceKm, lang),
                   start: formatClock(start),
-                  boat: formatClock(route.lastBoat),
                 })}
               </p>
             </div>

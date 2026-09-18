@@ -55,16 +55,14 @@ export function TimePanel({ view, model, progress }: StepProps) {
         stops={route.stops.map((stop) => arrivals[stop.id])}
         marks={[
           { at: turnaround, label: t('map.turnBy', { time: formatClock(turnaround) }), tone: 'plum', side: 'top' },
-          { at: route.lastBoat, label: t('brief.lastBoat', { time: formatClock(route.lastBoat) }), tone: 'muted', side: 'top' },
           ...(crux ? [{ at: cruxArrival, label: `${crux.name} ${formatArrival(cruxArrival)}`, tone: 'ink' as const, side: 'bottom' as const }] : []),
         ]}
       />
 
-      {progress >= 1 && (cruxArrival > turnaround || model.end > route.lastBoat) && (
-        <ul role="status" className="flex flex-col gap-1 text-[13px] font-semibold text-sev-high">
-          {crux && cruxArrival > turnaround && <li>{t('brief.lateCrux', { place: crux.name })}</li>}
-          {model.end > route.lastBoat && <li>{t('brief.lateBoat')}</li>}
-        </ul>
+      {progress >= 1 && crux && cruxArrival > turnaround && (
+        <p role="status" className="text-[13px] font-semibold text-sev-high">
+          {t('brief.lateCrux', { place: crux.name })}
+        </p>
       )}
     </div>
   )

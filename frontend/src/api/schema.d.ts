@@ -530,8 +530,6 @@ export interface components {
             grade: "T1" | "T2" | "T3" | "T4" | "T5" | "T6";
             /** Id */
             id: string;
-            /** Lastboat */
-            lastBoat: number;
             /** Legs */
             legs: components["schemas"]["Leg"][];
             /** Stops */

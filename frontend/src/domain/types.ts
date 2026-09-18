@@ -70,7 +70,6 @@ export interface Route {
   legs: Leg[]
   cruxStopId: string
   bailoutName: string
-  lastBoat: Minutes
   turnaroundDefault: Minutes
   descentM?: number
   /** Which stop the bail-out is. `bailoutName` alone cannot be placed on the map. */
