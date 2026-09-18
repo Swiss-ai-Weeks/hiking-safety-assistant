@@ -20,6 +20,20 @@ The app opens on route search with **From** and **To** empty. Type a few letters
 
 Search covers all of Switzerland, so pick the result in the region, not just the first one. "Blüemlisalp" alone first returns a hamlet near Zürich, and the lake above Grindelwald is "Bachsee" on the official map ("Bachalpsee" finds nothing). A place outside the region, such as Bern → Gurten, gets "no marked trail nearby", which is the expected answer. Hazards are checked against the real MeteoSwiss forecast for the chosen date, so the outcome varies by day; sections that could not be checked are marked "not evaluated", never clear.
 
+#### Routes that flag a hazard
+
+Weather hazards need both weather and ground: high passes catch cold first, and cloud or wet rock only counts from T3. These routes flagged hazards on the live app on 18 September 2026 (times are when the hiker would be at the named place):
+
+| From → To | Route (out and back) | Flagged |
+|---|---|---|
+| Griesalp → *Ort Griesalp* / Rotstockhütte → *Gebaeude Rotstockhütte* | T2, 19.9 km, ↑1,271 m, over the Sefinafurgga | Cold (moderate) at Sefinafurgga all day |
+| Mürren → *Ort Mürren* / Schilthorn → *Hauptgipfel Schilthorn (BE)* | T2, 14.8 km, ↑1,350 m | Cold (moderate) near the summit until 12:00, and until 09:00 the next day |
+| Oeschinensee → Blüemlisalphütte (above) | T2, 10.2 km, ↑1,200 m | Cold (moderate) at Hohtürli until 09:00, and until 10:00 the next day |
+| Stechelberg → Obersteinberg (above) | T3, 10.6 km, ↑987 m | Poor visibility (moderate) at Berggasthaus Tschingelhorn until 11:00: the cloud base sits below the hut, and the ground is T3 |
+| Schynige Platte → Faulhorn, First → Faulhorn | T2 | Cold (moderate) at Männdlenen / Reetihitta until 10:00 |
+
+Any route shows the **daylight** hazard: move the start time late enough that the return ends after about 19:35 (45 minutes before sunset, for the valley's shadow) and it turns high. Gusts, showers, thunderstorms and snow did not appear that week because the forecast was calm; on an unsettled day, try them on the Hohtürli, the Sefinafurgga or the Schilthorn. Thunderstorms rank one level higher above 2,000 m, and on exposed ground (T3 and up, or cables) gusts count from 40 km/h instead of 60 km/h. The thresholds are in [backend/app/hazards/rules.py](backend/app/hazards/rules.py).
+
 | Folder | Contents |
 |---|---|
 | [frontend/](frontend/) | React app |
