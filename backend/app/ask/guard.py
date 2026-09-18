@@ -20,6 +20,9 @@ NUMBER = re.compile(r"(?<![\w.:])-?\d+(?:[.:h]\d+)?(?![\w.:]*\d)")
 UNITS = ("km/h", "mm/h", "km", "°C", "%", "min", "m", "h")
 _UNIT_AFTER = re.compile(r"\s*(km/h|mm/h|km|°C|%|min|m|h)(?![A-Za-zÀ-ÿ])")
 _FRENCH_CLOCK = re.compile(r"^(\d{1,2})h(\d{2})$")
+# `1 304 m`, `1'304 m`: a height copied with its thousands grouped. Joined again only when the joined
+# figure is one the briefing gave, so two separate numbers are never read as one.
+_GROUPED = re.compile(r"(?<![\w.:])\d{1,3}(?:[   '’]\d{3})+(?![\w.:]*\d)")
 
 __all__ = ["MAX_CHARS", "PLACEHOLDER", "allowed_figures", "fill", "normalise", "strip_echoes", "violations"]
 
@@ -58,6 +61,15 @@ def strip_echoes(text: str, facts: dict[str, str]) -> str:
     return "".join(out)
 
 
+def _ungroup(text: str, allowed: set[tuple[str, str]]) -> str:
+    def join(match: re.Match[str]) -> str:
+        joined = re.sub(r"\D", "", match.group())
+        unit = _UNIT_AFTER.match(text, match.end())
+        return joined if (joined, unit.group(1) if unit else "") in allowed else match.group()
+
+    return _GROUPED.sub(join, text)
+
+
 def violations(text: str, facts: dict[str, str], lang: Lang) -> list[str]:
     """Why `text` may not be shown. Empty when it may."""
     found: list[str] = []
@@ -65,8 +77,8 @@ def violations(text: str, facts: dict[str, str], lang: Lang) -> list[str]:
         return ["empty"]
     if len(text) > MAX_CHARS:
         found.append(f"longer than {MAX_CHARS} characters")
-    bare = PLACEHOLDER.sub("", text)
     allowed = allowed_figures(facts)
+    bare = _ungroup(PLACEHOLDER.sub("", text), allowed)
     invented = []
     for match in NUMBER.finditer(bare):
         unit = _UNIT_AFTER.match(bare, match.end())

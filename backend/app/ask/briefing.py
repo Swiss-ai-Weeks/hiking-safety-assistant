@@ -11,6 +11,7 @@ Values carry their unit, so the model never has to add one.
 from dataclasses import dataclass, field
 from datetime import date
 
+from ..hazards.alternatives import start_later
 from ..hazards.daylight import sun_times
 from ..hazards.intervals import peak
 from ..models import AltRoute, AssessmentData, HazardDef, KeyLabel, LiveContext, PlanContext, Route, StartEarlier
@@ -133,6 +134,44 @@ def _hazard_lines(b: Briefing, route: Route, hazard: HazardDef) -> list[str]:
                 continue
             shown = clock(value) if unit is None else unit.format(value)
             lines.append(f"    {words}: {b.put(f'{key}.{name}', shown)}")
+    return lines
+
+
+def _later_lines(
+    b: Briefing, route: Route, assessment: AssessmentData, plan: PlanContext | None, crux: str, sunset: int | None
+) -> list[str]:
+    """Later starts, worked out by the engine, so a "what if I start later" answer never shifts a time itself."""
+    if plan is not None:
+        shifts = start_later(route, assessment.hazards, plan.start, dict(plan.arrivals))
+        turnaround, pace = plan.turnaround, "your pace"
+    else:
+        shifts = start_later(route, assessment.hazards)
+        turnaround, pace = route.turnaround_default, "a cautious pace, from the reference start"
+    if not shifts:
+        return []
+    lines = [f"IF YOU START LATER (worked out by the rules engine at {pace}; every arrival moves by as much)"]
+    for s in shifts:
+        key = f"later.{s.shift}"
+        head = f"- Starting {b.put(key + '.start', clock(round(s.start)))}: "
+        parts = []
+        if s.crux is not None:
+            when = "after" if s.crux > turnaround else "before"
+            parts.append(f"you reach {crux} {b.put(key + '.crux', clock(round(s.crux)))}, {when} your turnaround time")
+        finish = f"you finish {b.put(key + '.finish', clock(round(s.finish)))}"
+        if sunset is not None:
+            finish += ", after sunset" if s.finish > sunset else ", before sunset"
+        parts.append(finish)
+        if assessment.outcome == "not_assessable":
+            parts.append("the weather for any start is unknown")
+        elif s.changes:
+            parts += [
+                f"{hazard_name(h)} changes from {SEVERITY_WORDS[before]} to {SEVERITY_WORDS[after]}"
+                for h, before, after in s.changes
+            ]
+            parts.append("nothing else flagged changes")
+        else:
+            parts.append("no flagged hazard changes")
+        lines.append(head + "; ".join(parts) + ".")
     return lines
 
 
@@ -264,6 +303,10 @@ def build_briefing(
                 f"Alternative: turn back at {alternative.place} instead of crossing the crux "
                 f"({GRADE_WORDS[alternative.grade]})."
             )
+    # During a hike the start is behind them: only a plan can start later.
+    if live is None:
+        out.append("")
+        out += _later_lines(b, route, assessment, plan, crux, sun[1] if sun else None)
 
     if plan is None:
         out.append("")

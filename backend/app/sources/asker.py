@@ -87,7 +87,8 @@ class LlmAsker:
                 if (cached := self.cache.read(key, self.settings.cache_ttl_narration_s)) is not None:
                     return Answer.model_validate(cached)
                 answer = await self._answer(briefing, passages, request, lang)
-                if answer.reason != "unavailable":
+                # A dropped answer may well be kept by the next try: only a real answer is worth keeping.
+                if answer.reason not in ("unavailable", "dropped"):
                     self.cache.write(key, answer.model_dump(mode="json", by_alias=True, exclude_none=True))
         # Never "off topic" or silence for someone hurt or lost: the app's own sentence instead.
         if answer.reason != "ok" and EMERGENCY.search(request.question):
@@ -136,7 +137,7 @@ class LlmAsker:
                     text=fill(text, briefing.facts),
                     citations=[_citation(p) for p in used],
                 )
-            log.info("ask: answer rejected (attempt %d): %s: %r", attempt + 1, "; ".join(problems), text)
+            log.warning("ask: answer rejected (attempt %d): %s: %r", attempt + 1, "; ".join(problems), text)
             if attempt == 0:
                 follow_up = [*messages, {"role": "assistant", "content": content}]
                 follow_up.append({"role": "user", "content": build_correction(problems)})

@@ -10,7 +10,7 @@ from .briefing import Briefing
 from .guard import MAX_CHARS
 
 # Part of the cache key: bump it whenever the prompt or the answer format changes.
-ASK_PROMPT_VERSION = 4
+ASK_PROMPT_VERSION = 5
 
 LANGUAGE: dict[Lang, str] = {"en": "English (British spelling)", "fr": "French (as written in Switzerland, vous)"}
 
@@ -29,7 +29,8 @@ Rules, all strict:
    "gusts to {{h.gusts-hohturli.gust}}". Write the placeholder alone: its value already has its unit,
    and never repeat the "= value" part. A figure belongs to the place and time the briefing gives it
    for: never move it to another stop or hour. Never calculate a new figure (no sums, differences or
-   shifted times); describe the change in words instead. Write SAC grades in words.
+   shifted times); describe the change in words instead. For another start time, quote the IF YOU
+   START LATER or Alternative lines; never shift a time yourself. Write SAC grades in words.
 3. Use only the BRIEFING and the GUIDANCE. If they do not answer the question, say so in one sentence
    and say what they do tell. Never guess or invent weather, places, times or advice.
 4. Never tell the hiker whether to go, carry on or turn back, and never call anything safe, fine,

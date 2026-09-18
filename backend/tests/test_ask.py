@@ -70,6 +70,33 @@ def test_the_hikers_own_rule_saying_turn_is_put_plainly(status, cloud):
     assert "RULE SAYS TURN BACK NOW AND DESCEND VIA Oberbärgli" in briefing.text
 
 
+def test_a_later_start_is_worked_out_by_the_engine_from_the_hikers_own_arrivals():
+    briefing = build_briefing(OESCHINEN_ROUTE, ASSESSED, DAY, PLAN)
+
+    crux = ARRIVALS[OESCHINEN_ROUTE.crux_stop_id]
+    assert briefing.facts["later.30.start"] == "08:00"
+    assert briefing.facts["later.30.crux"] == f"{(crux + 30) // 60:02d}:{(crux + 30) % 60:02d}"
+    assert "later.90.finish" in briefing.facts
+    line = next(line for line in briefing.text.splitlines() if "{later.60.start}" in line)
+    assert "after your turnaround time" in line
+    assert "showers and wet rock changes from nothing flagged to moderate" in line
+
+
+def test_a_later_start_without_a_plan_uses_the_cautious_pace_and_none_is_offered_mid_hike():
+    assert "later.30.crux" in build_briefing(OESCHINEN_ROUTE, ASSESSED, DAY).facts
+
+    briefing = build_briefing(OESCHINEN_ROUTE, ASSESSED, DAY, PLAN, live())
+    assert "IF YOU START LATER" not in briefing.text
+    assert not any(name.startswith("later.") for name in briefing.facts)
+
+
+def test_an_answer_quoting_a_later_start_passes_the_guard():
+    briefing = build_briefing(OESCHINEN_ROUTE, ASSESSED, DAY, PLAN)
+
+    text = "Starting at {later.60.start}, you reach Hohtürli about {later.60.crux}, after your turnaround time."
+    assert violations(text, briefing.facts, "en") == []
+
+
 def test_a_day_without_an_assessment_says_the_weather_is_unknown():
     briefing = build_briefing(OESCHINEN_ROUTE, get_assessment("not_assessable"), DAY)
 
@@ -115,6 +142,17 @@ def test_french_verdicts_are_refused_too():
 
 def test_a_figure_copied_from_the_briefing_is_the_same_figure_and_passes():
     assert violations("You reach Hohtürli about 10:40, gusts to 60 km/h, in French 10h40.", FACTS, "fr") == []
+
+
+@pytest.mark.parametrize("height", ["1 304 m", "1'304 m", "1 304 m", "1 304 m"])
+def test_a_height_copied_with_its_thousands_grouped_is_the_same_figure(height):
+    assert violations(f"The climb to {height}.", {"elev.x": "1304 m"}, "en") == []
+
+
+def test_grouping_never_joins_two_figures_into_one_the_briefing_did_not_give():
+    found = violations("The climb to 1 305 m.", {"elev.x": "1304 m"}, "en")
+
+    assert any("figures not in the briefing" in v for v in found)
 
 
 def test_the_briefings_own_notation_is_stripped_however_often_it_is_copied():
@@ -203,10 +241,13 @@ async def test_a_broken_answer_is_sent_back_once_and_the_rewrite_served(tmp_path
 async def test_an_answer_still_broken_after_the_correction_is_dropped(tmp_path):
     endpoint = Endpoint(completion("It is safe."))
 
-    answer = await ask(endpoint.asker(tmp_path))
+    asker = endpoint.asker(tmp_path)
+    answer = await ask(asker, plan=PLAN)
 
     assert answer.reason == "dropped" and answer.text is None
     assert len(endpoint.requests) == 2
+    await ask(asker, plan=PLAN)
+    assert len(endpoint.requests) == 4, "a dropped answer is not cached: asking again tries again"
 
 
 async def test_passage_ids_it_was_not_given_are_ignored_not_held_against_it(tmp_path):

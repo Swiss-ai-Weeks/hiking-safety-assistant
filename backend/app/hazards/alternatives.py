@@ -79,6 +79,55 @@ def start_earlier(route: Route, hazards: list[HazardDef], reference: Minutes = R
     return [suggestion for _, suggestion in sorted(suggestions, key=lambda row: -row[0])]
 
 
+LATER_BY_MIN = (30, 60, 90)
+
+
+@dataclass(frozen=True, slots=True)
+class StartShift:
+    """What starting `shift` minutes later changes, at the same pace: a later start moves every arrival by as much."""
+
+    shift: int
+    start: float
+    crux: float | None
+    finish: float
+    # (hazard, severity before, severity after), only for hazards whose severity changes.
+    changes: list[tuple[HazardDef, Severity, Severity]]
+
+
+def start_later(
+    route: Route,
+    hazards: list[HazardDef],
+    start: Minutes | None = None,
+    at: dict[str, float] | None = None,
+    shifts: tuple[int, ...] = LATER_BY_MIN,
+) -> list[StartShift]:
+    """The same day started later, from the hiker's own arrivals when there are some, else the cautious pace."""
+    if start is None or not at:
+        start, at = REFERENCE_START, arrivals(timeline(route), REFERENCE_START)
+    last = next((stop.id for stop in reversed(route.stops) if stop.id in at), None)
+    if last is None:
+        return []
+    baseline = {hazard.id: hazard_severity(hazard, at) for hazard in hazards}
+    out = []
+    for shift in shifts:
+        later = {stop_id: minute + shift for stop_id, minute in at.items()}
+        changes = [
+            (hazard, baseline[hazard.id], after)
+            for hazard in hazards
+            if (after := hazard_severity(hazard, later)) != baseline[hazard.id]
+        ]
+        out.append(
+            StartShift(
+                shift=shift,
+                start=start + shift,
+                crux=later.get(route.crux_stop_id),
+                finish=later[last],
+                changes=changes,
+            )
+        )
+    return out
+
+
 def format_duration(minutes: float) -> str:
     hours, rest = divmod(round(minutes), 60)
     return f"{hours} h {rest:02d}"
