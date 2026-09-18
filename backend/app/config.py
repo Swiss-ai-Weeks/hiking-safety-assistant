@@ -8,7 +8,6 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 BACKEND_DIR = Path(__file__).resolve().parents[1]
 
-SourceMode = Literal["demo", "live"]
 WeatherSourceName = Literal["grib", "open-meteo"]
 MINUTE_S = 60
 
@@ -19,10 +18,6 @@ DAY_S = 24 * HOUR_S
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=BACKEND_DIR / ".env", extra="ignore")
-
-    # `demo` serves the hand-authored fixtures; `live` hits the real sources and fails loudly
-    # for the ones that are not implemented yet.
-    source_mode: SourceMode = "demo"
 
     # swisstopo: place search and the elevation profile.
     geoadmin_base_url: str = "https://api3.geo.admin.ch"
@@ -92,9 +87,10 @@ class Settings(BaseSettings):
 
     # Assess (and narrate, in both languages) these routes for today and tomorrow when the service
     # starts, in the background, so the first visitor after a restart does not wait on a cold cache.
-    # Live mode only; off by default so tests and `pnpm dev` stay quiet.
+    # Ids as `POST /api/routes` returns them; a route must have been computed to be warmed. Off by
+    # default so tests and `pnpm dev` stay quiet.
     warmup_enabled: bool = False
-    warmup_routes: list[str] = ["oeschinensee-bluemlisalphuette"]
+    warmup_routes: list[str] = []
 
     @property
     def narration_configured(self) -> bool:

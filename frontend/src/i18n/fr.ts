@@ -9,7 +9,7 @@ export const fr: Messages = {
   'common.increase': 'Plus',
   'common.loadError': 'Impossible de charger les données du serveur.',
   'common.routeGone': "Cet itinéraire n'est plus disponible. Il provenait d'une recherche, et celles-ci expirent au bout d'un moment.",
-  'common.routeGoneAction': "Revenir à l'itinéraire de démonstration",
+  'common.routeGoneAction': 'Rechercher un itinéraire',
   'common.retry': 'Réessayer',
 
   'plan.eyebrow': 'Planifier une randonnée',
@@ -43,7 +43,6 @@ export const fr: Messages = {
   'picker.building': 'Recherche de l’itinéraire…',
   'picker.noTrail':
     'Aucun sentier balisé ne relie ces lieux, ou l’un d’eux est trop loin du réseau. Essayez un village, une cabane ou un col proche.',
-  'picker.demoOnly': 'En mode démo, seuls les lieux de l’itinéraire d’Oeschinensee peuvent être reliés.',
   'picker.unavailable': 'Le calcul d’itinéraire n’est pas disponible pour le moment. Réessayez dans un instant.',
 
   'outcome.assessed': 'Évalué',
@@ -315,12 +314,6 @@ export const fr: Messages = {
   'settings.title': 'Réglages',
   'settings.language': 'Langue',
   'settings.languageNote': 'Les noms de lieux restent officiels dans toutes les langues.',
-  'settings.scenario': 'Scénario de démo',
-  'settings.scenarioNote': 'Données fictives uniquement. Changez pour voir chaque état d’évaluation.',
-  'scenario.assessed': 'Évalué',
-  'scenario.partial': 'Partiellement évalué',
-  'scenario.not_assessable': 'Non évaluable',
-  'scenario.stale': 'Prévision ancienne',
-  'settings.reset': 'Réinitialiser la démo',
-  'settings.resetDone': 'Données de démo réinitialisées.',
+  'settings.reset': 'Effacer les plans sur cet appareil',
+  'settings.resetDone': 'Plans, itinéraires et conversations effacés.',
 }

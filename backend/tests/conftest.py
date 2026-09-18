@@ -89,7 +89,6 @@ def responses(*staged: httpx.Response) -> tuple[httpx.MockTransport, list[httpx.
 def settings(tmp_path) -> Settings:
     """Test settings: cache in a tmp dir, no backoff, so nothing sleeps or persists."""
     return Settings(
-        source_mode="demo",
         cache_dir=tmp_path / "cache",
         http_backoff_s=0.0,
         http_attempts=3,

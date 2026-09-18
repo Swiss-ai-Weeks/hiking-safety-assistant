@@ -3,7 +3,7 @@
 swissTLM3D carries the official Swiss signposting class on every segment — yellow `Wanderweg`,
 white-red-white `Bergwanderweg`, white-blue-white `Alpinwanderweg` — which is complete and
 authoritative but coarse: `Bergwanderweg` spans T2 and T3, `Alpinwanderweg` spans T4 to T6. OSM
-carries the finer `sac_scale` on roughly a third of the ways around the demo route, concentrated
+carries the finer `sac_scale` on roughly a third of the ways around Oeschinensee, concentrated
 exactly where it matters, on the alpine sections.
 
 So the two are layered rather than chosen between. TLM3D sets the floor, OSM can only raise it

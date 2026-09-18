@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { useEffect, useMemo, useRef, useState, type PointerEvent } from 'react'
-import { Link, useNavigate, useSearchParams } from 'react-router'
+import { Link, useNavigate } from 'react-router'
 import { assessmentQuery } from '../api/queries'
 import { AskComposer } from '../components/ask/AskComposer'
 import { AskConversation, type AppMessage } from '../components/ask/AskConversation'
@@ -17,7 +17,6 @@ import type { CloudAnswer, LatLng } from '../domain/types'
 import { useT } from '../i18n'
 import { useFieldPosition } from '../hooks/useFieldPosition'
 import { formatInt, formatKm } from '../lib/format'
-import { resolveScenario } from '../lib/scenario'
 import { stopById, stopLabel, stopWaypoint } from '../lib/route'
 import { usePlan, useRoute, useTurnaround } from '../store/plan'
 
@@ -63,11 +62,9 @@ export function FieldScreen() {
 function ActiveHike() {
   const { t, lang } = useT()
   const navigate = useNavigate()
-  const [params] = useSearchParams()
   const route = useRoute()
   const paceAnswer = usePlan((s) => s.paceAnswer)
   const date = usePlan((s) => s.date)
-  const storedScenario = usePlan((s) => s.scenario)
   const turnaround = useTurnaround()
   const hikeStartedAt = usePlan((s) => s.hikeStartedAt)
   const cloudObservation = usePlan((s) => s.cloudObservation)
@@ -89,8 +86,7 @@ function ActiveHike() {
   const model = useBriefingModel({ route, arrivals, start: startedAt })
 
   // Not suspended: out on the trail the map and the numbers must show even when the server does not.
-  const scenario = resolveScenario(storedScenario, params)
-  const assessment = useQuery(assessmentQuery(route.id, scenario, date)).data
+  const assessment = useQuery(assessmentQuery(route.id, date)).data
   const evaluation = useMemo(() => (assessment ? evaluate(route, arrivals, assessment) : null), [route, arrivals, assessment])
 
   // Without a fix, where the plan says you'd be by now, timed from when you actually set off.
@@ -134,7 +130,6 @@ function ActiveHike() {
 
   const ask = useAsk({
     route,
-    scenario,
     context: () => ({
       plan: { start: startedAt, turnaround, arrivals },
       live: {

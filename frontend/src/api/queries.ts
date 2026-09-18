@@ -9,7 +9,6 @@ import type {
   PlaceResult,
   Route,
   RouteRequest,
-  Scenario,
 } from '../domain/types'
 import { api } from './client'
 
@@ -19,14 +18,20 @@ export const routeQuery = (routeId: string) =>
     queryFn: () => api<Route>(`/routes/${encodeURIComponent(routeId)}`),
   })
 
-/** Hazards for the hike on `date` (YYYY-MM-DD). Severity is resolved client-side at arrival. */
-export const assessmentQuery = (routeId: string, scenario: Scenario, date: string) =>
+/** How long an assessment is trusted before it is fetched again: about as often as a new model run is looked for. */
+const FORECAST_STALE_MS = 10 * 60_000
+
+/**
+ * Hazards for the hike on `date` (YYYY-MM-DD). Severity is resolved client-side at arrival.
+ *
+ * Refetched in the background once `FORECAST_STALE_MS` old, on focus or a new mount, so a briefing
+ * left open (or a phone taken out on the trail) picks up a newer forecast run.
+ */
+export const assessmentQuery = (routeId: string, date: string) =>
   queryOptions({
-    queryKey: ['assessment', routeId, scenario, date],
-    queryFn: () =>
-      api<AssessmentData>(
-        `/routes/${encodeURIComponent(routeId)}/assessment?scenario=${scenario}&date=${encodeURIComponent(date)}`,
-      ),
+    queryKey: ['assessment', routeId, date],
+    queryFn: () => api<AssessmentData>(`/routes/${encodeURIComponent(routeId)}/assessment?date=${encodeURIComponent(date)}`),
+    staleTime: FORECAST_STALE_MS,
   })
 
 /**
@@ -35,13 +40,11 @@ export const assessmentQuery = (routeId: string, scenario: Scenario, date: strin
  * Never on the critical path: the cards render from the assessment and its templates first, and a
  * failed or slow narration leaves them as they are. Not retried, for the same reason.
  */
-export const narrationQuery = (routeId: string, scenario: Scenario, date: string, lang: Lang) =>
+export const narrationQuery = (routeId: string, date: string, lang: Lang) =>
   queryOptions({
-    queryKey: ['narration', routeId, scenario, date, lang],
+    queryKey: ['narration', routeId, date, lang],
     queryFn: () =>
-      api<Narration>(
-        `/routes/${encodeURIComponent(routeId)}/narration?scenario=${scenario}&date=${encodeURIComponent(date)}&lang=${lang}`,
-      ),
+      api<Narration>(`/routes/${encodeURIComponent(routeId)}/narration?date=${encodeURIComponent(date)}&lang=${lang}`),
     retry: false,
     staleTime: 5 * 60_000,
   })
@@ -50,9 +53,9 @@ export const narrationQuery = (routeId: string, scenario: Scenario, date: string
  * A question about the hike, answered by the language model from the assessment and the plan. Never
  * throws on the model's account: `reason` says why there is no text. A 429 means too many questions.
  */
-export function askRoute(routeId: string, scenario: Scenario, date: string, lang: Lang, body: AskRequest) {
+export function askRoute(routeId: string, date: string, lang: Lang, body: AskRequest) {
   return api<Answer>(
-    `/routes/${encodeURIComponent(routeId)}/ask?scenario=${scenario}&date=${encodeURIComponent(date)}&lang=${lang}`,
+    `/routes/${encodeURIComponent(routeId)}/ask?date=${encodeURIComponent(date)}&lang=${lang}`,
     { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) },
   )
 }

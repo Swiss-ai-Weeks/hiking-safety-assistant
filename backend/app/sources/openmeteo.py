@@ -1,6 +1,6 @@
 """MeteoSwiss ICON over Open-Meteo's JSON: the same model fields, no GRIB toolchain.
 
-This is the fallback that keeps demo day alive if eccodes will not install, and also where
+This is the fallback that keeps forecasts coming if eccodes will not install, and also where
 ensemble spread comes from for both sources. Downloading ten perturbed members as GRIB costs
 23 MB per variable per hour; Open-Meteo serves the same members as a few kilobytes of JSON.
 

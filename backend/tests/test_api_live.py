@@ -59,7 +59,6 @@ def live_sources(settings: Settings, client: CachedHttpClient) -> Sources:
     weather = OpenMeteoIconSource(settings, client)
     warnings = AppWarningSource(settings, client)
     return Sources(
-        mode="live",
         routes=TlmRouteSource(
             settings,
             client,
@@ -78,7 +77,6 @@ def live_sources(settings: Settings, client: CachedHttpClient) -> Sources:
 @pytest.fixture
 def live_client(tmp_path):
     settings = Settings(
-        source_mode="live",
         cache_dir=tmp_path / "cache",
         trails_db=FIXTURES / "trails_oeschinensee.sqlite",
         http_backoff_s=0.0,
@@ -91,10 +89,6 @@ def live_client(tmp_path):
     with TestClient(app) as test_client:
         yield test_client
     app.dependency_overrides.clear()
-
-
-def test_health_reports_live_mode(live_client):
-    assert live_client.get("/api/health").json() == {"status": "ok", "mode": "live"}
 
 
 def test_search_returns_places_not_addresses(live_client):
@@ -178,12 +172,9 @@ def test_a_route_id_that_was_never_computed_is_404(live_client):
     assert "search for it again" in response.json()["detail"]
 
 
-def test_the_demo_route_resolves_in_live_mode(live_client):
-    # The frontend opens it by default and falls back to it when a computed route has expired.
-    response = live_client.get("/api/routes/oeschinensee-bluemlisalphuette")
-
-    assert response.status_code == 200
-    assert response.json()["id"] == "oeschinensee-bluemlisalphuette"
+def test_there_is_no_built_in_route(live_client):
+    # The hand-authored showcase route is gone: every route the app serves was computed from a search.
+    assert live_client.get("/api/routes/oeschinensee-bluemlisalphuette").status_code == 404
 
 
 def test_a_computed_route_is_assessed_from_the_recorded_forecast(live_client):
@@ -225,7 +216,6 @@ def test_retry_really_asks_the_forecast_source(live_client):
 def test_a_failing_grade_lookup_costs_detail_not_the_route(tmp_path):
     """Overpass is rate-limited and sometimes down. That must not cost the hiker the route."""
     settings = Settings(
-        source_mode="live",
         cache_dir=tmp_path / "cache",
         trails_db=FIXTURES / "trails_oeschinensee.sqlite",
         http_backoff_s=0.0,

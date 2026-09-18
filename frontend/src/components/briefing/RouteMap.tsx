@@ -66,7 +66,7 @@ function labelIcon(text: string, variant: PinVariant, position: string): L.DivIc
 
 /**
  * The line to draw for a leg. A computed route carries its real geometry and each leg indexes
- * into it; the demo route has waypoints only, so it falls back to a chord between the two stops.
+ * into it; a route without geometry falls back to a chord between the two stops.
  */
 function legPositions(route: Route, leg: Leg): LatLng[] {
   const { geometry } = route

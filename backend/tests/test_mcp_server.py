@@ -1,11 +1,11 @@
-"""The MCP tools, in process over the demo sources: the same engine the REST API serves."""
+"""The MCP tools, in process over the authored test sources: the same handlers the REST API serves."""
 
 import pytest
+from authored import authored_sources
 from mcp import Client
 
 from app.config import Settings
 from app.mcp_server import build_server
-from app.sources import build_sources
 
 pytestmark = pytest.mark.anyio
 
@@ -14,7 +14,7 @@ ROUTE_ID = "oeschinensee-bluemlisalphuette"
 
 @pytest.fixture
 async def mcp(tmp_path):
-    server = build_server(build_sources(Settings(source_mode="demo", cache_dir=tmp_path)))
+    server = build_server(authored_sources(Settings(cache_dir=tmp_path)))
     async with Client(server) as client:
         yield client
 
@@ -82,7 +82,7 @@ async def test_search_guidance_returns_passages_with_their_sources(mcp):
         (
             "create_route",
             {"start": {"name": "Gemmi", "lat": 46.4, "lng": 7.6}, "end": {"name": "Leuk", "lat": 46.38, "lng": 7.63}},
-            "source unavailable: demo",
+            "source unavailable: authored",
         ),
     ],
 )

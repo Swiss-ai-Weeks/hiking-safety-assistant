@@ -4,11 +4,11 @@ import re
 from typing import get_args
 
 import pytest
+from authored import HAZARDS, OESCHINEN_ROUTE
 
 from app.guidance import citations_for, load_corpus, search
 from app.guidance.cite import KIND_QUERY
 from app.guidance.corpus import parse_passage
-from app.mock_data import HAZARDS, OESCHINEN_ROUTE
 from app.models import Grade, HazardKind
 
 CORPUS = load_corpus()

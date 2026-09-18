@@ -60,8 +60,8 @@ const STEPS: StepDef[] = [
  */
 export function BriefingScreen() {
   const view = useAssessmentView()
-  // Remount on scenario change so animations and retry state start fresh.
-  return <Briefing key={view.scenario} view={view} />
+  // Remount on another route so animations and retry state start fresh.
+  return <Briefing key={view.route.id} view={view} />
 }
 
 function Briefing({ view }: { view: AssessmentView }) {
@@ -81,7 +81,6 @@ function Briefing({ view }: { view: AssessmentView }) {
   const [chatOpen, setChatOpen] = useState(false)
   const ask = useAsk({
     route,
-    scenario: view.scenario,
     context: () => ({ plan: { start, turnaround, arrivals: view.arrivals }, live: null }),
   })
   const assessable = data.outcome !== 'not_assessable'

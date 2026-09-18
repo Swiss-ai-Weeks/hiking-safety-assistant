@@ -1,9 +1,8 @@
 import type { Route } from '../../domain/types'
 
 /**
- * Oeschinensee → Blüemlisalphütte, out and back.
- * Waypoints are illustrative; replace with swisstopo geometry when wiring real data.
- * Reference moving times are for a 5–6 h hiker.
+ * Oeschinensee → Blüemlisalphütte, out and back. Test data, the same as `backend/tests/authored.py`:
+ * the waypoints are illustrative and the app never shows it. Reference moving times are for a 5–6 h hiker.
  */
 export const oeschinenRoute: Route = {
   id: 'oeschinensee-bluemlisalphuette',

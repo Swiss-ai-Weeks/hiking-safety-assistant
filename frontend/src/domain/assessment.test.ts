@@ -1,10 +1,9 @@
 import { describe, expect, it } from 'vitest'
-import { resolveScenario } from '../lib/scenario'
-import { getAssessmentData } from '../test/fixtures/mockApi'
+import { getAssessmentData, type Scenario } from '../test/fixtures/mockApi'
 import { oeschinenRoute as route } from '../test/fixtures/route-oeschinensee'
 import { conditionsAt, evaluate, gustAt, hazardSeverityAt, nothingFlaggedRange } from './assessment'
 import { computeArrivals } from './timing'
-import type { PaceAnswer, Scenario } from './types'
+import type { PaceAnswer } from './types'
 
 const evaluateFor = (start: number, pace: PaceAnswer | null, scenario: Scenario = 'assessed') => {
   const data = getAssessmentData(scenario)
@@ -91,26 +90,5 @@ describe('hazard helpers', () => {
     const data = getAssessmentData('not_assessable')
     expect(gustAt(data, 'hohturli', 700)).toBeNull()
     expect(conditionsAt(data, 'hohturli', 700)).toBeNull()
-  })
-})
-
-describe('scenarios', () => {
-  it('lets query parameters override the settings scenario', () => {
-    expect(resolveScenario('assessed', new URLSearchParams('outcome=not_assessable'))).toBe('not_assessable')
-    expect(resolveScenario('partial', new URLSearchParams('stale=1'))).toBe('stale')
-    expect(resolveScenario('partial', new URLSearchParams('outcome=nonsense'))).toBe('partial')
-  })
-
-  it('shows no hazards or recommendations when not assessable (02b)', () => {
-    const data = getAssessmentData('not_assessable')
-    expect(data.outcome).toBe('not_assessable')
-    expect(data.hazards).toEqual([])
-    expect(data.alternatives).toEqual([])
-  })
-
-  it('keeps the outcome but flags staleness', () => {
-    const data = getAssessmentData('stale')
-    expect(data.outcome).toBe('assessed')
-    expect(data.stale).toBe(true)
   })
 })

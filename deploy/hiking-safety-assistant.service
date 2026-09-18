@@ -15,9 +15,6 @@ Type=simple
 User=hiker
 WorkingDirectory=/opt/hiking-safety-assistant/backend
 Environment=PYTHONUNBUFFERED=1
-# `live` routes, forecasts and assesses for real; `demo` serves the hand-authored showcase. `/api/health`
-# reports the active mode.
-Environment=SOURCE_MODE=live
 # `open-meteo` serves MeteoSwiss ICON over JSON with nothing to install. `grib` reads MeteoSwiss' own
 # files and needs eccodes: `uv sync --directory backend --no-dev --frozen --group grib` (the `eccodeslib`
 # wheel supplies the C library on Linux x86_64 and aarch64; macOS needs `brew install eccodes`).
@@ -32,8 +29,10 @@ Environment=NARRATION_BASE_URL=http://localhost:8000/v1
 Environment=NARRATION_MODEL=nemotron-3.5-lightning
 # Questions per client per minute, per worker: every one is a GPU call.
 #Environment=ASK_PER_MINUTE=10
-# Assess and narrate the showcase route for today and tomorrow at startup, in one worker.
+# Assess and narrate WARMUP_ROUTES (route ids from `POST /api/routes`, as a JSON list) for today and
+# tomorrow at startup, in one worker. With no routes listed it does nothing.
 Environment=WARMUP_ENABLED=true
+#Environment=WARMUP_ROUTES=["r684db50d72f54bf6"]
 # The MCP server at /mcp, next to the API. Unauthenticated, like the API.
 Environment=MCP_HTTP=true
 Environment=CACHE_DIR=/opt/hiking-safety-assistant/backend/.cache

@@ -3,13 +3,13 @@
 from datetime import date
 
 import pytest
+from authored import OESCHINEN_ROUTE
 
 from app.domain import GeoPoint, PointForecast
 from app.hazards import rules
 from app.hazards.daylight import sun_times
 from app.hazards.intervals import merge, severity_at, window_of
 from app.hazards.terrain import StopTerrain, terrain_for
-from app.mock_data import OESCHINEN_ROUTE
 from app.models import SeverityInterval
 
 

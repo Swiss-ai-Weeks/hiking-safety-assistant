@@ -2,7 +2,7 @@ import { useSuspenseQuery } from '@tanstack/react-query'
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { routeQuery } from '../api/queries'
-import type { ChatMessage, CloudAnswer, Lang, Minutes, PaceAnswer, RecentRoute, Route, SavedPlan, Scenario } from '../domain/types'
+import type { ChatMessage, CloudAnswer, Lang, Minutes, PaceAnswer, RecentRoute, Route, SavedPlan } from '../domain/types'
 
 export function nextSaturdayISO(from: Date = new Date()): string {
   const d = new Date(from.getFullYear(), from.getMonth(), from.getDate())
@@ -11,14 +11,10 @@ export function nextSaturdayISO(from: Date = new Date()): string {
 }
 
 /**
- * The demo route, and what the app falls back to.
- *
- * A computed route's id is a digest of the search that made it, and the backend holds that route
- * in its disk cache for thirty days. An id saved for longer than that resolves to a 404 — and
- * since the route is read with `useSuspenseQuery`, that throws on every screen. `LoadBoundary`
- * recognises the 404 and offers this route, which cannot expire, as the way back.
+ * The id of the hand-authored showcase route earlier versions opened by default. The backend no
+ * longer serves it, so a device that still has it is sent to search instead.
  */
-export const DEFAULT_ROUTE_ID = 'oeschinensee-bluemlisalphuette'
+const RETIRED_ROUTE_ID = 'oeschinensee-bluemlisalphuette'
 const DEFAULT_START: Minutes = 7 * 60 + 30
 const MAX_RECENT = 5
 /** Messages kept per conversation, and conversations kept on the device. */
@@ -32,8 +28,12 @@ export function conversationKey(routeId: string, date: string): string {
 
 interface PlanData {
   lang: Lang
-  scenario: Scenario
-  routeId: string
+  /**
+   * The planned route, as the backend computed it from a search. `null` until one is picked: there
+   * is no built-in route. A computed route expires from the backend's cache after thirty days, and
+   * `LoadBoundary` sends the hiker back to search when it does.
+   */
+  routeId: string | null
   date: string
   /** Start time chosen on the Plan screen. */
   originalStart: Minutes
@@ -56,10 +56,9 @@ interface PlanData {
 
 interface PlanActions {
   setLang: (lang: Lang) => void
-  setRouteId: (routeId: string) => void
+  setRouteId: (routeId: string | null) => void
   /** Plan `route` and remember it under Recent. */
   openRoute: (route: Pick<Route, 'id' | 'fromName' | 'toName' | 'grade'>) => void
-  setScenario: (scenario: Scenario) => void
   setDate: (date: string) => void
   setPlannedStart: (start: Minutes) => void
   checkConditions: () => void
@@ -75,15 +74,14 @@ interface PlanActions {
   reopenPlan: (plan: SavedPlan) => void
   addMessage: (key: string, message: ChatMessage) => void
   clearConversation: (key: string) => void
-  resetDemo: () => void
+  resetData: () => void
 }
 
 export type PlanState = PlanData & PlanActions
 
 const initialData = (): PlanData => ({
   lang: 'en',
-  scenario: 'assessed',
-  routeId: DEFAULT_ROUTE_ID,
+  routeId: null,
   date: nextSaturdayISO(),
   originalStart: DEFAULT_START,
   start: DEFAULT_START,
@@ -126,7 +124,6 @@ export const usePlan = create<PlanState>()(
             recentRoutes: [recent, ...get().recentRoutes.filter((r) => r.id !== route.id)].slice(0, MAX_RECENT),
           })
         },
-        setScenario: (scenario) => set({ scenario }),
         setDate: (date) => edit({ date }),
         setPlannedStart: (start) => edit({ start, originalStart: start }),
         checkConditions: () => edit({ originalStart: get().start }),
@@ -168,27 +165,41 @@ export const usePlan = create<PlanState>()(
         clearConversation: (key) => {
           set({ conversations: Object.fromEntries(Object.entries(get().conversations).filter(([k]) => k !== key)) })
         },
-        resetDemo: () => set({ ...initialData(), lang: get().lang }),
+        resetData: () => set({ ...initialData(), lang: get().lang }),
       }
     },
     {
       name: 'hsa-plan',
-      version: 3,
+      version: 4,
       // v2 keeps recent routes on the device, now that the server no longer invents a list.
       // v3 keeps the conversation with the model about each hike.
+      // v4 drops the demo: its route and the scenario picker are gone.
       migrate: (persisted, version) => {
-        let state = persisted as Partial<PlanData>
+        let state = persisted as Partial<PlanData> & { scenario?: unknown }
         if (version < 2) state = { ...state, recentRoutes: [] }
         if (version < 3) state = { ...state, conversations: {} }
+        if (version < 4) {
+          const rest = { ...state }
+          delete rest.scenario
+          const onDemo = rest.routeId === RETIRED_ROUTE_ID
+          state = {
+            ...rest,
+            routeId: onDemo ? null : rest.routeId,
+            ...(onDemo && { hikeStarted: false, hikeStartedAt: null, planAccepted: false, cloudObservation: null }),
+            saved: rest.saved?.filter((plan) => plan.routeId !== RETIRED_ROUTE_ID),
+            recentRoutes: rest.recentRoutes?.filter((recent) => recent.id !== RETIRED_ROUTE_ID),
+          }
+        }
         return state
       },
     },
   ),
 )
 
-/** The planned route, fetched from the backend. Suspends until loaded. */
+/** The planned route, fetched from the backend. Suspends until loaded. Only under `RequireRoute`. */
 export function useRoute(): Route {
   const routeId = usePlan((s) => s.routeId)
+  if (routeId === null) throw new Error('useRoute needs a planned route: render it under RequireRoute')
   return useSuspenseQuery(routeQuery(routeId)).data
 }
 

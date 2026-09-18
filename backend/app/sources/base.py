@@ -10,7 +10,7 @@ from typing import Protocol, runtime_checkable
 
 from ..domain import ElevationProfile, GeoPoint, ModelRun, PlaceHit, PointForecast, Warning
 from ..errors import SourceUnavailable
-from ..models import Answer, AskRequest, AssessmentData, Lang, Narration, Route, RouteRequest, Scenario
+from ..models import Answer, AskRequest, AssessmentData, Lang, Narration, Route, RouteRequest
 
 __all__ = [
     "Asker",
@@ -64,14 +64,9 @@ class WarningSource(Protocol):
 
 @runtime_checkable
 class Assessor(Protocol):
-    """Terrain x forecast x arrival hour -> hazards: the authored demo, or the hazard engine.
+    """Terrain x forecast x arrival hour -> hazards. `day` defaults to today in Switzerland."""
 
-    `scenario` only means anything under `SOURCE_MODE=demo`, where it picks one of the four
-    demo states; the engine derives the outcome and ignores it. `day` defaults to today in
-    Switzerland.
-    """
-
-    async def assess(self, route: Route, scenario: Scenario, day: date | None = None) -> AssessmentData: ...
+    async def assess(self, route: Route, day: date | None = None) -> AssessmentData: ...
 
     async def recheck(self, day: date | None = None) -> bool:
         """Whether the forecast source answers again: "Try again" on the not-assessable screen."""
@@ -104,7 +99,6 @@ class Asker(Protocol):
 class Sources:
     """Everything the API layer is allowed to know about where data comes from."""
 
-    mode: str
     routes: RouteSource
     elevation: ElevationSource
     weather: WeatherSource

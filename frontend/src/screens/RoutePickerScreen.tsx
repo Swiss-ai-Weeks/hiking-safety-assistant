@@ -1,11 +1,12 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useEffect, useId, useState } from 'react'
-import { useNavigate } from 'react-router'
+import { Link, useNavigate } from 'react-router'
 import { ApiError } from '../api/client'
 import { createRoute, placeSearchQuery, routeQuery } from '../api/queries'
 import { BottomAction } from '../components/BottomAction'
 import { Button } from '../components/Button'
 import { Card } from '../components/Card'
+import { SettingsIcon } from '../components/icons'
 import { ScreenHeader } from '../components/ScreenHeader'
 import type { PlaceRef } from '../domain/types'
 import { useT, type MessageKey } from '../i18n'
@@ -27,7 +28,6 @@ function routeErrorKey(error: unknown): MessageKey {
   if (error instanceof ApiError && error.status === 503) {
     // The trail graph answers for itself: no path, or a point too far from any marked trail.
     if (error.source === 'swisstlm3d') return 'picker.noTrail'
-    if (error.source === 'demo') return 'picker.demoOnly'
   }
   return 'picker.unavailable'
 }
@@ -129,6 +129,8 @@ export function RoutePickerScreen() {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const openRoute = usePlan((s) => s.openRoute)
+  // With nothing planned yet this is the first screen: no way back, and Settings is reached from here.
+  const firstScreen = usePlan((s) => s.routeId === null)
   const [from, setFrom] = useState<PlaceRef | null>(null)
   const [to, setTo] = useState<PlaceRef | null>(null)
   const [via, setVia] = useState<PlaceRef | null>(null)
@@ -148,7 +150,21 @@ export function RoutePickerScreen() {
 
   return (
     <>
-      <ScreenHeader title={t('picker.title')} backTo="/" />
+      <ScreenHeader
+        title={t('picker.title')}
+        backTo={firstScreen ? undefined : '/'}
+        action={
+          firstScreen && (
+            <Link
+              to="/settings"
+              aria-label={t('common.settings')}
+              className="flex size-10 shrink-0 items-center justify-center rounded-full text-plum hover:bg-subtle"
+            >
+              <SettingsIcon />
+            </Link>
+          )
+        }
+      />
       <main className="flex flex-1 flex-col gap-3.5 px-[22px] pt-5 pb-2">
         <Card>
           <PlaceField label={t('picker.from')} value={from} onChange={setFrom} />

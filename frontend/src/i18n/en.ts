@@ -7,7 +7,7 @@ export const en = {
   'common.increase': 'More',
   'common.loadError': "Couldn't load data from the server.",
   'common.routeGone': 'That route is no longer available. It was worked out from a search, and those expire after a while.',
-  'common.routeGoneAction': 'Back to the demo route',
+  'common.routeGoneAction': 'Search for a route',
   'common.retry': 'Try again',
 
   'plan.eyebrow': 'Plan a hike',
@@ -41,7 +41,6 @@ export const en = {
   'picker.building': 'Finding the route…',
   'picker.noTrail':
     'No marked trail connects these places, or one of them is too far from the network. Try a nearby village, hut or pass.',
-  'picker.demoOnly': 'Demo mode only routes between places on the Oeschinensee route.',
   'picker.unavailable': "Routing isn't available right now. Try again in a moment.",
 
   'outcome.assessed': 'Assessed',
@@ -313,14 +312,8 @@ export const en = {
   'settings.title': 'Settings',
   'settings.language': 'Language',
   'settings.languageNote': 'Place names stay official in every language.',
-  'settings.scenario': 'Demo scenario',
-  'settings.scenarioNote': 'Mock data only. Switch to see each assessment state.',
-  'scenario.assessed': 'Assessed',
-  'scenario.partial': 'Partially assessed',
-  'scenario.not_assessable': 'Not assessable',
-  'scenario.stale': 'Stale forecast',
-  'settings.reset': 'Reset demo data',
-  'settings.resetDone': 'Demo data reset.',
+  'settings.reset': 'Clear plans on this device',
+  'settings.resetDone': 'Plans, routes and conversations cleared.',
 }
 
 export type MessageKey = keyof typeof en

@@ -3,10 +3,10 @@
 from dataclasses import replace
 
 import pytest
+from authored import authored_sources
 
 from app import warmup
 from app.config import Settings
-from app.sources import build_sources
 
 pytestmark = pytest.mark.anyio
 
@@ -19,11 +19,11 @@ class Counting:
         self.calls: list[tuple] = []
         self.fail_on = fail_on
 
-    async def assess(self, route, scenario, day=None):
+    async def assess(self, route, day=None):
         self.calls.append((route.id, day))
         if self.fail_on == day:
             raise RuntimeError("bug")
-        return await self.inner.assess(route, scenario, day)
+        return await self.inner.assess(route, day)
 
     async def narrate(self, route, assessment, lang):
         self.calls.append((route.id, lang))
@@ -35,7 +35,7 @@ class Counting:
 
 @pytest.fixture
 def sources(tmp_path):
-    return build_sources(Settings(cache_dir=tmp_path / "cache"))
+    return authored_sources(Settings(cache_dir=tmp_path / "cache"))
 
 
 async def test_warm_assesses_today_and_tomorrow_and_narrates_both_languages(sources):
@@ -69,6 +69,6 @@ def test_only_one_worker_claims_the_warm_up(tmp_path):
         first.close()
 
 
-async def test_nothing_warms_in_demo_mode_or_when_disabled(sources, tmp_path):
+async def test_nothing_warms_when_disabled_or_with_no_routes(sources, tmp_path):
+    assert warmup.start(Settings(cache_dir=tmp_path, warmup_routes=[ROUTE_ID]), sources) is None
     assert warmup.start(Settings(cache_dir=tmp_path, warmup_enabled=True), sources) is None
-    assert warmup.start(Settings(cache_dir=tmp_path), replace(sources, mode="live")) is None

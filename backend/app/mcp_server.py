@@ -28,7 +28,6 @@ from .models import (
     Lang,
     PlaceRef,
     RouteRequest,
-    Scenario,
     Schema,
 )
 from .sources import Sources, get_sources
@@ -65,7 +64,7 @@ def _unavailable(exc: SourceUnavailable) -> ToolError:
 
 
 def build_server(sources: Sources | None = None) -> MCPServer:
-    """A fresh server. `sources` defaults to the configured ones; tests pass the demo set."""
+    """A fresh server. `sources` defaults to the configured ones; tests pass their own."""
 
     def current() -> Sources:
         return sources or get_sources()
@@ -138,18 +137,18 @@ def build_server(sources: Sources | None = None) -> MCPServer:
 
     @server.tool()
     async def assess_route(
-        route_id: str, date: Date | None = None, lang: Lang = "en", scenario: Scenario = "assessed"
+        route_id: str, date: Date | None = None, lang: Lang = "en"
     ) -> dict[str, Any]:
         """Hazards for hiking `route_id` on `date` (default today), with the guidance each is grounded in.
 
         Returns `assessment` (outcome, forecast run, hazards with per-stop severity intervals and their
         figures in `facts`, gaps, alternatives, stops not evaluated) and `narration` (per hazard: cited
         guidance passages, and a phrased `body` when a language model is configured; its `{placeholders}`
-        are filled from that hazard's `facts`). `scenario` only matters on the demo service.
+        are filled from that hazard's `facts`).
         """
         route = await route_or_error(route_id)
         sources = current()
-        assessment = await sources.assessor.assess(route, scenario, date)
+        assessment = await sources.assessor.assess(route, date)
         narration = await sources.narrator.narrate(route, assessment, lang)
         return {"assessment": _dump(assessment), "narration": _dump(narration)}
 
@@ -159,7 +158,6 @@ def build_server(sources: Sources | None = None) -> MCPServer:
         question: str,
         date: Date | None = None,
         lang: Lang = "en",
-        scenario: Scenario = "assessed",
     ) -> dict[str, Any]:
         """Ask a question about hiking `route_id` on `date` (default today), in plain language.
 
@@ -173,7 +171,7 @@ def build_server(sources: Sources | None = None) -> MCPServer:
         if len(question) > QUESTION_MAX_CHARS:
             raise ToolError(f"question is longer than {QUESTION_MAX_CHARS} characters")
         day = date or local_today()
-        assessment = await sources.assessor.assess(route, scenario, day)
+        assessment = await sources.assessor.assess(route, day)
         if sources.asker is None:
             return _dump(Answer(enabled=False, reason="disabled", citations=[]))
         answer = await sources.asker.ask(route, assessment, AskRequest(question=question), day, lang)

@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { askRoute } from '../../api/queries'
 import { ApiError } from '../../api/client'
-import type { AskTurn, ChatMessage, LiveContext, PlanContext, Route, Scenario } from '../../domain/types'
+import type { AskTurn, ChatMessage, LiveContext, PlanContext, Route } from '../../domain/types'
 import { useT } from '../../i18n'
 import { conversationKey, usePlan } from '../../store/plan'
 
@@ -12,7 +12,6 @@ export type AskFailure = 'tooMany' | 'failed'
 
 interface Options {
   route: Route
-  scenario: Scenario
   /** Built when a question is sent, so it describes that moment: the plan now, the position now. */
   context: () => { plan: PlanContext | null; live: LiveContext | null }
 }
@@ -34,7 +33,7 @@ function historyOf(messages: ChatMessage[]): AskTurn[] {
 }
 
 /** The conversation with the model about this route on the planned day, kept on the device. */
-export function useAsk({ route, scenario, context }: Options) {
+export function useAsk({ route, context }: Options) {
   const { lang } = useT()
   const date = usePlan((s) => s.date)
   const key = conversationKey(route.id, date)
@@ -59,7 +58,7 @@ export function useAsk({ route, scenario, context }: Options) {
         plan.turnaround = Math.round(plan.turnaround)
         plan.arrivals = Object.fromEntries(Object.entries(plan.arrivals).map(([id, at]) => [id, Math.round(at)]))
       }
-      const answer = await askRoute(route.id, scenario, date, lang, { question, history, plan, live })
+      const answer = await askRoute(route.id, date, lang, { question, history, plan, live })
       addMessage(key, {
         id: newId(),
         role: 'assistant',

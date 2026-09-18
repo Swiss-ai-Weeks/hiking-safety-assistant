@@ -24,17 +24,17 @@ pnpm start    # production build served by the backend on http://localhost:8000
 
 In dev, Vite proxies `/api` to the backend. In production the backend serves the built frontend and the API from one port.
 
-Under `SOURCE_MODE=demo`, switch between demo states (assessed, partially assessed, not assessable, stale forecast) in Settings, or with `?outcome=partial`, `?outcome=not_assessable` or `?stale=1` on `/briefing`.
+The app serves real data only: there is no demo mode and no built-in route. It opens on route search, and routing needs the trail graph imported once (see [Trail data](#trail-data)); forecasts, elevation and place search are fetched live, so it needs internet access.
 
 ### Configuration
 
 The backend reads its settings from the environment, or a `backend/.env` file — see [backend/app/config.py](backend/app/config.py) for every field and its default.
 
-`SOURCE_MODE` picks where data comes from. `demo` (the default) serves the hand-authored Oeschinensee data. `live` routes over the real swisstopo trail network, reads real MeteoSwiss forecasts and runs the hazard engine over them. `/api/health` reports the active mode.
+Routes come from the swisstopo trail network, forecasts from MeteoSwiss, and the hazard engine runs over them. The settings below choose between real sources; none of them fakes data.
 
 ### Weather data
 
-Under `SOURCE_MODE=live`, `WEATHER_SOURCE` picks one of two implementations of the same model, MeteoSwiss ICON-CH1 (1 km, next 33 h) and ICON-CH2 (beyond that, up to 5 days):
+`WEATHER_SOURCE` picks one of two implementations of the same model, MeteoSwiss ICON-CH1 (1 km, next 33 h) and ICON-CH2 (beyond that, up to 5 days):
 
 - `grib` (the default) reads the official GRIB2 files from MeteoSwiss Open Government Data. It needs eccodes:
   ```sh
@@ -83,7 +83,7 @@ The running app serves `/mcp` unless `MCP_HTTP=false`. It has no authentication,
 
 ### Trail data
 
-`SOURCE_MODE=live` routes over [swissTLM3D Wanderwege](https://www.swisstopo.admin.ch/en/landscape-model-swisstlm3d), the official Swiss hiking network. It is a 190 MB download, prepared once:
+Routes run over [swissTLM3D Wanderwege](https://www.swisstopo.admin.ch/en/landscape-model-swisstlm3d), the official Swiss hiking network. It is a 190 MB download, prepared once:
 
 ```bash
 uv run --directory backend python -m scripts.fetch_trails     # ~190 MB from swisstopo, checksum verified
@@ -111,19 +111,19 @@ A rename then fails `pytest` (the schema snapshot is stale) and `tsc -b` (the as
 
 | Method | Path | Returns |
 |---|---|---|
-| GET | `/api/health` | `{"status": "ok", "mode": "demo"}` — `mode` is the active `SOURCE_MODE` |
+| GET | `/api/health` | `{"status": "ok"}` |
 | GET | `/api/routes/search?q=` | Place-name search (swisstopo gazetteer), for picking the ends of a route |
 | POST | `/api/routes` | Routes `{from, to, via?}` over swissTLM3D. The id it returns is a digest of the request, so the same search is always the same route |
 | GET | `/api/routes/{routeId}` | Route geometry, stops and legs |
-| GET | `/api/routes/{routeId}/assessment?scenario=assessed` | Forecast, hazards, gaps and alternatives (`assessed`, `partial`, `not_assessable`, `stale`) |
-| GET | `/api/routes/{routeId}/narration?scenario=&date=&lang=en` | The assessment's hazards phrased by a language model (when configured), and the guidance each is grounded in |
-| POST | `/api/routes/{routeId}/ask?scenario=&date=&lang=` | `{question, history?, plan?, live?}` → a language model's answer from the assessment, the plan and (during a hike) where you are. Figures are filled in by the server; `reason` says why there is no text |
+| GET | `/api/routes/{routeId}/assessment?date=` | Forecast, hazards, gaps and alternatives. `outcome` is `assessed`, `partial` or `not_assessable`, and `stale` flags an old forecast run |
+| GET | `/api/routes/{routeId}/narration?date=&lang=en` | The assessment's hazards phrased by a language model (when configured), and the guidance each is grounded in |
+| POST | `/api/routes/{routeId}/ask?date=&lang=` | `{question, history?, plan?, live?}` → a language model's answer from the assessment, the plan and (during a hike) where you are. Figures are filled in by the server; `reason` says why there is no text |
 | POST | `/api/forecast/retry` | Re-checks the forecast source |
 | POST | `/mcp` | The MCP server over streamable HTTP (see [AI layer](#ai-layer)) |
 
 Interactive docs are at `/docs` while the backend runs.
 
-A computed route is held in the backend's disk cache for 30 days. After that `GET /api/routes/{id}` is a 404 and the app offers the demo route instead, so a saved link degrades rather than breaking. Open one in the UI with `?routeId=`:
+A computed route is held in the backend's disk cache for 30 days. After that `GET /api/routes/{id}` is a 404 and the app sends the hiker back to route search, so a saved link degrades rather than breaking. Open one in the UI with `?routeId=`:
 
 ```bash
 curl -s -X POST localhost:8000/api/routes -H 'content-type: application/json' \
@@ -199,9 +199,11 @@ Nothing a source does can take a page down. Each failure costs what it has to an
 ### End-to-end tests
 
 ```bash
-pnpm e2e                                                    # build, then Playwright over a demo-mode server
+pnpm e2e                                                    # build, then Playwright with the API stubbed in the browser
 E2E_BASE_URL=https://hiking-safety.tail685478.ts.net pnpm -C frontend exec playwright test   # the live app
 ```
+
+The default run checks the frontend in every state it renders (assessed, partial, not assessable, stale) by answering its API calls from the test fixtures in [frontend/e2e/api.ts](frontend/e2e/api.ts); real routing and forecasts cannot be pinned for a test. Those specs are tagged `@stubbed` and skipped against a real server. The hand-authored Oeschinensee route and hazards the tests use live in [backend/tests/authored.py](backend/tests/authored.py) and `frontend/src/test/fixtures/`, and nothing in the app imports them.
 
 The first run needs `pnpm -C frontend exec playwright install chromium`.
 

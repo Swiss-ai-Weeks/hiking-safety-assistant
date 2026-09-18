@@ -1,7 +1,10 @@
-import type { AssessmentData, Scenario } from '../../domain/types'
+import type { AssessmentData } from '../../domain/types'
 import { alternatives, conditionsFor, forecast, gaps, hazards, partialNotEvaluated } from './assessment'
 
-/** Same scenarios the backend serves (backend/app/mock_data.py), for pure domain tests. */
+/** The states the briefing renders. Test data only: the app shows what the backend computes. */
+export type Scenario = 'assessed' | 'partial' | 'not_assessable' | 'stale'
+
+/** The same authored assessments as `backend/tests/authored.py`, for tests. */
 export function getAssessmentData(scenario: Scenario): AssessmentData {
   switch (scenario) {
     case 'not_assessable':

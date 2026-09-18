@@ -1,9 +1,11 @@
 import { expect, test } from '@playwright/test'
-import { watchConsole, withPlan } from './helpers'
+import { stubApi } from './api'
+import { pickRoute, plannedRouteId, watchConsole, withPlan } from './helpers'
 
-test.describe('the briefing in each outcome state @demo', () => {
+test.describe('the briefing in each outcome state @stubbed', () => {
   test('assessed: the hazard check flags the showcase hazards, and the plan carries the rule', async ({ page }) => {
     const clean = watchConsole(page)
+    await stubApi(page)
     await withPlan(page, '/briefing?step=4', { paceAnswer: '5to6' })
 
     await expect(page.getByText('Assessed', { exact: true })).toBeVisible()
@@ -19,7 +21,8 @@ test.describe('the briefing in each outcome state @demo', () => {
 
   test('partial: says which segments were not evaluated', async ({ page }) => {
     const clean = watchConsole(page)
-    await withPlan(page, '/briefing?step=4&outcome=partial', { paceAnswer: '5to6' })
+    await stubApi(page, 'partial')
+    await withPlan(page, '/briefing?step=4', { paceAnswer: '5to6' })
 
     await expect(page.getByText('Partially assessed')).toBeVisible()
     await expect(page.getByText(/^Not evaluated:/)).toBeVisible()
@@ -28,7 +31,8 @@ test.describe('the briefing in each outcome state @demo', () => {
 
   test('not assessable: the story stops at the weather, with the official sources and a retry', async ({ page }) => {
     const clean = watchConsole(page)
-    await withPlan(page, '/briefing?step=4&outcome=not_assessable', {})
+    await stubApi(page, 'not_assessable')
+    await withPlan(page, '/briefing?step=4', {})
 
     await expect(page.getByText("We can't assess this hike right now.")).toBeVisible()
     await expect(page.getByRole('link', { name: 'MeteoSwiss forecast' })).toBeVisible()
@@ -40,7 +44,8 @@ test.describe('the briefing in each outcome state @demo', () => {
 
   test('stale: the forecast age is shown', async ({ page }) => {
     const clean = watchConsole(page)
-    await withPlan(page, '/briefing?step=4&stale=1', { paceAnswer: '5to6' })
+    await stubApi(page, 'stale')
+    await withPlan(page, '/briefing?step=4', { paceAnswer: '5to6' })
 
     await expect(page.getByText(/h old/)).toBeVisible()
     clean()
@@ -48,8 +53,9 @@ test.describe('the briefing in each outcome state @demo', () => {
 })
 
 test.describe('asking about the hike', () => {
-  test('the briefing opens the conversation, and says when no model is set up @demo', async ({ page }) => {
+  test('the briefing opens the conversation, and says when no model is set up @stubbed', async ({ page }) => {
     const clean = watchConsole(page)
+    await stubApi(page)
     await withPlan(page, '/briefing?step=1', {})
 
     const open = page.getByRole('button', { name: 'Ask' })
@@ -71,7 +77,9 @@ test.describe('asking about the hike', () => {
   test('a live answer is marked as the model’s, with figures filled in', async ({ page }) => {
     test.skip(!process.env.E2E_BASE_URL, 'needs a server with a model')
     const clean = watchConsole(page)
-    await withPlan(page, '/briefing?step=1', { paceAnswer: '5to6' })
+    // A real server has no built-in route: plan one the way a hiker does.
+    await pickRoute(page)
+    await withPlan(page, '/briefing?step=1', { paceAnswer: '5to6', routeId: await plannedRouteId(page) })
 
     await page.getByRole('button', { name: 'Ask' }).click()
     const composer = page.getByRole('textbox', { name: /Ask Nemotron/ })
@@ -85,16 +93,41 @@ test.describe('asking about the hike', () => {
   })
 })
 
-test('picking a route from search opens its briefing @demo', async ({ page }) => {
+test('picking a route from search opens its briefing @stubbed', async ({ page }) => {
   const clean = watchConsole(page)
-  await page.goto('/routes/new')
-
-  await page.getByLabel('From').fill('Oeschinen')
-  await page.getByRole('button', { name: /Oeschinensee/ }).first().click()
-  await page.getByLabel('To').fill('Blüemlisalp')
-  await page.getByRole('button', { name: /Blüemlisalp/ }).first().click()
-  await page.getByRole('button', { name: 'Find route' }).click()
-
-  await expect(page).toHaveURL(/\/($|\?|briefing)/)
+  await stubApi(page)
+  await pickRoute(page)
   clean()
+})
+
+test.describe('with no route planned @stubbed', () => {
+  test('a first visit opens on route search, with Settings in reach', async ({ page }) => {
+    const clean = watchConsole(page)
+    await stubApi(page)
+    await page.goto('/briefing')
+
+    await expect(page).toHaveURL(/\/routes\/new$/)
+    await expect(page.getByRole('link', { name: 'Back' })).toHaveCount(0)
+    await expect(page.getByRole('link', { name: 'Settings' })).toBeVisible()
+    clean()
+  })
+
+  test('a device still on the retired demo route is sent to search, not to a 404', async ({ page }) => {
+    const clean = watchConsole(page)
+    await stubApi(page)
+    await page.goto('/routes/new')
+    await page.evaluate(() => {
+      const state = { routeId: 'oeschinensee-bluemlisalphuette', scenario: 'partial', hikeStarted: true, saved: [], recentRoutes: [] }
+      localStorage.setItem('hsa-plan', JSON.stringify({ state, version: 3 }))
+    })
+    await page.goto('/field')
+
+    await expect(page).toHaveURL(/\/routes\/new$/)
+    const stored = await page.evaluate(() => JSON.parse(localStorage.getItem('hsa-plan') ?? '{}'))
+    expect(stored.version).toBe(4)
+    expect(stored.state.routeId).toBeNull()
+    expect(stored.state.hikeStarted).toBe(false)
+    expect(stored.state).not.toHaveProperty('scenario')
+    clean()
+  })
 })

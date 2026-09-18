@@ -4,12 +4,11 @@ import json
 
 import httpx
 import pytest
+from authored import OESCHINEN_ROUTE, AuthoredAssessor, get_assessment
 from conftest import FIXTURES, load_fixture, save_fixture
 
 from app.config import Settings
-from app.mock_data import OESCHINEN_ROUTE, get_assessment
 from app.models import AssessmentData, Narration
-from app.sources.demo import DemoAssessor
 from app.sources.grounded import GroundedAssessor
 from app.sources.http import DiskCache
 from app.sources.narrator import LlmNarrator
@@ -191,7 +190,7 @@ async def test_the_fixture_answers_serve_what_the_fixture_says(tmp_path, recordi
     `frontend/src/i18n/copy-rules.test.ts` holds the served bodies to the client's copy rules, so this
     is also what keeps that test looking at what the backend would really serve.
     """
-    assessment = await GroundedAssessor(DemoAssessor()).assess(OESCHINEN_ROUTE, "assessed")
+    assessment = await GroundedAssessor(AuthoredAssessor()).assess(OESCHINEN_ROUTE)
     if recording:
         settings = Settings(cache_dir=tmp_path / "cache")
         if not settings.narration_configured:

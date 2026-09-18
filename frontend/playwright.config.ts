@@ -3,10 +3,11 @@ import { defineConfig, devices } from '@playwright/test'
 /**
  * End-to-end over the built app: `pnpm e2e` at the repo root builds, then runs these.
  *
- * By default the backend is started in demo mode on its own port, with every source and the model
- * switched off explicitly (a deployed `backend/.env` says live), so the four outcome states are
- * reachable and nothing leaves the machine. `E2E_BASE_URL` points the suite at a running app instead,
- * where the specs tagged @demo are skipped.
+ * By default the backend is started on its own port to serve the build, with the model switched off
+ * explicitly (a deployed `backend/.env` turns it on). The specs tagged @stubbed answer the app's API
+ * calls in the browser from the test fixtures (`e2e/api.ts`), so every outcome state is reachable and
+ * nothing leaves the machine. `E2E_BASE_URL` points the suite at a running app instead, where the
+ * @stubbed specs are skipped.
  */
 const PORT = 8210
 const external = process.env.E2E_BASE_URL
@@ -24,7 +25,7 @@ export default defineConfig({
     reducedMotion: 'reduce',
     trace: 'retain-on-failure',
   },
-  grepInvert: external ? /@demo/ : undefined,
+  grepInvert: external ? /@stubbed/ : undefined,
   webServer: external
     ? undefined
     : {
@@ -33,7 +34,6 @@ export default defineConfig({
         reuseExistingServer: false,
         timeout: 60_000,
         env: {
-          SOURCE_MODE: 'demo',
           NARRATION_ENABLED: 'false',
           WARMUP_ENABLED: 'false',
           MCP_HTTP: 'false',

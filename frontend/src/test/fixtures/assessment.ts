@@ -47,7 +47,7 @@ export const hazards: HazardDef[] = [
 
 const GUST_KMH: Record<Severity, number> = { none: 25, mod: 40, high: 55 }
 
-/** Same as `mock_data._conditions`: the authored gust figure per stretch of the day, and −2 °C. */
+/** Same as `_conditions` in `backend/tests/authored.py`: the authored gust figure per stretch of the day, and −2 °C. */
 export function conditionsFor(list: HazardDef[]): Record<string, StopConditions[]> {
   const gusts = list.find((h) => h.kind === 'gusts')
   const conditions: Record<string, StopConditions[]> = {}

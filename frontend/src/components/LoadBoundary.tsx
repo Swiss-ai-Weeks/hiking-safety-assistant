@@ -2,7 +2,8 @@ import { QueryErrorResetBoundary } from '@tanstack/react-query'
 import { Component, Suspense, type ReactNode } from 'react'
 import { ApiError } from '../api/client'
 import { useT } from '../i18n'
-import { DEFAULT_ROUTE_ID, usePlan } from '../store/plan'
+import { useNavigate } from 'react-router'
+import { usePlan } from '../store/plan'
 import { Button } from './Button'
 import { Skeleton } from './Card'
 
@@ -36,10 +37,11 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, { error: unknown }> {
 
 function LoadError({ error, onRetry }: { error: unknown; onRetry: () => void }) {
   const { t } = useT()
+  const navigate = useNavigate()
   const setRouteId = usePlan((s) => s.setRouteId)
 
   // A 404 means the route itself is gone — a computed route that has aged out of the backend's
-  // cache. Retrying can only 404 again, so the way out is a route that cannot expire.
+  // cache. Retrying can only 404 again, so the way out is searching for it again.
   if (error instanceof ApiError && error.status === 404) {
     return (
       <main role="alert" className="flex flex-1 flex-col justify-center gap-4 px-[22px] py-10">
@@ -48,7 +50,8 @@ function LoadError({ error, onRetry }: { error: unknown; onRetry: () => void }) 
           variant="accent"
           size="md"
           onClick={() => {
-            setRouteId(DEFAULT_ROUTE_ID)
+            setRouteId(null)
+            navigate('/routes/new')
             onRetry()
           }}
         >

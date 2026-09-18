@@ -1,9 +1,17 @@
-"""Mock data for the Oeschinensee → Blüemlisalphütte demo.
+"""Hand-authored test data: an Oeschinensee → Blüemlisalphütte route and its hazards.
 
-Replace with MeteoSwiss and swisstopo data when wiring real sources.
+Test-only. The app serves real data and nothing else; this is a fixed, readable shape for the tests
+that need a route and an assessment without a trail graph or a forecast behind them. The waypoints are
+illustrative and the figures made up, so nothing here may be shown to a hiker.
 """
 
-from .models import (
+from datetime import date, datetime
+from typing import Literal
+
+from app.config import Settings
+from app.domain import ElevationProfile, GeoPoint, ModelRun, PlaceHit, PointForecast, Warning
+from app.errors import SourceUnavailable
+from app.models import (
     AltRoute,
     AssessmentData,
     Forecast,
@@ -15,7 +23,7 @@ from .models import (
     NotEvaluated,
     PlaceLabel,
     Route,
-    Scenario,
+    RouteRequest,
     Severity,
     SeverityInterval,
     StartEarlier,
@@ -24,6 +32,15 @@ from .models import (
     Waypoint,
     Window,
 )
+from app.sources import Sources
+from app.sources.asker import LlmAsker
+from app.sources.grounded import GroundedAssessor
+from app.sources.http import DiskCache
+from app.sources.narrator import LlmNarrator
+from app.sources.weather_common import ICON_CH1, SWISS_TIME, local_today
+
+# The states the briefing renders, picked by the tests that exercise each one.
+Scenario = Literal["assessed", "partial", "not_assessable", "stale"]
 
 # Out and back. Waypoints are illustrative; replace with swisstopo geometry when wiring real data.
 # Reference moving times are for a 5–6 h hiker.
@@ -199,4 +216,77 @@ def get_assessment(scenario: Scenario) -> AssessmentData:
         alternatives=ALTERNATIVES,
         not_evaluated=[],
         conditions=_conditions(HAZARDS),
+    )
+
+
+# Test doubles for the source protocols, serving the data above. What `SOURCE_MODE=demo` used to
+# serve, now only ever built by a test.
+
+AUTHORED_MODEL_RUN = f"{FORECAST.model} {FORECAST.issued_at // 60:02d}:{FORECAST.issued_at % 60:02d}"
+
+
+class AuthoredRoutes:
+    """The one authored route by id, its waypoints by name. Nothing can be routed."""
+
+    async def search(self, query: str) -> list[PlaceHit]:
+        needle = query.casefold().strip()
+        return [
+            PlaceHit(waypoint.name, GeoPoint(*waypoint.lat_lng, waypoint.elevation_m), rank)
+            for route in ROUTES.values()
+            for rank, waypoint in enumerate(route.waypoints)
+            if needle and needle in waypoint.name.casefold()
+        ]
+
+    async def get_route(self, route_id: str) -> Route | None:
+        return ROUTES.get(route_id)
+
+    async def create_route(self, request: RouteRequest) -> Route:
+        raise SourceUnavailable("authored", "test sources route nothing")
+
+
+class AuthoredElevation:
+    async def profile(self, points: list[GeoPoint]) -> ElevationProfile:
+        return ElevationProfile(points=tuple(points))
+
+
+class AuthoredWeather:
+    async def forecast_at(self, point: GeoPoint, hour: int, day: date | None = None) -> PointForecast:
+        return PointForecast(model_run=AUTHORED_MODEL_RUN, hour=hour, temp_c=FEELS_LIKE_C)
+
+    async def latest_run(self, day: date | None = None) -> ModelRun:
+        day = day or local_today()
+        hours, minutes = divmod(FORECAST.issued_at, 60)
+        issued = datetime(day.year, day.month, day.day, hours, minutes, tzinfo=SWISS_TIME)
+        return ModelRun(FORECAST.model, issued, ICON_CH1.horizon_h)
+
+
+class AuthoredWarnings:
+    async def warnings_for(self, points: list[GeoPoint]) -> list[Warning]:
+        return []
+
+
+class AuthoredAssessor:
+    """Always the one scenario it was built with. `recheck` says the source is still down."""
+
+    def __init__(self, scenario: Scenario = "assessed") -> None:
+        self.scenario = scenario
+
+    async def assess(self, route: Route, day: date | None = None) -> AssessmentData:
+        return get_assessment(self.scenario)
+
+    async def recheck(self, day: date | None = None) -> bool:
+        return False
+
+
+def authored_sources(settings: Settings, scenario: Scenario = "assessed") -> Sources:
+    """The source set the API and MCP tests run over: authored data, with the app's own model clients."""
+    cache = DiskCache(settings.cache_dir)
+    return Sources(
+        routes=AuthoredRoutes(),
+        elevation=AuthoredElevation(),
+        weather=AuthoredWeather(),
+        warnings=AuthoredWarnings(),
+        assessor=GroundedAssessor(AuthoredAssessor(scenario)),
+        narrator=LlmNarrator(settings, cache),
+        asker=LlmAsker(settings, cache),
     )

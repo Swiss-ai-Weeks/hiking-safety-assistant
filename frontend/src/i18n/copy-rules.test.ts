@@ -6,7 +6,7 @@ import { BANNED, verdictsIn } from './copyRules'
 import { BASE_PLACEHOLDERS, FACT_PLACEHOLDERS, hazardParams, narratedBody } from './hazardCopy'
 
 /**
- * What the backend serves as narration for the demo hazards, in both languages: model answers put
+ * What the backend serves as narration for the authored test hazards, in both languages: model answers put
  * through its parser and guard (`backend/tests/test_narrator.py` checks the `served` part is exactly
  * what they produce). `pytest --record` replaces the answers with a real model's.
  */

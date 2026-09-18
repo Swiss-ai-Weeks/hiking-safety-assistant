@@ -41,8 +41,12 @@ from app.sources.weather_common import DAY_LAST_HOUR, MODELS, local_today, targe
 
 OESCHINENSEE = GeoPoint(46.49836, 7.72667, 1578)
 HOHTURLI = GeoPoint(46.4888, 7.7717, 2778)
-SHOWCASE_ROUTE = "oeschinensee-bluemlisalphuette"
-SMN_STATION = "abo"  # Adelboden, the SMN station nearest the showcase route
+# The app plans this route the way the picker does, then assesses it: there is no built-in route.
+ROUTE_REQUEST = {
+    "from": {"name": "Oeschinensee", "latLng": [46.49836, 7.72667]},
+    "to": {"name": "Blüemlisalphütte", "latLng": [46.51019, 7.77162]},
+}
+SMN_STATION = "abo"  # Adelboden, the SMN station nearest Oeschinensee
 TILE = "https://wmts.geo.admin.ch/1.0.0/ch.swisstopo.pixelkarte-farbe/default/current/3857/13/4271/2898.jpeg"
 
 
@@ -218,10 +222,25 @@ def app_checks(url: str) -> list[tuple[str, Check, bool]]:
 
     async def health() -> str:
         body = await get("/api/health")
-        return f"mode {body['mode']}"
+        return body["status"]
+
+    route_id: list[str] = []
+
+    async def route() -> str:
+        async with httpx.AsyncClient(timeout=120) as http:
+            response = await http.post(f"{base}/api/routes", json=ROUTE_REQUEST)
+        response.raise_for_status()
+        body = response.json()
+        route_id.append(body["id"])
+        return f"{body['id']}: {body['grade']}, {body['distanceKm']} km, crux {body['cruxStopId']}"
+
+    def routed() -> str:
+        if not route_id:
+            raise RuntimeError("no route: the app route check failed")
+        return route_id[0]
 
     async def assessment() -> str:
-        body = await get(f"/api/routes/{SHOWCASE_ROUTE}/assessment", date=tomorrow)
+        body = await get(f"/api/routes/{routed()}/assessment", date=tomorrow)
         forecast = body["forecast"]
         kinds = sorted({hazard["kind"] for hazard in body["hazards"]})
         unevaluated = sum(len(item["legIds"]) for item in body.get("notEvaluated", []))
@@ -231,14 +250,14 @@ def app_checks(url: str) -> list[tuple[str, Check, bool]]:
         )
 
     async def narration() -> str:
-        body = await get(f"/api/routes/{SHOWCASE_ROUTE}/narration", date=tomorrow, lang="en")
+        body = await get(f"/api/routes/{routed()}/narration", date=tomorrow, lang="en")
         phrased = sum(1 for hazard in body["hazards"] if hazard.get("body"))
         return f"enabled={body['enabled']}, {phrased}/{len(body['hazards'])} bodies phrased"
 
     async def ask() -> str:
         async with httpx.AsyncClient(timeout=120) as http:
             response = await http.post(
-                f"{base}/api/routes/{SHOWCASE_ROUTE}/ask",
+                f"{base}/api/routes/{routed()}/ask",
                 params={"date": tomorrow, "lang": "en"},
                 json={"question": "Which part of the route is the most exposed?"},
             )
@@ -268,6 +287,7 @@ def app_checks(url: str) -> list[tuple[str, Check, bool]]:
 
     return [
         ("app health", health, True),
+        ("app route", route, True),
         ("app assessment (tomorrow)", assessment, True),
         ("app narration", narration, False),
         ("app ask", ask, False),

@@ -14,7 +14,6 @@ import logging
 
 from ..config import Settings
 from ..domain import GeoPoint, PlaceHit
-from ..mock_data import ROUTES
 from ..models import Route, RouteRequest
 from ..routing.build import build_route, refine, route_id_for
 from ..routing.graph import load_graph
@@ -66,11 +65,7 @@ class TlmRouteSource:
 
     async def get_route(self, route_id: str) -> Route | None:
         cached = self.client.cache.read(_cache_key(route_id), self.settings.cache_ttl_route_s)
-        if cached is None:
-            # The showcase route is the frontend's default and its way back from an expired route,
-            # so it must resolve here too. Its forecast and hazards are still computed live.
-            return ROUTES.get(route_id)
-        return Route.model_validate(cached)
+        return None if cached is None else Route.model_validate(cached)
 
     async def create_route(self, request: RouteRequest) -> Route:
         existing = await self.get_route(route_id_for(request))

@@ -29,7 +29,7 @@ __pycache__
 .vercel
 .env*
 
-# Recorded source responses (see SOURCE_MODE)
+# Cached source responses
 backend/.cache
 backend/.e2e-cache
 

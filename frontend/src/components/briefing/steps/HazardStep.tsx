@@ -31,9 +31,9 @@ export function HazardPanel({ view, progress }: StepProps) {
   const { t, lang } = useT()
   const date = usePlan((s) => s.date)
   const [open, setOpen] = useState<HazardKind | null>(null)
-  const { route, data, evaluation, paceAnswer, scenario } = view
+  const { route, data, evaluation, paceAnswer } = view
   // Not blocking: until (or unless) it answers, the cards keep their templates.
-  const narrationResult = useQuery(narrationQuery(route.id, scenario, date, lang))
+  const narrationResult = useQuery(narrationQuery(route.id, date, lang))
   const narration = narrationResult.data
   const resolved = resolvedChecks(progress)
   const done = resolved >= HAZARD_ORDER.length

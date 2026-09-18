@@ -1,12 +1,14 @@
 import { expect, test } from '@playwright/test'
+import { stubApi } from './api'
 import { watchConsole, withPlan } from './helpers'
 
-// Between Oberbärgli and the moraine on the demo route.
+// Between Oberbärgli and the moraine on the stubbed test route.
 const ON_ROUTE = { latitude: 46.4955, longitude: 7.7512 }
 
 test.use({ geolocation: ON_ROUTE, permissions: ['geolocation'], viewport: { width: 390, height: 844 } })
 
 async function startHike(page: import('@playwright/test').Page, hoursAgo = 1) {
+  await stubApi(page)
   await withPlan(page, '/field', {
     paceAnswer: '5to6',
     planAccepted: true,
@@ -16,7 +18,7 @@ async function startHike(page: import('@playwright/test').Page, hoursAgo = 1) {
   })
 }
 
-test.describe('field mode @demo', () => {
+test.describe('field mode @stubbed', () => {
   test('the map, the three numbers, SOS and the composer are on one screen', async ({ page }) => {
     const clean = watchConsole(page)
     await startHike(page)

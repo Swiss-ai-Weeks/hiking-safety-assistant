@@ -29,7 +29,7 @@ export function useBriefingModel(view: Pick<AssessmentView, 'route' | 'arrivals'
 
   const keyStops = useMemo(() => {
     const cruxIndex = route.stops.findIndex((s) => s.id === route.cruxStopId)
-    // A computed route names the bail-out stop; the demo route only gives a name to match.
+    // A computed route names the bail-out stop; a route without `bailoutStopId` only gives a name to match.
     const bailoutIndex = route.bailoutStopId
       ? route.stops.findIndex((s) => s.id === route.bailoutStopId)
       : route.stops.findIndex((s) => waypointById(route, s.waypointId).name === route.bailoutName)

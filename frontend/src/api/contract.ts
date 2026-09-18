@@ -27,7 +27,6 @@ import type {
   PlaceResult,
   Route,
   RouteRequest,
-  Scenario,
   SeverityInterval,
   Stop,
   StopConditions,
@@ -133,14 +132,6 @@ export type _CreateRouteEndpoint = Expect<
 // The other direction: what we send has to be what the backend accepts. `from` is a reserved
 // word in Python, so this is also what checks that the alias survived.
 export type _CreateRouteBody = Expect<Assignable<RouteRequest, Body<paths['/api/routes']['post']>>>
-
-// `?scenario=` accepts exactly the four demo states the UI can ask for. The parameter is
-// optional (it defaults to `assessed`), so `undefined` is dropped before comparing.
-type ScenarioQuery = NonNullable<
-  paths['/api/routes/{route_id}/assessment']['get']['parameters']['query']
->['scenario']
-
-export type _ScenarioParam = Expect<Exact<Scenario, NonNullable<ScenarioQuery>>>
 
 // `?lang=` is exactly the languages the UI has.
 type NarrationQuery = NonNullable<paths['/api/routes/{route_id}/narration']['get']['parameters']['query']>

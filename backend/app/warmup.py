@@ -1,6 +1,6 @@
-"""Fill the caches for the showcase routes once the service is up.
+"""Fill the caches for the configured routes once the service is up.
 
-Insurance for demo day: the first person to open the briefing after a restart should not be the one
+The first person to open the briefing after a restart should not be the one
 who waits for seven waypoints × seventeen hours of forecast, the ensemble and a model call. Nothing
 here can take the service down: every step logs and carries on.
 """
@@ -54,7 +54,7 @@ async def warm(sources: Sources, route_ids: list[str], langs: tuple[str, ...] = 
         for day in (today, today + timedelta(days=1)):
             started = time.monotonic()
             try:
-                assessment = await sources.assessor.assess(route, "assessed", day)
+                assessment = await sources.assessor.assess(route, day)
             except Exception:
                 log.exception("warm-up: assessment of %s on %s failed", route_id, day)
                 continue
@@ -86,7 +86,7 @@ async def warm(sources: Sources, route_ids: list[str], langs: tuple[str, ...] = 
 
 def start(settings: Settings, sources: Sources) -> asyncio.Task | None:
     """Warm in the background if this worker wins the lock. The task is returned so it can be cancelled."""
-    if not settings.warmup_enabled or sources.mode != "live":
+    if not settings.warmup_enabled or not settings.warmup_routes:
         return None
     lock = claim(settings.cache_dir)
     if lock is None:

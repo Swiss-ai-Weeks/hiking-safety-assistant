@@ -15,7 +15,7 @@ from ..config import Settings
 from ..domain import GeoPoint, PointForecast, Warning
 from ..errors import SourceUnavailable
 from ..hazards import engine
-from ..models import AssessmentData, Route, Scenario
+from ..models import AssessmentData, Route
 from .base import WarningSource, WeatherSource
 from .http import CachedHttpClient, CacheKey
 from .weather_common import local_today, model_for, target_time
@@ -44,8 +44,7 @@ class EngineAssessor:
         self.warnings = warnings
         self.now = now
 
-    async def assess(self, route: Route, scenario: Scenario, day: date | None = None) -> AssessmentData:
-        """`scenario` is a demo-mode control; the outcome here is derived, so it is ignored."""
+    async def assess(self, route: Route, day: date | None = None) -> AssessmentData:
         now = self.now()
         day = day or local_today(now)
         try:

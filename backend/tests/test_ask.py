@@ -5,6 +5,7 @@ from datetime import date
 
 import httpx
 import pytest
+from authored import OESCHINEN_ROUTE, authored_sources, get_assessment
 from fastapi.testclient import TestClient
 
 from app import api
@@ -12,8 +13,8 @@ from app.ask import build_briefing, fill, parse_answer, violations
 from app.ask.guard import strip_echoes
 from app.config import Settings, get_settings
 from app.main import create_app
-from app.mock_data import OESCHINEN_ROUTE, get_assessment
 from app.models import AskRequest, AskTurn, LiveContext, PlanContext
+from app.sources import get_sources
 from app.sources.asker import LlmAsker, passages_for
 from app.sources.http import DiskCache
 
@@ -273,7 +274,10 @@ async def test_history_is_sent_before_the_new_question(tmp_path):
 @pytest.fixture
 def client(tmp_path):
     api.ask_limit.seen.clear()
-    yield TestClient(create_app(frontend_dist=tmp_path))
+    app = create_app(frontend_dist=tmp_path)
+    sources = authored_sources(Settings(cache_dir=tmp_path / "cache"))
+    app.dependency_overrides[get_sources] = lambda: sources
+    yield TestClient(app)
     api.ask_limit.seen.clear()
     get_settings.cache_clear()
 

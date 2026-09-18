@@ -12,7 +12,6 @@ Grade = Literal["T1", "T2", "T3", "T4", "T5", "T6"]
 # Severity scale: grey, amber, red. There is deliberately no "green".
 Severity = Literal["none", "mod", "high"]
 Outcome = Literal["assessed", "partial", "not_assessable"]
-Scenario = Literal["assessed", "partial", "not_assessable", "stale"]
 HazardKind = Literal["gusts", "showers", "thunder", "cold", "snow", "visibility", "daylight"]
 GapKind = Literal["warnings", "snowline", "pace"]
 # Why there is no assessment: the forecast source failed, or the day is further ahead than any

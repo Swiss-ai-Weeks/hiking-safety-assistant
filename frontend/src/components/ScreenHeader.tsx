@@ -6,7 +6,8 @@ import { ChevronLeft } from './icons'
 interface Props {
   title: ReactNode
   subtitle?: ReactNode
-  backTo: To
+  /** Omitted where there is nowhere to go back to. */
+  backTo?: To
   action?: ReactNode
   bordered?: boolean
 }
@@ -19,13 +20,17 @@ export function ScreenHeader({ title, subtitle, backTo, action, bordered = true 
         bordered ? 'border-b border-rule' : ''
       }`}
     >
-      <Link
-        to={backTo}
-        aria-label={t('common.back')}
-        className="flex size-10 shrink-0 items-center justify-center rounded-full text-plum hover:bg-subtle"
-      >
-        <ChevronLeft />
-      </Link>
+      {backTo !== undefined ? (
+        <Link
+          to={backTo}
+          aria-label={t('common.back')}
+          className="flex size-10 shrink-0 items-center justify-center rounded-full text-plum hover:bg-subtle"
+        >
+          <ChevronLeft />
+        </Link>
+      ) : (
+        <span aria-hidden="true" className="w-1.5 shrink-0" />
+      )}
       <div className="min-w-0 flex-1">
         <h1 className="truncate text-[15px] font-semibold">{title}</h1>
         {subtitle && <p className="truncate text-xs text-muted">{subtitle}</p>}

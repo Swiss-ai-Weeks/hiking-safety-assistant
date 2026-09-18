@@ -8,12 +8,12 @@ from dataclasses import replace
 from datetime import UTC, date, datetime, timedelta
 
 import pytest
+from authored import OESCHINEN_ROUTE
 
 from app.domain import ModelRun, PointForecast, Warning
 from app.errors import SourceUnavailable
 from app.hazards import engine
 from app.hazards.alternatives import arrivals, timeline
-from app.mock_data import OESCHINEN_ROUTE
 from app.sources.assessor import EngineAssessor
 from app.sources.http import CachedHttpClient
 
@@ -316,7 +316,7 @@ def make_assessor(settings):
 async def test_the_assessor_fetches_every_waypoint_hour_and_assesses(make_assessor):
     weather = FakeWeather(day_of(hohturli=gusty(12, 13, 14)))
 
-    data = await make_assessor(weather).assess(ROUTE, "assessed", SUMMER)
+    data = await make_assessor(weather).assess(ROUTE, SUMMER)
 
     assert data.outcome == "assessed"
     assert "gusts" in kinds(data)
@@ -324,19 +324,13 @@ async def test_the_assessor_fetches_every_waypoint_hour_and_assesses(make_assess
     assert weather.calls == len(WAYPOINTS) * len(engine.FORECAST_HOURS)
 
 
-async def test_the_scenario_is_ignored_because_the_outcome_is_derived(make_assessor):
-    data = await make_assessor(FakeWeather(day_of())).assess(ROUTE, "not_assessable", SUMMER)
-
-    assert data.outcome == "assessed"
-
-
 async def test_a_second_request_for_the_same_run_is_served_from_the_cache(make_assessor):
     weather = FakeWeather(day_of())
     assessor = make_assessor(weather)
 
-    first = await assessor.assess(ROUTE, "assessed", SUMMER)
+    first = await assessor.assess(ROUTE, SUMMER)
     calls = weather.calls
-    second = await assessor.assess(ROUTE, "assessed", SUMMER)
+    second = await assessor.assess(ROUTE, SUMMER)
 
     assert second == first
     assert weather.calls == calls
@@ -346,7 +340,7 @@ async def test_a_failed_stop_costs_that_stop(make_assessor):
     forecasts = day_of()
     forecasts["hutte"] = {}
 
-    data = await make_assessor(FakeWeather(forecasts)).assess(ROUTE, "assessed", SUMMER)
+    data = await make_assessor(FakeWeather(forecasts)).assess(ROUTE, SUMMER)
 
     assert data.outcome == "partial"
     assert data.not_evaluated[0].leg_ids == ["hohturli-hutte"]
@@ -362,7 +356,7 @@ class BrokenWeather(FakeWeather):
 async def test_an_unexpected_error_is_not_assessable_rather_than_a_crash(make_assessor):
     assessor = make_assessor(BrokenWeather(day_of()))
 
-    data = await assessor.assess(ROUTE, "assessed", SUMMER)
+    data = await assessor.assess(ROUTE, SUMMER)
 
     assert data.outcome == "not_assessable"
     assert data.forecast.unavailable_reason == "source"
@@ -370,7 +364,7 @@ async def test_an_unexpected_error_is_not_assessable_rather_than_a_crash(make_as
 
 
 async def test_no_model_run_is_not_assessable_because_of_the_source(make_assessor):
-    data = await make_assessor(FakeWeather(day_of(), fail_run=True)).assess(ROUTE, "assessed", SUMMER)
+    data = await make_assessor(FakeWeather(day_of(), fail_run=True)).assess(ROUTE, SUMMER)
 
     assert data.outcome == "not_assessable"
     assert data.forecast.unavailable_reason == "source"
@@ -379,14 +373,14 @@ async def test_no_model_run_is_not_assessable_because_of_the_source(make_assesso
 async def test_a_day_no_model_reaches_is_said_to_be_beyond_the_horizon(make_assessor):
     weather = FakeWeather(day_of())
 
-    data = await make_assessor(weather).assess(ROUTE, "assessed", SUMMER + timedelta(days=10))
+    data = await make_assessor(weather).assess(ROUTE, SUMMER + timedelta(days=10))
 
     assert data.forecast.unavailable_reason == "beyond_horizon"
     assert weather.calls == 0
 
 
 async def test_warnings_that_answer_are_not_a_gap(make_assessor):
-    data = await make_assessor(FakeWeather(day_of()), FakeWarnings(fail=False)).assess(ROUTE, "assessed", SUMMER)
+    data = await make_assessor(FakeWeather(day_of()), FakeWarnings(fail=False)).assess(ROUTE, SUMMER)
 
     assert data.gaps == ["pace"]
 

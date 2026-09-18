@@ -52,7 +52,7 @@ export function RouteMapScreen() {
   return (
     <div className="flex h-dvh flex-col">
       <ScreenHeader
-        backTo={hikeStarted ? '/field' : { pathname: '/briefing', search: view.search }}
+        backTo={hikeStarted ? '/field' : '/briefing'}
         title={t('map.title')}
         subtitle={t('map.subtitle', { route: routeName(route), km: formatKm(route.distanceKm, lang) })}
         action={

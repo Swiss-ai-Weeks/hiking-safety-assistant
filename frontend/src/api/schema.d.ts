@@ -803,7 +803,6 @@ export interface operations {
     ask_about_route_api_routes__route_id__ask_post: {
         parameters: {
             query?: {
-                scenario?: "assessed" | "partial" | "not_assessable" | "stale";
                 date?: string | null;
                 lang?: "en" | "fr";
             };
@@ -842,7 +841,6 @@ export interface operations {
     get_route_assessment_api_routes__route_id__assessment_get: {
         parameters: {
             query?: {
-                scenario?: "assessed" | "partial" | "not_assessable" | "stale";
                 date?: string | null;
             };
             header?: never;
@@ -876,7 +874,6 @@ export interface operations {
     get_route_narration_api_routes__route_id__narration_get: {
         parameters: {
             query?: {
-                scenario?: "assessed" | "partial" | "not_assessable" | "stale";
                 date?: string | null;
                 lang?: "en" | "fr";
             };

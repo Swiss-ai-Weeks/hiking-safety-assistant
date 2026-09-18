@@ -14,7 +14,6 @@ export type PaceAnswer = 'under5' | '5to6' | 'over7'
 export type CloudAnswer = 'above' | 'touching' | 'below'
 
 export type Outcome = 'assessed' | 'partial' | 'not_assessable'
-export type Scenario = 'assessed' | 'partial' | 'not_assessable' | 'stale'
 
 export interface Waypoint {
   id: string
@@ -74,7 +73,7 @@ export interface Route {
   descentM?: number
   /** Which stop the bail-out is. `bailoutName` alone cannot be placed on the map. */
   bailoutStopId?: string
-  /** The walked line. Absent on the demo route, which has waypoints but no geometry. */
+  /** The walked line. Every computed route has it; without it the map draws chords between stops. */
   geometry?: LatLng[]
   /** Metres above sea level per `geometry` point, same length and order. */
   elevations?: number[]

@@ -1582,22 +1582,6 @@
           },
           {
             "in": "query",
-            "name": "scenario",
-            "required": false,
-            "schema": {
-              "default": "assessed",
-              "enum": [
-                "assessed",
-                "partial",
-                "not_assessable",
-                "stale"
-              ],
-              "title": "Scenario",
-              "type": "string"
-            }
-          },
-          {
-            "in": "query",
             "name": "date",
             "required": false,
             "schema": {
@@ -1679,22 +1663,6 @@
           },
           {
             "in": "query",
-            "name": "scenario",
-            "required": false,
-            "schema": {
-              "default": "assessed",
-              "enum": [
-                "assessed",
-                "partial",
-                "not_assessable",
-                "stale"
-              ],
-              "title": "Scenario",
-              "type": "string"
-            }
-          },
-          {
-            "in": "query",
             "name": "date",
             "required": false,
             "schema": {
@@ -1747,22 +1715,6 @@
             "required": true,
             "schema": {
               "title": "Route Id",
-              "type": "string"
-            }
-          },
-          {
-            "in": "query",
-            "name": "scenario",
-            "required": false,
-            "schema": {
-              "default": "assessed",
-              "enum": [
-                "assessed",
-                "partial",
-                "not_assessable",
-                "stale"
-              ],
-              "title": "Scenario",
               "type": "string"
             }
           },

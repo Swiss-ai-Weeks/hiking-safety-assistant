@@ -1,6 +1,6 @@
 export class ApiError extends Error {
   status: number
-  /** For a 503, which source could not answer (`swisstlm3d`, `demo`, …), when the body says. */
+  /** For a 503, which source could not answer (`swisstlm3d`, `geoadmin`, …), when the body says. */
   source?: string
 
   constructor(status: number, message: string, source?: string) {

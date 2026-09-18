@@ -1,14 +1,15 @@
 import { expect, type Page } from '@playwright/test'
+import { ROUTE_ID } from './api'
 
-/** Seeds the persisted plan store, then opens `path`. */
+/** Seeds the persisted plan store with the stubbed route and `patch`, then opens `path`. */
 export async function withPlan(page: Page, path: string, patch: Record<string, unknown>) {
-  await page.goto('/')
+  await page.goto('/routes/new')
   await page.evaluate((patch) => {
-    const stored = JSON.parse(localStorage.getItem('hsa-plan') ?? '{"state":{},"version":3}')
+    const stored = JSON.parse(localStorage.getItem('hsa-plan') ?? '{"state":{},"version":4}')
     stored.state = { ...stored.state, ...patch }
-    stored.version = 3
+    stored.version = 4
     localStorage.setItem('hsa-plan', JSON.stringify(stored))
-  }, patch)
+  }, { routeId: ROUTE_ID, ...patch })
   await page.goto(path)
 }
 
@@ -20,4 +21,23 @@ export function watchConsole(page: Page, allow: RegExp[] = []) {
     if (message.type() === 'error' && !allow.some((pattern) => pattern.test(message.text()))) errors.push(message.text())
   })
   return () => expect(errors).toEqual([])
+}
+
+/**
+ * Oeschinensee to the Blüemlisalphütte through the route picker, as a hiker plans it. Lands on the plan.
+ * The hut by its full name: the gazetteer's first "Blüemlisalp" is a hamlet near Zürich, with no trail to it.
+ */
+export async function pickRoute(page: Page) {
+  await page.goto('/routes/new')
+  await page.getByLabel('From').fill('Oeschinensee')
+  await page.getByRole('button', { name: /Oeschinensee/ }).first().click()
+  await page.getByLabel('To').fill('Blüemlisalphütte')
+  await page.getByRole('button', { name: /Blüemlisalphütte/ }).first().click()
+  await page.getByRole('button', { name: 'Find route' }).click()
+  await expect(page).toHaveURL(/\/($|\?|briefing)/, { timeout: 60_000 })
+}
+
+/** The route the persisted plan is on. */
+export function plannedRouteId(page: Page): Promise<string> {
+  return page.evaluate(() => JSON.parse(localStorage.getItem('hsa-plan') ?? '{}').state?.routeId)
 }

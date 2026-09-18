@@ -17,7 +17,6 @@ from .models import (
     RetryResult,
     Route,
     RouteRequest,
-    Scenario,
 )
 from .sources import Sources, get_sources
 
@@ -25,7 +24,7 @@ router = APIRouter(prefix="/api")
 
 SWISS_TIME = ZoneInfo("Europe/Zurich")
 
-# Where the data comes from is configuration (`SOURCE_MODE`), not something the API layer knows.
+# Where the data comes from is the sources' business, not something the API layer knows.
 SourcesDep = Annotated[Sources, Depends(get_sources)]
 
 
@@ -40,9 +39,8 @@ async def find_route(route_id: str, sources: Sources) -> Route:
 
 
 @router.get("/health")
-def health(sources: SourcesDep) -> dict[str, str]:
-    # `mode` is the only way to tell from outside which sources a running service is using.
-    return {"status": "ok", "mode": sources.mode}
+def health() -> dict[str, str]:
+    return {"status": "ok"}
 
 
 # Declared above `/routes/{route_id}`: registered the other way round, FastAPI matches this path
@@ -68,18 +66,17 @@ async def get_route(route_id: str, sources: SourcesDep) -> Route:
 
 @router.get("/routes/{route_id}/assessment", response_model_exclude_none=True)
 async def get_route_assessment(
-    route_id: str, sources: SourcesDep, scenario: Scenario = "assessed", date: date | None = None
+    route_id: str, sources: SourcesDep, date: date | None = None
 ) -> AssessmentData:
     """Hazards for the hike on `date` (default: today in Switzerland), evaluated client-side at arrival."""
     route = await find_route(route_id, sources)
-    return await sources.assessor.assess(route, scenario, date)
+    return await sources.assessor.assess(route, date)
 
 
 @router.get("/routes/{route_id}/narration", response_model_exclude_none=True)
 async def get_route_narration(
     route_id: str,
     sources: SourcesDep,
-    scenario: Scenario = "assessed",
     date: date | None = None,
     lang: Lang = "en",
 ) -> Narration:
@@ -89,7 +86,7 @@ async def get_route_narration(
     account: a hazard without a `body` keeps its templated copy.
     """
     route = await find_route(route_id, sources)
-    assessment = await sources.assessor.assess(route, scenario, date)
+    assessment = await sources.assessor.assess(route, date)
     return await sources.narrator.narrate(route, assessment, lang)
 
 
@@ -122,7 +119,6 @@ async def ask_about_route(
     body: AskRequest,
     request: Request,
     sources: SourcesDep,
-    scenario: Scenario = "assessed",
     date: date | None = None,
     lang: Lang = "en",
 ) -> Answer:
@@ -137,7 +133,7 @@ async def ask_about_route(
         raise HTTPException(status_code=429, detail="Too many questions; try again in a minute.")
     route = await find_route(route_id, sources)
     day = date or datetime.now(SWISS_TIME).date()
-    assessment = await sources.assessor.assess(route, scenario, day)
+    assessment = await sources.assessor.assess(route, day)
     if sources.asker is None:
         return Answer(enabled=False, reason="disabled", citations=[])
     return await sources.asker.ask(route, assessment, body, day, lang)

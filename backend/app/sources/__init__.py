@@ -1,4 +1,4 @@
-"""Picks the source implementations for the configured mode."""
+"""Builds the source implementations from the settings. Every one of them is real."""
 
 import importlib.util
 import logging
@@ -18,9 +18,8 @@ from .base import (
     WarningSource,
     WeatherSource,
 )
-from .demo import DemoAssessor, DemoElevationSource, DemoRouteSource, DemoWarningSource, DemoWeatherSource
 from .grounded import GroundedAssessor
-from .http import CachedHttpClient, DiskCache
+from .http import CachedHttpClient
 from .icon_grib import IconGribSource
 from .names import SwissNamesSource
 from .narrator import LlmNarrator
@@ -48,18 +47,6 @@ __all__ = [
 
 
 def build_sources(settings: Settings) -> Sources:
-    if settings.source_mode == "demo":
-        return Sources(
-            mode="demo",
-            routes=DemoRouteSource(),
-            elevation=DemoElevationSource(),
-            weather=DemoWeatherSource(),
-            warnings=DemoWarningSource(),
-            assessor=GroundedAssessor(DemoAssessor()),
-            narrator=LlmNarrator(settings, DiskCache(settings.cache_dir)),
-            asker=LlmAsker(settings, DiskCache(settings.cache_dir)),
-        )
-
     client = CachedHttpClient(settings)
     elevation = SwissAltiElevationSource(settings, client)
     open_meteo = OpenMeteoIconSource(settings, client)
@@ -69,7 +56,6 @@ def build_sources(settings: Settings) -> Sources:
     )
     warnings = AppWarningSource(settings, client)
     sources = Sources(
-        mode="live",
         routes=TlmRouteSource(
             settings,
             client,
@@ -85,7 +71,7 @@ def build_sources(settings: Settings) -> Sources:
         asker=LlmAsker(settings, client.cache),
     )
     log.warning(
-        "SOURCE_MODE=live: routes, elevation, weather (%s) and the hazard engine are live. App warnings are %s.",
+        "Sources: weather from %s, app warnings %s.",
         settings.weather_source,
         "on" if settings.meteoswiss_app_warnings else "off",
     )

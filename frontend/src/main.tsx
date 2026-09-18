@@ -8,7 +8,7 @@ import '@fontsource/literata/500.css'
 import './index.css'
 import App from './App.tsx'
 
-// Mock data never changes during a session; refetch only when a query is reset.
+// A route never changes once computed. Queries that follow the forecast set their own `staleTime`.
 const queryClient = new QueryClient({
   defaultOptions: { queries: { staleTime: Infinity, retry: 1 } },
 })

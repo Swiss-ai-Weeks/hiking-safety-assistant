@@ -43,7 +43,6 @@ def create_app(frontend_dist: Path | None = None) -> FastAPI:
     if mcp is not None:
         mount_mcp(app, mcp)
 
-    log.info("source mode: %s", settings.source_mode)
 
     dist = frontend_dist or Path(os.environ.get("FRONTEND_DIST", DEFAULT_FRONTEND_DIST))
     if (dist / "index.html").is_file():

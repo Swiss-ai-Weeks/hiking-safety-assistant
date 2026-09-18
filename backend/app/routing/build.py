@@ -121,7 +121,7 @@ def build_route(
         )
 
     # Timeline order: up through every stop, a break at the turnaround, then back down the same
-    # line. Return stops reuse the outbound waypoints, exactly as the demo route expresses it.
+    # line. Return stops reuse the outbound waypoints.
     used_stops: set[str] = set()
     stops: list[Stop] = []
     timeline: list[int] = [stop.vertex_index for stop in outbound]

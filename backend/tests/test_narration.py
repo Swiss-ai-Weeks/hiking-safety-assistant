@@ -4,9 +4,9 @@ import re
 from pathlib import Path
 
 import pytest
+from authored import HAZARDS, OESCHINEN_ROUTE
 
 from app.guidance import citations_for
-from app.mock_data import HAZARDS, OESCHINEN_ROUTE
 from app.models import HazardDef, HazardFacts, Window
 from app.narration.guard import normalise, violations
 from app.narration.placeholders import FACT_PLACEHOLDERS, available

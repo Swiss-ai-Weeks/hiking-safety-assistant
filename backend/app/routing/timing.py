@@ -3,7 +3,7 @@
 The SAC / DIN 33466 estimate, which is what Swiss signposts and SchweizMobil quote: horizontal
 and vertical effort are computed separately, the larger one is taken in full and the smaller one
 half-counted, on the reasoning that you recover some of the lesser effort while doing the
-greater. That single rule replaces every hand-written `legMinutes` in `mock_data.py`.
+greater. That single rule gives every `legMinutes`; none is typed in.
 
 Pure functions, no I/O: this is called once per graph edge while Dijkstra runs, so it has to be
 cheap, and it is the piece most worth unit-testing on its own.
