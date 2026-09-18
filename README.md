@@ -6,7 +6,7 @@ A mobile-first assistant built from the UI spec in [docs/design/](docs/design/hi
 
 ### Try it
 
-The app opens on route search with **From** and **To** empty. Type a few letters, pick a result, then **Find route**. Routing covers the imported trail region, the Bernese Oberland (roughly Kandersteg to Grindelwald). These pairs route on the live app:
+The app opens on route search with **From** and **To** empty. Under **Suggested routes**, tap Oeschinensee → Blüemlisalphütte (a high pass, which often flags a hazard) or Kleine Scheidegg → Männlichen (an easy walk) to fill both, then **Find route**. Or type a few letters, pick a result, then **Find route**. Routing covers the imported trail region, the Bernese Oberland (roughly Kandersteg to Grindelwald). These pairs route on the live app:
 
 | From: type → pick | To: type → pick | Route (out and back) |
 |---|---|---|

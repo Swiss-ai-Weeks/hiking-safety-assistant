@@ -30,9 +30,10 @@ export function watchConsole(page: Page, allow: RegExp[] = []) {
 export async function pickRoute(page: Page) {
   await page.goto('/routes/new')
   await page.getByLabel('From').fill('Oeschinensee')
-  await page.getByRole('button', { name: /Oeschinensee/ }).first().click()
+  // Not the suggested route "Oeschinensee → Blüemlisalphütte", which is a button too: a search result has no arrow.
+  await page.getByRole('button', { name: /^[^→]*Oeschinensee[^→]*$/ }).first().click()
   await page.getByLabel('To').fill('Blüemlisalphütte')
-  await page.getByRole('button', { name: /Blüemlisalphütte/ }).first().click()
+  await page.getByRole('button', { name: /^[^→]*Blüemlisalphütte[^→]*$/ }).first().click()
   await page.getByRole('button', { name: 'Find route' }).click()
   await expect(page).toHaveURL(/\/($|\?|briefing)/, { timeout: 60_000 })
 }

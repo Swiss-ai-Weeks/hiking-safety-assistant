@@ -44,6 +44,9 @@ export const fr: Messages = {
   'picker.noTrail':
     'Aucun sentier balisé ne relie ces lieux, ou l’un d’eux est trop loin du réseau. Essayez un village, une cabane ou un col proche.',
   'picker.unavailable': 'Le calcul d’itinéraire n’est pas disponible pour le moment. Réessayez dans un instant.',
+  'picker.suggested': 'Itinéraires suggérés',
+  'picker.suggest.hohturli': 'Montée à une cabane par un col élevé',
+  'picker.suggest.mannlichen': 'Balade facile sur la crête entre deux remontées mécaniques',
 
   'outcome.assessed': 'Évalué',
   'outcome.assessedDetail': '· tous les tronçons · prévision de {time} aujourd’hui',

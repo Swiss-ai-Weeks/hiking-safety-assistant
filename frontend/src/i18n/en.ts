@@ -42,6 +42,9 @@ export const en = {
   'picker.noTrail':
     'No marked trail connects these places, or one of them is too far from the network. Try a nearby village, hut or pass.',
   'picker.unavailable': "Routing isn't available right now. Try again in a moment.",
+  'picker.suggested': 'Suggested routes',
+  'picker.suggest.hohturli': 'Hut hike over a high pass',
+  'picker.suggest.mannlichen': 'Easy ridge walk between two cable cars',
 
   'outcome.assessed': 'Assessed',
   'outcome.assessedDetail': '· all segments · forecast from {time} today',

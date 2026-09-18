@@ -5,7 +5,7 @@ import { ApiError } from '../api/client'
 import { createRoute, placeSearchQuery, routeQuery } from '../api/queries'
 import { BottomAction } from '../components/BottomAction'
 import { Button } from '../components/Button'
-import { Card } from '../components/Card'
+import { Card, SectionTitle } from '../components/Card'
 import { SettingsIcon } from '../components/icons'
 import { ScreenHeader } from '../components/ScreenHeader'
 import type { PlaceRef } from '../domain/types'
@@ -13,6 +13,25 @@ import { useT, type MessageKey } from '../i18n'
 import { usePlan } from '../store/plan'
 
 const SEARCH_DEBOUNCE_MS = 300
+
+/**
+ * Routes to start from, one hard and one easy. Each end is spelled exactly as place search returns
+ * it, so a suggestion builds the same route (and route id) as picking those places by hand.
+ */
+const SUGGESTED_ROUTES: { name: string; blurb: MessageKey; from: PlaceRef; to: PlaceRef }[] = [
+  {
+    name: 'Oeschinensee → Blüemlisalphütte',
+    blurb: 'picker.suggest.hohturli',
+    from: { name: 'See Oeschinensee (BE) - Kandersteg', latLng: [46.49836, 7.72667] },
+    to: { name: 'Gebaeude Blüemlisalphütte SAC (BE) - Kandersteg', latLng: [46.51019, 7.77162] },
+  },
+  {
+    name: 'Kleine Scheidegg → Männlichen',
+    blurb: 'picker.suggest.mannlichen',
+    from: { name: 'Ort Kleine Scheidegg (BE) - Lauterbrunnen', latLng: [46.58469, 7.96068] },
+    to: { name: 'Männlichen (BE) - Lauterbrunnen,Grindelwald', latLng: [46.61206, 7.94194] },
+  },
+]
 
 function useDebounced<T>(value: T, ms: number): T {
   const [debounced, setDebounced] = useState(value)
@@ -146,6 +165,13 @@ export function RoutePickerScreen() {
     },
   })
 
+  const pickSuggestion = (suggestion: (typeof SUGGESTED_ROUTES)[number]) => {
+    setFrom(suggestion.from)
+    setTo(suggestion.to)
+    setVia(null)
+    setViaOpen(false)
+  }
+
   const ready = from !== null && to !== null && (!viaOpen || via !== null)
 
   return (
@@ -192,6 +218,21 @@ export function RoutePickerScreen() {
             {t(routeErrorKey(build.error))}
           </p>
         )}
+        <SectionTitle>{t('picker.suggested')}</SectionTitle>
+        <ul className="flex flex-col gap-2.5">
+          {SUGGESTED_ROUTES.map((suggestion) => (
+            <li key={suggestion.name}>
+              <button
+                type="button"
+                onClick={() => pickSuggestion(suggestion)}
+                className="flex w-full flex-col gap-[3px] rounded-card border border-line bg-card px-4 py-3.5 text-left hover:bg-subtle"
+              >
+                <span className="text-[17px] font-medium">{suggestion.name}</span>
+                <span className="text-[13px] text-muted">{t(suggestion.blurb)}</span>
+              </button>
+            </li>
+          ))}
+        </ul>
       </main>
       <BottomAction>
         <Button
