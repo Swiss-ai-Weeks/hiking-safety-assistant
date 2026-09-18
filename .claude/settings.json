@@ -9,7 +9,21 @@
       "Bash(uv run ruff check tests)",
       "Bash(pnpm test)",
       "Bash(pnpm lint)",
-      "Bash(pnpm exec tsc -b --force)"
+      "Bash(pnpm exec tsc -b --force)",
+      "Bash(pnpm exec tsc -b)",
+      "Bash(journalctl -u hiking-safety-assistant *)",
+      "Bash(openshell sandbox list)",
+      "Bash(openshell forward list)",
+      "Bash(uv run openshell status)",
+      "Bash(openshell --help)",
+      "Bash(openshell sandbox --help)",
+      "Bash(systemctl is-active *)",
+      "Bash(uv run ruff check)",
+      "Bash(uv run ruff check -q)",
+      "Bash(uv run ruff check --output-format concise)",
+      "Bash(uv run ruff check app --output-format concise)",
+      "Bash(uv run ruff check app/ask --output-format concise)",
+      "Bash(uv run ruff format --check app)"
     ]
   }
 }
