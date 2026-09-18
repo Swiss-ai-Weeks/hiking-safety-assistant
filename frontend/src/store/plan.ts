@@ -170,10 +170,11 @@ export const usePlan = create<PlanState>()(
     },
     {
       name: 'hsa-plan',
-      version: 4,
+      version: 5,
       // v2 keeps recent routes on the device, now that the server no longer invents a list.
       // v3 keeps the conversation with the model about each hike.
       // v4 drops the demo: its route and the scenario picker are gone.
+      // v5 asks pace against signpost times; the old hour buckets map onto the same factors.
       migrate: (persisted, version) => {
         let state = persisted as Partial<PlanData> & { scenario?: unknown }
         if (version < 2) state = { ...state, recentRoutes: [] }
@@ -189,6 +190,11 @@ export const usePlan = create<PlanState>()(
             saved: rest.saved?.filter((plan) => plan.routeId !== RETIRED_ROUTE_ID),
             recentRoutes: rest.recentRoutes?.filter((recent) => recent.id !== RETIRED_ROUTE_ID),
           }
+        }
+        if (version < 5) {
+          const renamed: Record<string, PaceAnswer> = { under5: 'faster', '5to6': 'same', over7: 'slower' }
+          const old = state.paceAnswer as string | null | undefined
+          state = { ...state, paceAnswer: old ? (renamed[old] ?? null) : null }
         }
         return state
       },

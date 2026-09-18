@@ -2,13 +2,13 @@ import type { Minutes, PaceAnswer, Route } from './types'
 
 /**
  * Multipliers on the route's reference moving times. Until the hiker answers the
- * reference-class question we assume a cautious pace.
+ * signpost question we assume a cautious pace.
  */
 export const PACE_FACTORS: Record<PaceAnswer | 'cautious', number> = {
   cautious: 1.08,
-  under5: 0.85,
-  '5to6': 1,
-  over7: 1.25,
+  faster: 0.85,
+  same: 1,
+  slower: 1.25,
 }
 
 export function paceFactor(answer: PaceAnswer | null): number {

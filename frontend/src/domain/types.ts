@@ -10,7 +10,8 @@ export type Severity = 'none' | 'mod' | 'high'
 /** A stop or leg whose data could not be evaluated. */
 export type StopSeverity = Severity | 'unknown'
 
-export type PaceAnswer = 'under5' | '5to6' | 'over7'
+/** How the hiker walks next to signpost times, which is what route times are. */
+export type PaceAnswer = 'faster' | 'same' | 'slower'
 export type CloudAnswer = 'above' | 'touching' | 'below'
 
 export type Outcome = 'assessed' | 'partial' | 'not_assessable'
@@ -30,7 +31,7 @@ export interface Stop {
   id: string
   waypointId: string
   label: StopLabel
-  /** Moving time from the previous stop at the reference pace (5–6 h hiker). */
+  /** Moving time from the previous stop at signpost pace (SAC / DIN 33466). */
   legMinutes: Minutes
   /** Break taken after arriving (not scaled by pace). */
   breakMinutes?: Minutes

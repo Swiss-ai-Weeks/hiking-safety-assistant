@@ -21,8 +21,8 @@ describe('computeArrivals', () => {
   })
 
   it('recomputes with the reference-class answer (spec 03)', () => {
-    expect(arrival(450, '5to6', 'hohturli')).toBe('11:20')
-    expect(arrival(450, '5to6', 'lake-end')).toBe('15:40')
+    expect(arrival(450, 'same', 'hohturli')).toBe('11:20')
+    expect(arrival(450, 'same', 'lake-end')).toBe('15:40')
   })
 
   it('puts the crux at 10:40 with the suggested 06:30 start', () => {
@@ -31,12 +31,12 @@ describe('computeArrivals', () => {
 
   it('orders paces from fastest to slowest', () => {
     const at = (pace: PaceAnswer) => computeArrivals(route, 450, pace).hohturli
-    expect(at('under5')).toBeLessThan(at('5to6'))
-    expect(at('5to6')).toBeLessThan(at('over7'))
+    expect(at('faster')).toBeLessThan(at('same'))
+    expect(at('same')).toBeLessThan(at('slower'))
   })
 
   it('does not scale breaks with pace', () => {
-    const fast = computeArrivals(route, 450, 'under5')
+    const fast = computeArrivals(route, 450, 'faster')
     expect(fast.descent - fast.hutte).toBeCloseTo(45 + 45 * 0.85)
   })
 })

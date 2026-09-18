@@ -11,7 +11,7 @@ cheap, and it is the piece most worth unit-testing on its own.
 
 from ..models import Grade
 
-# Reference pace, the "5-6 h hiker" the frontend's `PACE_FACTORS` are relative to.
+# Signpost pace (SAC / DIN 33466), the one the frontend's `PACE_FACTORS` are relative to.
 FLAT_KMH = 4.0
 ASCENT_MH = 400.0
 DESCENT_MH = 800.0

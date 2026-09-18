@@ -18,7 +18,7 @@ export const WEATHER_STEP_MS = 6500
 const CHECK_MS = 520
 export const HAZARD_STEP_MS = CHECK_MS * (HAZARD_ORDER.length + 1)
 
-export const PACE_OPTIONS: PaceAnswer[] = ['under5', '5to6', 'over7']
+export const PACE_OPTIONS: PaceAnswer[] = ['faster', 'same', 'slower']
 
 /** The walker's clock at `progress`, from the first step to the last. */
 export function minuteAt(model: BriefingModel, progress: number) {

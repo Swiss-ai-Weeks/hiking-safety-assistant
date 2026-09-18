@@ -51,7 +51,7 @@ class Stop(Schema):
     id: str
     waypoint_id: str
     label: PlaceLabel | KeyLabel
-    # Moving time from the previous stop at the reference pace (5–6 h hiker).
+    # Moving time from the previous stop at signpost pace (SAC / DIN 33466).
     leg_minutes: Minutes
     # Break taken after arriving (not scaled by pace).
     break_minutes: Minutes | None = None

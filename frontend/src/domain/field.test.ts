@@ -49,7 +49,7 @@ describe('trackOf', () => {
     expect(geoTrack.sections[1].points.map((p) => p.elevationM)).toEqual([1300, 1200, 1100, 1000])
 
     const halfway = snapToTrack(geoTrack, [46.5015, 7.7005])!
-    const progress = fieldProgress(geo, geoTrack, halfway, '5to6', 600)
+    const progress = fieldProgress(geo, geoTrack, halfway, 'same', 600)
     expect(progress.remainingAscentM).toBeCloseTo(150, 0)
   })
 })
@@ -92,7 +92,7 @@ describe('fieldProgress', () => {
 
   it('turns to the end of the hike once the crux is behind, breaks included', () => {
     const snap = snapToTrack(track, at('hutte'), track.sections[2].startM + track.sections[2].lengthM)!
-    const progress = fieldProgress(route, track, snap, '5to6', 13 * 60)
+    const progress = fieldProgress(route, track, snap, 'same', 13 * 60)
 
     expect(progress.passedCrux).toBe(true)
     expect(progress.targetStopId).toBe('lake-end')

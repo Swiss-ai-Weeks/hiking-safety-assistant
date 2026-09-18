@@ -48,7 +48,7 @@ describe('evaluate', () => {
   })
 
   it('updates flags when the start moves earlier', () => {
-    const { evaluation } = evaluateFor(390, '5to6')
+    const { evaluation } = evaluateFor(390, 'same')
     expect(evaluation.stopSeverity.hohturli).toBe('none')
     expect(evaluation.stopSeverity.hutte).toBe('mod')
     expect(evaluation.flagged.map((f) => [f.hazard.id, f.severity])).toEqual([['gusts-hohturli', 'mod']])
