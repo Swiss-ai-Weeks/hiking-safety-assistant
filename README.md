@@ -4,6 +4,22 @@ A mobile-first assistant built from the UI spec in [docs/design/](docs/design/hi
 
 **Live:** https://hiking-safety.tail685478.ts.net
 
+### Try it
+
+The app opens on route search with **From** and **To** empty. Type a few letters, pick a result, then **Find route**. Routing covers the imported trail region, the Bernese Oberland (roughly Kandersteg to Grindelwald). These pairs route on the live app:
+
+| From: type → pick | To: type → pick | Route (out and back) |
+|---|---|---|
+| Oeschinensee → *See Oeschinensee (BE) - Kandersteg* | Blüemlisalphütte → *Gebaeude Blüemlisalphütte SAC* | T2, 10.2 km, ↑1,200 m, crux Hohtürli |
+| Kleine Scheidegg → *Ort Kleine Scheidegg* | Männlichen → *Männlichen (BE)* | T1, 9.2 km, ↑221 m |
+| First → *First (BE) - Grindelwald* | Bachsee → *See Bachsee (BE) - Grindelwald* | T2, 6.1 km, ↑169 m |
+| Grütschalp → *Uebrige Bahnen Grütschalp* | Mürren → *Ort Mürren* | T1, 10.5 km, ↑202 m |
+| Wengen → *Ort Wengen* | Kleine Scheidegg → *Ort Kleine Scheidegg* | T1, 13.6 km, ↑802 m |
+| Schynige Platte → *Massiv Schynige Platte* | Faulhorn → *Alpiner Gipfel Faulhorn* | T2, 21.6 km, ↑985 m |
+| Stechelberg → *Ort Stechelberg* | Obersteinberg → *Gebiet Obersteinberg* | T3, 10.6 km, ↑987 m |
+
+Search covers all of Switzerland, so pick the result in the region, not just the first one. "Blüemlisalp" alone first returns a hamlet near Zürich, and the lake above Grindelwald is "Bachsee" on the official map ("Bachalpsee" finds nothing). A place outside the region, such as Bern → Gurten, gets "no marked trail nearby", which is the expected answer. Hazards are checked against the real MeteoSwiss forecast for the chosen date, so the outcome varies by day; sections that could not be checked are marked "not evaluated", never clear.
+
 | Folder | Contents |
 |---|---|
 | [frontend/](frontend/) | React app |
