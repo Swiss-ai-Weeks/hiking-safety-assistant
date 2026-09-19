@@ -65,6 +65,8 @@ export const fr: Messages = {
   'brief.step.hazards': 'Vérification des dangers',
   'brief.step.plan': 'Votre plan',
   'brief.skip': 'Passer',
+  'brief.loading': 'Préparation du briefing…',
+  'brief.loadingDetail': 'Vérification de la météo et du terrain sur votre itinéraire. Cela peut prendre quelques secondes.',
   'brief.replay': 'Revoir',
   'brief.share': 'Partager',
   'brief.changePlan': 'Changer la date ou l’itinéraire',

@@ -1,6 +1,7 @@
 import { lazy, Suspense, type ReactNode } from 'react'
 import { createBrowserRouter, Navigate, RouterProvider, useLocation, useSearchParams } from 'react-router'
 import { AppShell } from './components/AppShell'
+import { BriefingLoading } from './components/briefing/BriefingLoading'
 import { PlanScreen } from './screens/PlanScreen'
 import { RoutePickerScreen } from './screens/RoutePickerScreen'
 import { SettingsScreen } from './screens/SettingsScreen'
@@ -52,7 +53,7 @@ const router = createBrowserRouter([
         path: 'briefing',
         element: (
           <RequireRoute>
-            <Suspense fallback={mapFallback}>
+            <Suspense fallback={<BriefingLoading />}>
               <BriefingScreen />
             </Suspense>
           </RequireRoute>

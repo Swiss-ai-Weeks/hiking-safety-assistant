@@ -63,6 +63,8 @@ export const en = {
   'brief.step.hazards': 'Hazard check',
   'brief.step.plan': 'Your plan',
   'brief.skip': 'Skip',
+  'brief.loading': 'Preparing your briefing…',
+  'brief.loadingDetail': 'Checking the forecast and terrain along your route. This can take a few seconds.',
   'brief.replay': 'Replay',
   'brief.share': 'Share',
   'brief.changePlan': 'Change date or route',
