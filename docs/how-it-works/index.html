@@ -1,0 +1,1210 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Hiking safety assistant — how it works</title>
+    <link rel="stylesheet" href="fonts.css" />
+    <style>
+      /*
+       * Print stylesheet for docs/how-it-works.pdf. The tokens are the app's own
+       * (frontend/src/index.css), so the document and the product read as one thing.
+       */
+      :root {
+        --page: oklch(0.955 0.007 75);
+        --canvas: oklch(0.975 0.006 75);
+        --card: #fff;
+        --line: oklch(0.88 0.01 75);
+        --divider: oklch(0.92 0.008 75);
+        --subtle: oklch(0.95 0.01 75);
+        --ink: oklch(0.22 0.012 60);
+        --ink-2: oklch(0.35 0.012 60);
+        --muted: oklch(0.5 0.012 60);
+        --plum: oklch(0.5 0.12 300);
+        --ai: oklch(0.5 0.15 265);
+        --ai-soft: oklch(0.95 0.025 265);
+        --sev-none: oklch(0.8 0.02 75);
+        --sev-mod: oklch(0.78 0.13 70);
+        --sev-high: oklch(0.62 0.17 40);
+        --crux: oklch(0.3 0.012 60);
+      }
+
+      @page {
+        size: A4;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+      html {
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+      body {
+        margin: 0;
+        padding: 0 16mm;
+        background: var(--page);
+        color: var(--ink);
+        font-family: 'Figtree', system-ui, sans-serif;
+        font-size: 9.7pt;
+        line-height: 1.4;
+      }
+
+      .page {
+        break-after: page;
+        padding-bottom: 2mm;
+      }
+      .page:last-child {
+        break-after: auto;
+      }
+
+      h1 {
+        font-family: 'Literata', Georgia, serif;
+        font-size: 28pt;
+        line-height: 1.1;
+        margin: 0 0 4mm;
+        letter-spacing: -0.01em;
+      }
+      h2 {
+        font-family: 'Literata', Georgia, serif;
+        font-size: 16pt;
+        margin: 0 0 1.5mm;
+        letter-spacing: -0.01em;
+      }
+      h3 {
+        font-size: 10.5pt;
+        margin: 5mm 0 1.5mm;
+      }
+      .eyebrow {
+        font-size: 8pt;
+        font-weight: 700;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--muted);
+        margin: 0 0 2mm;
+      }
+      .lede {
+        font-size: 10.8pt;
+        color: var(--ink-2);
+        margin: 0 0 4mm;
+      }
+      p {
+        margin: 0 0 2.5mm;
+      }
+      a {
+        color: var(--plum);
+        text-decoration: none;
+      }
+      code {
+        font-family: 'DejaVu Sans Mono', ui-monospace, monospace;
+        font-size: 0.86em;
+        background: var(--subtle);
+        border-radius: 3px;
+        padding: 0 2px;
+      }
+      strong {
+        font-weight: 700;
+      }
+
+      .rule {
+        border: 0;
+        border-top: 1px solid var(--line);
+        margin: 4mm 0;
+      }
+
+      /* --- blocks ------------------------------------------------------------------ */
+      .thesis {
+        background: var(--crux);
+        color: var(--canvas);
+        border-radius: 5mm;
+        padding: 4.5mm 6mm;
+        margin: 4mm 0;
+      }
+      .thesis p {
+        margin: 0;
+        font-family: 'Literata', Georgia, serif;
+        font-size: 12pt;
+        line-height: 1.35;
+      }
+      .thesis .sub {
+        font-family: 'Figtree', system-ui, sans-serif;
+        font-size: 9.5pt;
+        color: oklch(0.8 0.01 75);
+        margin-top: 3mm;
+      }
+
+      .note {
+        background: var(--canvas);
+        border: 1px solid var(--line);
+        border-radius: 4mm;
+        padding: 4mm 5mm;
+      }
+      .note.ai {
+        background: var(--ai-soft);
+        border-color: oklch(0.86 0.06 265);
+      }
+
+      .cols {
+        display: flex;
+        gap: 6mm;
+      }
+      .cols > * {
+        flex: 1;
+        min-width: 0;
+      }
+
+      .tiles {
+        display: flex;
+        gap: 4mm;
+        margin: 4mm 0 3.5mm;
+      }
+      .tile {
+        flex: 1;
+        background: var(--card);
+        border: 1px solid var(--line);
+        border-radius: 4mm;
+        padding: 4mm;
+      }
+      .tile .n {
+        font-family: 'Literata', Georgia, serif;
+        font-size: 18pt;
+        line-height: 1;
+      }
+      .tile .l {
+        font-size: 8.5pt;
+        color: var(--muted);
+        margin-top: 1.5mm;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 8.2pt;
+        margin: 2mm 0 3mm;
+      }
+      th {
+        text-align: left;
+        font-size: 7.6pt;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: var(--muted);
+        border-bottom: 1px solid var(--line);
+        padding: 0 3mm 1.2mm 0;
+        font-weight: 700;
+      }
+      td {
+        vertical-align: top;
+        padding: 1.6mm 3mm 1.6mm 0;
+        border-bottom: 1px solid var(--divider);
+      }
+      td:last-child,
+      th:last-child {
+        padding-right: 0;
+      }
+      td code {
+        white-space: nowrap;
+      }
+      td.num {
+        white-space: nowrap;
+        font-variant-numeric: tabular-nums;
+      }
+
+      figure {
+        margin: 2.5mm 0 3mm;
+        break-inside: avoid;
+      }
+      figure svg,
+      .figure-slot svg {
+        width: 100%;
+        height: auto;
+        display: block;
+      }
+      figcaption {
+        font-size: 8.4pt;
+        color: var(--muted);
+        margin-top: 2mm;
+      }
+      figcaption b {
+        color: var(--ink-2);
+      }
+
+      .shots {
+        display: flex;
+        gap: 3mm;
+        break-inside: avoid;
+      }
+      .shots figure {
+        flex: 1;
+        margin: 0;
+      }
+      .shots img {
+        width: 100%;
+        border: 1px solid var(--line);
+        border-radius: 3mm;
+        display: block;
+      }
+      .shots figcaption {
+        font-size: 7.8pt;
+        margin-top: 1.5mm;
+      }
+      .shots.hero img {
+        height: 214px;
+        object-fit: cover;
+        object-position: top;
+      }
+      .shots.crop img {
+        height: 114px;
+        object-fit: cover;
+        object-position: top;
+      }
+      img.card {
+        width: 100%;
+        border: 1px solid var(--line);
+        border-radius: 3mm;
+        display: block;
+      }
+
+      ul {
+        margin: 0 0 2.5mm;
+        padding-left: 4.5mm;
+      }
+      li {
+        margin-bottom: 1.2mm;
+      }
+
+      .sev {
+        display: inline-block;
+        width: 8px;
+        height: 8px;
+        border-radius: 2px;
+        vertical-align: baseline;
+      }
+      .sev.mod {
+        background: var(--sev-mod);
+      }
+      .sev.high {
+        background: var(--sev-high);
+      }
+      .sev.none {
+        background: var(--sev-none);
+      }
+
+      /* --- inline SVG diagrams ----------------------------------------------------- */
+      svg text {
+        font-family: 'Figtree', system-ui, sans-serif;
+        fill: var(--ink);
+        font-size: 12px;
+      }
+      svg .t {
+        font-size: 12px;
+        font-weight: 600;
+      }
+      svg .s {
+        font-size: 10.5px;
+        fill: var(--muted);
+      }
+      svg .band-l {
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        fill: var(--muted);
+      }
+      svg .b {
+        fill: var(--card);
+        stroke: var(--line);
+        stroke-width: 1.2;
+        rx: 7;
+      }
+      svg .band {
+        fill: var(--canvas);
+        stroke: var(--divider);
+        stroke-width: 1;
+        rx: 9;
+      }
+      svg .pure {
+        fill: #fff;
+        stroke: var(--plum);
+        stroke-width: 1.4;
+        rx: 7;
+      }
+      svg .io {
+        fill: var(--subtle);
+        stroke: var(--line);
+        stroke-width: 1.2;
+        rx: 7;
+      }
+      svg .ext {
+        fill: var(--crux);
+        stroke: none;
+        rx: 7;
+      }
+      svg .ext-t {
+        fill: var(--canvas);
+        font-size: 11px;
+        font-weight: 600;
+      }
+      svg .ai-b {
+        fill: var(--ai-soft);
+        stroke: var(--ai);
+        stroke-width: 1.2;
+        rx: 7;
+      }
+      svg .arr {
+        stroke: var(--muted);
+        stroke-width: 1.3;
+        fill: none;
+        marker-end: url(#a);
+      }
+      svg .arr-d {
+        stroke: var(--muted);
+        stroke-width: 1.3;
+        fill: none;
+        stroke-dasharray: 4 3;
+        marker-end: url(#a);
+      }
+      svg .arr-plum {
+        stroke: var(--plum);
+        stroke-width: 1.6;
+        fill: none;
+        marker-end: url(#ap);
+      }
+      svg .lab {
+        font-size: 10px;
+        fill: var(--muted);
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Arrowheads, defined once for every diagram on the page. -->
+    <svg width="0" height="0" style="position: absolute" aria-hidden="true">
+      <defs>
+        <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+          <path d="M0,1 L9,5 L0,9 z" fill="oklch(0.5 0.012 60)" />
+        </marker>
+        <marker id="ap" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+          <path d="M0,1 L9,5 L0,9 z" fill="oklch(0.5 0.12 300)" />
+        </marker>
+      </defs>
+    </svg>
+
+    <!-- ============================ 1. COVER ============================ -->
+    <section class="page">
+      <p class="eyebrow">Swiss {ai} Weeks hackathon · September 2026</p>
+      <h1>Hiking safety assistant</h1>
+      <p class="lede">
+        A safety briefing for a Swiss mountain hike: the official trail network, the MeteoSwiss forecast for the hours you
+        will actually be up there, and a rules engine that says where the day gets hard — and where it could not tell.
+      </p>
+
+      <div class="thesis">
+        <p>The rules engine decides every hazard. The language model grounds, phrases and explains those decisions. It never makes one.</p>
+        <p class="sub">
+          And there is deliberately no green: the app says <em>nothing flagged</em>, <em>moderate</em>, <em>high</em>, or
+          <em>not evaluated</em>. A section it could not check is never shown as safe.
+        </p>
+      </div>
+
+      <div class="cols">
+        <div>
+          <h3 style="margin-top: 0">What it does</h3>
+          <p>
+            You pick two places. The backend routes between them over swisstopo's official hiking network, names the stops
+            after the passes, huts and lakes they really are, and works out when you reach each one at your pace. It then
+            pulls the MeteoSwiss ICON forecast <em>at those points, for those hours</em>, runs seven hazard rules over it,
+            and tells the story in five steps over one map.
+          </p>
+          <p>
+            On the trail it switches to a dark, map-first field mode that holds you to one rule: turn around at this place
+            by this time. You can ask a language model about any of it, at the briefing or on the ridge.
+          </p>
+        </div>
+        <div>
+          <h3 style="margin-top: 0">What is in this document</h3>
+          <ul>
+            <li>The architecture, and the one boundary that matters (page 2)</li>
+            <li>Every data source, and what each one decides (page 3)</li>
+            <li>The hazard engine: the rules and their thresholds (page 4)</li>
+            <li>One hazard, end to end from forecast to card (page 5)</li>
+            <li>The whole app as one flowchart (page 6)</li>
+            <li>The AI layer, and the guard rails around it (page 7)</li>
+            <li>Failure behaviour and honest limits (page 8)</li>
+          </ul>
+          <p style="font-size: 8.6pt; color: var(--muted)">
+            Live at <a href="https://hiking-safety.tail685478.ts.net">hiking-safety.tail685478.ts.net</a>. Every screenshot
+            in this document was taken from that deployment by a script, against the real forecast; every threshold was read
+            out of the running code.
+          </p>
+        </div>
+      </div>
+
+      <div class="tiles">
+        <div class="tile"><div class="n">7</div><div class="l">hazard rules, each versioned and cited on the card it produces</div></div>
+        <div class="tile"><div class="n">8</div><div class="l">official data sources — swisstopo, MeteoSwiss, OpenStreetMap</div></div>
+        <div class="tile"><div class="n">0</div><div class="l">API keys required: every source is open data</div></div>
+        <div class="tile"><div class="n">59k</div><div class="l">trail segments in the routing graph, loaded in under 3 s</div></div>
+      </div>
+
+      <div class="shots hero">
+        <figure><img src="shots/01-picker.png" alt="The route picker" /><figcaption>Pick two places.</figcaption></figure>
+        <figure><img src="shots/03-brief-route.png" alt="The briefing, step one" /><figcaption>The briefing, over one map.</figcaption></figure>
+        <figure><img src="shots/06-brief-hazards.png" alt="The hazard check" /><figcaption>Every rule, checked and shown.</figcaption></figure>
+        <figure><img src="shots/10-field.png" alt="Field mode" /><figcaption>Field mode, on the trail.</figcaption></figure>
+      </div>
+    </section>
+
+    <!-- ============================ 2. ARCHITECTURE ============================ -->
+    <section class="page">
+      <p class="eyebrow">Architecture</p>
+      <h2>One pure core, all the I/O at the edge</h2>
+      <p class="lede" style="font-size: 10.5pt">
+        A React frontend, a FastAPI backend, and a hard line inside the backend between code that decides things and code
+        that talks to the world.
+      </p>
+
+      <figure>
+        <svg viewBox="0 0 720 430" role="img" aria-label="Layered architecture: browser, HTTP surface, pure domain, sources, and the outside world">
+          <!-- browser -->
+          <rect class="band" x="70" y="0" width="650" height="62" />
+          <text class="band-l" x="0" y="35">BROWSER</text>
+          <rect class="b" x="84" y="12" width="118" height="38" />
+          <text class="t" x="143" y="30" text-anchor="middle">Route picker</text>
+          <text class="s" x="143" y="43" text-anchor="middle">place search</text>
+          <rect class="b" x="210" y="12" width="118" height="38" />
+          <text class="t" x="269" y="30" text-anchor="middle">Plan</text>
+          <text class="s" x="269" y="43" text-anchor="middle">date, start time</text>
+          <rect class="b" x="336" y="12" width="140" height="38" />
+          <text class="t" x="406" y="30" text-anchor="middle">Briefing</text>
+          <text class="s" x="406" y="43" text-anchor="middle">five steps, one map</text>
+          <rect class="b" x="484" y="12" width="104" height="38" />
+          <text class="t" x="536" y="30" text-anchor="middle">Field mode</text>
+          <text class="s" x="536" y="43" text-anchor="middle">GPS, turnaround</text>
+          <rect class="ai-b" x="596" y="12" width="110" height="38" />
+          <text class="t" x="651" y="30" text-anchor="middle">Ask</text>
+          <text class="s" x="651" y="43" text-anchor="middle">conversation</text>
+
+          <line class="arr" x1="300" y1="64" x2="300" y2="92" />
+          <text class="lab" x="310" y="82">HTTP · JSON</text>
+          <line class="arr" x1="520" y1="92" x2="520" y2="64" />
+          <text class="lab" x="530" y="82">severity resolved in the browser</text>
+
+          <!-- api -->
+          <rect class="band" x="70" y="94" width="650" height="54" />
+          <text class="band-l" x="0" y="125">API</text>
+          <rect class="b" x="84" y="104" width="300" height="34" />
+          <text class="t" x="234" y="119" text-anchor="middle">FastAPI · /api</text>
+          <text class="s" x="234" y="132" text-anchor="middle">routes · assessment · narration · ask</text>
+          <rect class="b" x="392" y="104" width="314" height="34" />
+          <text class="t" x="549" y="119" text-anchor="middle">MCP server · /mcp</text>
+          <text class="s" x="549" y="132" text-anchor="middle">the same engine as seven tools for any agent</text>
+
+          <line class="arr-plum" x1="234" y1="150" x2="234" y2="178" />
+          <line class="arr-plum" x1="549" y1="150" x2="549" y2="178" />
+
+          <!-- domain -->
+          <rect class="band" x="70" y="180" width="650" height="72" />
+          <text class="band-l" x="0" y="212">DOMAIN</text>
+          <text class="band-l" x="0" y="226" style="letter-spacing: 0.02em">pure</text>
+          <rect class="pure" x="84" y="192" width="118" height="46" />
+          <text class="t" x="143" y="212" text-anchor="middle">routing/</text>
+          <text class="s" x="143" y="226" text-anchor="middle">graph, Dijkstra, timing</text>
+          <rect class="pure" x="210" y="192" width="132" height="46" />
+          <text class="t" x="276" y="212" text-anchor="middle">hazards/</text>
+          <text class="s" x="276" y="226" text-anchor="middle">the seven rules</text>
+          <rect class="pure" x="350" y="192" width="118" height="46" />
+          <text class="t" x="409" y="212" text-anchor="middle">guidance/</text>
+          <text class="s" x="409" y="226" text-anchor="middle">18 passages, BM25</text>
+          <rect class="pure" x="476" y="192" width="112" height="46" />
+          <text class="t" x="532" y="212" text-anchor="middle">narration/</text>
+          <text class="s" x="532" y="226" text-anchor="middle">prompt + guard</text>
+          <rect class="pure" x="596" y="192" width="110" height="46" />
+          <text class="t" x="651" y="212" text-anchor="middle">ask/</text>
+          <text class="s" x="651" y="226" text-anchor="middle">briefing + guard</text>
+
+          <line class="arr" x1="360" y1="254" x2="360" y2="282" />
+          <text class="lab" x="370" y="272">values in, decisions out — never a fetch</text>
+
+          <!-- sources -->
+          <rect class="band" x="70" y="284" width="650" height="54" />
+          <text class="band-l" x="0" y="315">SOURCES</text>
+          <rect class="io" x="84" y="294" width="480" height="34" />
+          <text class="t" x="324" y="309" text-anchor="middle">sources/ — every HTTP call in the app</text>
+          <text class="s" x="324" y="322" text-anchor="middle">retry, timeout, and one shape per source</text>
+          <rect class="io" x="572" y="294" width="134" height="34" />
+          <text class="t" x="639" y="309" text-anchor="middle">disk cache</text>
+          <text class="s" x="639" y="322" text-anchor="middle">keyed by model run</text>
+
+          <line class="arr" x1="360" y1="340" x2="360" y2="368" />
+
+          <!-- outside -->
+          <rect class="band" x="70" y="370" width="650" height="56" />
+          <text class="band-l" x="0" y="402">WORLD</text>
+          <rect class="ext" x="84" y="382" width="136" height="32" />
+          <text class="ext-t" x="152" y="402" text-anchor="middle">swisstopo</text>
+          <rect class="ext" x="228" y="382" width="150" height="32" />
+          <text class="ext-t" x="303" y="402" text-anchor="middle">MeteoSwiss ICON</text>
+          <rect class="ext" x="386" y="382" width="156" height="32" />
+          <text class="ext-t" x="464" y="402" text-anchor="middle">OpenStreetMap</text>
+          <rect class="ext" x="550" y="382" width="156" height="32" />
+          <text class="ext-t" x="628" y="402" text-anchor="middle">Nemotron on vLLM</text>
+        </svg>
+        <figcaption>
+          <b>Figure 1.</b> The purple boundary is the point. Everything below it fetches; everything inside it is pure
+          functions over values that were handed in, which is why the hazard engine can be unit-tested against a fixture and
+          why <code>/api</code> and <code>/mcp</code> cannot drift apart — they call the same functions in the same process.
+        </figcaption>
+      </figure>
+
+      <div class="cols">
+        <div>
+          <h3>The stack</h3>
+          <table>
+            <tr><td style="width: 26%"><strong>Frontend</strong></td><td>React 19, TypeScript, Vite, Tailwind v4, Leaflet, TanStack Query, Zustand</td></tr>
+            <tr><td><strong>Backend</strong></td><td>Python 3.13, FastAPI, httpx, shapely, networkx, managed with uv</td></tr>
+            <tr><td><strong>Model</strong></td><td>NVIDIA Nemotron on a local vLLM server, OpenAI-compatible</td></tr>
+            <tr><td><strong>Data</strong></td><td>SQLite for the trail graph; a JSON disk cache for everything fetched</td></tr>
+            <tr><td><strong>Deploy</strong></td><td>One systemd unit serving API, frontend and <code>/mcp</code>, published over HTTPS by Tailscale Funnel</td></tr>
+          </table>
+        </div>
+        <div>
+          <h3>Two decisions worth defending</h3>
+          <p>
+            <strong>Severity is resolved in the browser.</strong> The server sends, per stop, the hours at which each hazard
+            holds. The client looks up the hour <em>you</em> arrive. Moving your start time re-colours the whole route with
+            no request at all — and, as page 5 shows, it can change what is flagged.
+          </p>
+          <p>
+            <strong>The wire format is generated, not maintained.</strong> The backend's Pydantic models are the contract;
+            the OpenAPI schema is committed and the frontend's types are asserted against it, so renaming a field fails both
+            the Python tests and the TypeScript build rather than surfacing as an empty card.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================ 3. DATA ============================ -->
+    <section class="page">
+      <p class="eyebrow">Data</p>
+      <h2>Where every number comes from</h2>
+      <p class="lede" style="font-size: 10.5pt">
+        Nothing on a computed route is hand-written — not the line, not the grade, not the distance, not the walking time.
+        Each source decides one thing, and each can fail on its own.
+      </p>
+
+      <figure>
+        <svg viewBox="0 0 720 300" role="img" aria-label="Seven data sources, the two artefacts they produce, and the engine that decides on both together">
+          <rect class="ext" x="0" y="8" width="186" height="30" />
+          <text class="ext-t" x="12" y="27">swissTLM3D Wanderwege</text>
+          <path class="arr" d="M186 23 H 352" />
+          <text class="lab" x="192" y="18">the line and its class</text>
+          <rect class="ext" x="0" y="46" width="186" height="30" />
+          <text class="ext-t" x="12" y="65">swissALTI3D</text>
+          <path class="arr" d="M186 61 H 352" />
+          <text class="lab" x="192" y="56">ascent, descent, heights</text>
+          <rect class="ext" x="0" y="84" width="186" height="30" />
+          <text class="ext-t" x="12" y="103">swissNAMES3D</text>
+          <path class="arr" d="M186 99 H 352" />
+          <text class="lab" x="192" y="94">what the stops are called</text>
+          <rect class="ext" x="0" y="122" width="186" height="30" />
+          <text class="ext-t" x="12" y="141">OpenStreetMap (Overpass)</text>
+          <path class="arr" d="M186 137 H 352" />
+          <text class="lab" x="192" y="132">grade refinement, cables</text>
+          <rect class="ext" x="0" y="168" width="186" height="30" />
+          <text class="ext-t" x="12" y="187">MeteoSwiss ICON-CH1/CH2</text>
+          <path class="arr" d="M186 183 H 352" />
+          <text class="lab" x="192" y="178">wind, gusts, rain, cloud base</text>
+          <rect class="ext" x="0" y="206" width="186" height="30" />
+          <text class="ext-t" x="12" y="225">Open-Meteo ensemble</text>
+          <path class="arr" d="M186 221 H 352" />
+          <text class="lab" x="192" y="216">spread, thunder probability</text>
+          <rect class="ext" x="0" y="244" width="186" height="30" />
+          <text class="ext-t" x="12" y="263">MeteoSwiss app warnings</text>
+          <path class="arr-d" d="M186 259 H 352" />
+          <text class="lab" x="192" y="254">a severity floor (unofficial)</text>
+
+          <rect class="b" x="352" y="8" width="150" height="144" />
+          <text class="t" x="427" y="66" text-anchor="middle">The route</text>
+          <text class="s" x="427" y="84" text-anchor="middle">stops · legs · grades</text>
+          <text class="s" x="427" y="99" text-anchor="middle">distance · ascent · times</text>
+
+          <rect class="b" x="352" y="168" width="150" height="106" />
+          <text class="t" x="427" y="206" text-anchor="middle">The day's weather</text>
+          <text class="s" x="427" y="224" text-anchor="middle">at each stop,</text>
+          <text class="s" x="427" y="239" text-anchor="middle">every hour 05:00–21:00</text>
+
+          <path class="arr-plum" d="M502 80 H 530 V 130 H 558" />
+          <path class="arr-plum" d="M502 220 H 530 V 170 H 558" />
+          <rect class="pure" x="558" y="104" width="162" height="92" />
+          <text class="t" x="639" y="142" text-anchor="middle">Hazard engine</text>
+          <text class="s" x="639" y="160" text-anchor="middle">terrain × weather</text>
+          <text class="s" x="639" y="175" text-anchor="middle">× the hour you are there</text>
+        </svg>
+        <figcaption>
+          <b>Figure 2.</b> Weather alone is not a hazard and terrain alone is not a hazard. The engine only ever decides on
+          the two together — which is why wet rock counts from T3 and not below, and why a gust that is nothing in a valley
+          is moderate on a ridge.
+        </figcaption>
+      </figure>
+
+      <table>
+        <thead>
+          <tr><th style="width: 24%">Source</th><th>What it decides</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>swissTLM3D Wanderwege</strong><br /><span style="color: var(--muted)">imported once, 59k edges</span></td>
+            <td>The trail itself, and the official class that floors the grade: <em>Wanderweg</em> → T1, <em>Bergwanderweg</em> → T2, <em>Alpinwanderweg</em> → T4.</td>
+          </tr>
+          <tr>
+            <td><strong>swissALTI3D</strong><br /><span style="color: var(--muted)">profile.json, live</span></td>
+            <td>Elevation resampled along the chosen line, and so ascent, descent and per-leg climb.</td>
+          </tr>
+          <tr>
+            <td><strong>swissNAMES3D</strong><br /><span style="color: var(--muted)">live</span></td>
+            <td>The names the stops are called after — passes, huts, lakes — so the timeline reads in places, not coordinates.</td>
+          </tr>
+          <tr>
+            <td><strong>OpenStreetMap</strong><br /><span style="color: var(--muted)">Overpass, live</span></td>
+            <td>Refines the grade inside its official class via <code>sac_scale</code>, and the cables flag via <code>safety_rope</code>, <code>ladder</code>, <code>via_ferrata_scale</code>. It can raise a grade, never lower it.</td>
+          </tr>
+          <tr>
+            <td><strong>MeteoSwiss ICON</strong><br /><span style="color: var(--muted)">CH1 1 km / CH2 out to 5 days</span></td>
+            <td>Temperature, wind, gusts, precipitation, freezing level, snow line, cloud base and CAPE at each stop, each hour. The finest model that covers the whole day is used, so one briefing never mixes models between hours.</td>
+          </tr>
+          <tr>
+            <td><strong>Open-Meteo ensemble</strong><br /><span style="color: var(--muted)">live</span></td>
+            <td>How much the members disagree, and the thunderstorm probability. Wide disagreement on an exposed stop makes the engine decline to evaluate it rather than guess.</td>
+          </tr>
+          <tr>
+            <td><strong>MeteoSwiss warnings</strong><br /><span style="color: var(--muted)">app API, opt-in</span></td>
+            <td>Raises the severity floor for the hours a warning covers. MeteoSwiss publishes no warnings as open data, so this is the undocumented app endpoint and is always labelled unofficial.</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3>Walking time is computed too</h3>
+      <p>
+        Every <code>legMinutes</code> is the SAC / DIN 33466 estimate that Swiss signposts quote: 4 km/h on the flat,
+        400 m/h up, 800 m/h down, the larger effort counted in full and the smaller halved, then multiplied by a factor for
+        the grade (and 1.05 again where there are cables). Dijkstra weights the graph by <em>that</em>, not by distance, so
+        the routing itself prefers the line a person would choose. Your own answer to "next to signpost times, you usually
+        walk…" scales it again: 0.85 faster, 1.25 slower.
+      </p>
+    </section>
+
+    <!-- ============================ 4. HAZARD ENGINE ============================ -->
+    <section class="page">
+      <p class="eyebrow">The hazard engine</p>
+      <h2>Seven rules, one hour at a time</h2>
+      <p class="lede" style="font-size: 10.5pt">
+        The engine takes a route, a forecast per stop per hour, and any warnings. It returns, per hazard and per stop, the
+        hours at which that hazard is moderate or high — plus the things it could not check.
+      </p>
+
+      <figure>
+        <svg viewBox="0 0 720 268" role="img" aria-label="The hazard engine pipeline from forecasts through the evaluability gate and the rules to intervals and cards">
+          <rect class="io" x="0" y="26" width="118" height="58" />
+          <text class="t" x="59" y="48" text-anchor="middle">Forecast</text>
+          <text class="s" x="59" y="63" text-anchor="middle">per stop,</text>
+          <text class="s" x="59" y="76" text-anchor="middle">17 hours</text>
+
+          <rect class="io" x="0" y="96" width="118" height="44" />
+          <text class="t" x="59" y="114" text-anchor="middle">Terrain</text>
+          <text class="s" x="59" y="129" text-anchor="middle">grade, cables, height</text>
+
+          <path class="arr" d="M118 55 H 156" />
+          <path class="arr" d="M118 118 H 140 V 62 H 156" />
+
+          <rect class="b" x="156" y="26" width="128" height="114" />
+          <text class="t" x="220" y="52" text-anchor="middle">Can it be</text>
+          <text class="t" x="220" y="67" text-anchor="middle">evaluated?</text>
+          <text class="s" x="220" y="88" text-anchor="middle">an hour missing,</text>
+          <text class="s" x="220" y="102" text-anchor="middle">the cell 500 m off,</text>
+          <text class="s" x="220" y="116" text-anchor="middle">members far apart</text>
+
+          <path class="arr" d="M220 142 V 186" />
+          <rect class="io" x="146" y="188" width="148" height="40" />
+          <text class="t" x="220" y="205" text-anchor="middle">not evaluated</text>
+          <text class="s" x="220" y="219" text-anchor="middle">shown as a gap, never clear</text>
+
+          <path class="arr" d="M284 62 H 322" />
+          <text class="lab" x="288" y="54">yes</text>
+
+          <rect class="pure" x="322" y="16" width="150" height="134" />
+          <text class="t" x="397" y="38" text-anchor="middle">The seven rules</text>
+          <text class="s" x="397" y="57" text-anchor="middle">gusts · showers · thunder</text>
+          <text class="s" x="397" y="71" text-anchor="middle">cold · snow · visibility</text>
+          <text class="s" x="397" y="85" text-anchor="middle">daylight</text>
+          <text class="s" x="397" y="107" text-anchor="middle">each hour, each stop</text>
+          <text class="s" x="397" y="121" text-anchor="middle">→ none / mod / high</text>
+          <text class="s" x="397" y="139" text-anchor="middle">no input → not evaluated</text>
+
+          <path class="arr-d" d="M397 176 V 152" />
+          <rect class="io" x="322" y="178" width="150" height="40" />
+          <text class="t" x="397" y="195" text-anchor="middle">Warnings</text>
+          <text class="s" x="397" y="209" text-anchor="middle">raise the floor for those hours</text>
+
+          <path class="arr-plum" d="M472 83 H 510" />
+
+          <rect class="pure" x="510" y="16" width="210" height="134" />
+          <text class="t" x="615" y="38" text-anchor="middle">Merge into intervals</text>
+          <text class="s" x="615" y="57" text-anchor="middle">20:00–21:00 moderate at the summit</text>
+          <text class="s" x="615" y="76" text-anchor="middle">+ the worst stop, the window,</text>
+          <text class="s" x="615" y="90" text-anchor="middle">the figures that flagged,</text>
+          <text class="s" x="615" y="104" text-anchor="middle">the rule id and the model run</text>
+          <text class="s" x="615" y="126" text-anchor="middle">+ alternatives that actually help</text>
+          <text class="s" x="615" y="140" text-anchor="middle">(start earlier, turn at the bailout)</text>
+
+          <path class="arr-plum" d="M615 152 V 186" />
+          <rect class="b" x="510" y="188" width="210" height="40" />
+          <text class="t" x="615" y="205" text-anchor="middle">Sent to the browser</text>
+          <text class="s" x="615" y="219" text-anchor="middle">which resolves them at your arrival</text>
+
+          <text class="s" x="0" y="256">Absence is not reassurance: a stop the engine set aside is drawn as not evaluated, and a source that failed is reported as a gap.</text>
+        </svg>
+        <figcaption>
+          <b>Figure 4.</b> The gate on the left is the safety-critical part. A stop is set aside — not quietly passed — when
+          an hour is missing, when the model's cell sits more than 500 m from the stop's real elevation (a 1 km cell can be
+          forecasting the valley next door), or when the ensemble members straddle a threshold by more than 25 km/h on
+          exposed ground.
+        </figcaption>
+      </figure>
+
+      <table>
+        <thead>
+          <tr><th style="width: 14%">Hazard</th><th style="width: 16%">Rule</th><th>Moderate</th><th>High</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><strong>Gusts</strong></td><td><code>WIND-EXP v1</code></td><td class="num">40 km/h exposed · 60 km/h open</td><td class="num">55 km/h exposed · 80 km/h open</td></tr>
+          <tr><td><strong>Showers</strong></td><td><code>PRECIP-WET v1</code></td><td class="num">0.5 mm/h, and only from T3</td><td class="num">2 mm/h on T4, or on cables</td></tr>
+          <tr><td><strong>Thunder</strong></td><td><code>THUNDER v1</code></td><td class="num">30% of members</td><td class="num">60%, or 30% above 2 000 m / exposed</td></tr>
+          <tr><td><strong>Cold</strong></td><td><code>COLD-CHILL v1</code></td><td class="num">wind chill ≤ 0 °C</td><td class="num">wind chill ≤ −10 °C</td></tr>
+          <tr><td><strong>Snow</strong></td><td><code>SNOW-LEVEL v1</code></td><td class="num">freezing level at or below the stop</td><td class="num">snow line below it, and falling</td></tr>
+          <tr><td><strong>Visibility</strong></td><td><code>CLOUD-BASE v1</code></td><td class="num">cloud base below the stop, from T3</td><td class="num">the same from T4</td></tr>
+          <tr><td><strong>Daylight</strong></td><td><code>DAYLIGHT v1</code></td><td class="num">45 min before sunset, and before sunrise</td><td class="num">after sunset</td></tr>
+        </tbody>
+      </table>
+      <p style="font-size: 8.8pt; color: var(--muted)">
+        The thresholds follow SAC and MeteoSwiss guidance. They are a decision-support calibration, not a law of physics,
+        which is why they live in one file with a version on each rule: change a number, bump the version, and the card says
+        which version judged it.
+      </p>
+
+      <div class="cols" style="margin-top: 3mm">
+        <figure style="margin: 0">
+          <div class="figure-slot" data-figure="gust-thresholds"></div>
+          <figcaption><b>Figure 5.</b> The same gust, two verdicts. On exposed ground — T3 and up, or anywhere with cables — a gust counts 20 km/h earlier.</figcaption>
+        </figure>
+        <figure style="margin: 0">
+          <div class="figure-slot" data-figure="wind-chill"></div>
+          <figcaption><b>Figure 6.</b> The cold rule tests wind chill, not temperature: at 5 °C air, 40 km/h of wind is already below freezing on the skin.</figcaption>
+        </figure>
+      </div>
+    </section>
+
+    <!-- ============================ 5. WORKED EXAMPLE ============================ -->
+    <section class="page">
+      <p class="eyebrow">Worked example · captured live on 20 September 2026</p>
+      <h2>One hazard, forecast to card</h2>
+      <p class="lede" style="font-size: 10.5pt">
+        Mürren to the Schilthorn and back — T2, 14.8 km, 1 350 m of ascent — planned for Monday 21 September.
+      </p>
+
+      <div class="cols">
+        <div style="flex: 1.35">
+          <table>
+            <tr><td style="width: 34%"><strong>The stop</strong></td><td>Hauptgipfel Schilthorn, 2 963 m — the last of four stops out, reached 4 h 32 after the start at signpost pace</td></tr>
+            <tr><td><strong>The forecast there</strong></td><td>ICON-CH2, run of 20 Sept 06:00 UTC. At 20:00–21:00: gusts 26 km/h, precipitation 0 mm, wind chill <strong>0 °C</strong></td></tr>
+            <tr><td><strong>The rule</strong></td><td><code>COLD-CHILL v1</code>: wind chill ≤ 0 °C is moderate, ≤ −10 °C is high</td></tr>
+            <tr><td><strong>The verdict</strong></td><td><span class="sev mod"></span> moderate, 20:00–21:00, at that stop only</td></tr>
+            <tr><td><strong>On the card</strong></td><td>Rule <code>COLD-CHILL v1</code> · ICON-CH2 2026-09-20T06:00Z · MeteoSwiss, <em>Wind chill</em></td></tr>
+          </table>
+          <p>
+            Every figure on that card came from the engine. The sentence around them was written by Nemotron, from the
+            retrieved MeteoSwiss passage on wind chill, and then checked: a generated body that contains a digit, or a
+            placeholder this hazard cannot fill, or any wording that sounds like a verdict, is dropped and the card falls
+            back to its template.
+          </p>
+        </div>
+        <div style="flex: 1">
+          <img class="card" src="shots/08-hazard-card.png" alt="The wind chill hazard card, as the app shows it" />
+          <p style="font-size: 7.8pt; color: var(--muted); margin-top: 1.5mm">
+            The card as the hiker sees it, on the live app. <em>Lifts if</em> is computed, not written: the condition under
+            which this particular hazard would go away.
+          </p>
+        </div>
+      </div>
+
+      <hr class="rule" />
+
+      <h3 style="margin-top: 0">Why the start time changes what is flagged</h3>
+      <p>
+        The engine never asks when you are walking: it reports what is true at each stop, each hour. The browser looks up
+        the hour you arrive. Below, the same route and the same intervals, resolved against two start times.
+      </p>
+
+      <figure>
+        <div class="figure-slot" data-figure="severity-timeline"></div>
+        <figcaption>
+          <b>Figure 7.</b> Each row is a stop, out and back (↩ marks the return). The bars are the engine's intervals; the
+          dot is where the hiker is at that hour. Top: a 15:30 start puts the summit arrival at 20:02, inside both the cold
+          hour and the dark — two hazards flagged. Bottom: the reference 07:30 start crosses the same ground in daylight,
+          and nothing is flagged. No second request was made: the browser did this with the intervals it already had.
+        </figcaption>
+      </figure>
+
+    </section>
+
+    <!-- ============================ 6. FLOWCHART ============================ -->
+    <section class="page">
+      <p class="eyebrow">The whole app</p>
+      <h2>End to end</h2>
+
+      <figure style="margin-top: 1mm">
+        <svg viewBox="0 0 720 962" role="img" aria-label="Full flowchart of the application from route search through routing, assessment, the briefing and field mode">
+          <text class="band-l" x="0" y="12">HIKER</text>
+          <text class="band-l" x="0" y="214">BACKEND · ROUTING</text>
+          <text class="band-l" x="0" y="474">BACKEND · ASSESSMENT</text>
+          <text class="band-l" x="0" y="720">BROWSER</text>
+          <g transform="translate(0,18)">
+          <!-- lanes -->
+          <line x1="0" y1="180" x2="720" y2="180" stroke="var(--divider)" />
+          <line x1="0" y1="440" x2="720" y2="440" stroke="var(--divider)" />
+          <line x1="0" y1="686" x2="720" y2="686" stroke="var(--divider)" />
+
+          <!-- hiker -->
+          <rect class="b" x="150" y="8" width="180" height="40" />
+          <text class="t" x="240" y="26" text-anchor="middle">Search two places</text>
+          <text class="s" x="240" y="40" text-anchor="middle">swisstopo gazetteer</text>
+          <path class="arr" d="M330 28 H 380" />
+          <rect class="b" x="380" y="8" width="180" height="40" />
+          <text class="t" x="470" y="26" text-anchor="middle">Date and start time</text>
+          <text class="s" x="470" y="40" text-anchor="middle">kept in the browser</text>
+
+          <path class="arr-plum" d="M240 50 V 78" />
+          <rect class="b" x="150" y="80" width="180" height="34" />
+          <text class="t" x="240" y="102" text-anchor="middle">POST /api/routes</text>
+          <path class="arr-plum" d="M470 50 V 96 H 704 V 430 H 492" />
+          <text class="lab" x="482" y="66">the date and start travel with the request</text>
+
+          <path class="arr-plum" d="M240 116 V 200" />
+
+          <!-- routing lane -->
+          <rect class="b" x="24" y="202" width="150" height="46" />
+          <text class="t" x="99" y="222" text-anchor="middle">Snap to the graph</text>
+          <text class="s" x="99" y="237" text-anchor="middle">59k trail segments</text>
+          <path class="arr" d="M174 225 H 206" />
+          <rect class="b" x="206" y="202" width="160" height="46" />
+          <text class="t" x="286" y="222" text-anchor="middle">Dijkstra</text>
+          <text class="s" x="286" y="237" text-anchor="middle">weighted by walking time</text>
+          <path class="arr" d="M366 225 H 398" />
+          <rect class="b" x="398" y="202" width="150" height="46" />
+          <text class="t" x="473" y="222" text-anchor="middle">Pick the stops</text>
+          <text class="s" x="473" y="237" text-anchor="middle">passes, huts, summits</text>
+          <path class="arr" d="M548 225 H 580" />
+          <rect class="b" x="580" y="202" width="140" height="46" />
+          <text class="t" x="650" y="222" text-anchor="middle">Name them</text>
+          <text class="s" x="650" y="237" text-anchor="middle">swissNAMES3D</text>
+
+          <path class="arr" d="M650 250 V 268 H 473" />
+          <rect class="b" x="398" y="270" width="150" height="46" />
+          <text class="t" x="473" y="290" text-anchor="middle">Elevation profile</text>
+          <text class="s" x="473" y="305" text-anchor="middle">swissALTI3D</text>
+          <path class="arr" d="M398 293 H 366" />
+          <rect class="b" x="206" y="270" width="160" height="46" />
+          <text class="t" x="286" y="290" text-anchor="middle">Refine the grade</text>
+          <text class="s" x="286" y="305" text-anchor="middle">OSM sac_scale, cables</text>
+          <path class="arr" d="M206 293 H 174" />
+          <rect class="b" x="24" y="270" width="150" height="46" />
+          <text class="t" x="99" y="290" text-anchor="middle">Leg times</text>
+          <text class="s" x="99" y="305" text-anchor="middle">SAC / DIN 33466</text>
+
+          <path class="arr-plum" d="M99 318 V 344 H 286" />
+          <rect class="pure" x="206" y="346" width="200" height="44" />
+          <text class="t" x="306" y="366" text-anchor="middle">Route</text>
+          <text class="s" x="306" y="381" text-anchor="middle">id = digest of the request · cached 30 days</text>
+
+          <rect class="io" x="440" y="346" width="180" height="44" />
+          <text class="t" x="530" y="366" text-anchor="middle">No trail nearby?</text>
+          <text class="s" x="530" y="381" text-anchor="middle">say so — do not invent one</text>
+          <path class="arr-d" d="M406 368 H 440" />
+
+          <path class="arr-plum" d="M306 392 V 462" />
+          <text class="lab" x="316" y="424">GET /api/routes/{id}/assessment?date=</text>
+
+          <!-- assessment lane -->
+          <rect class="b" x="24" y="464" width="176" height="52" />
+          <text class="t" x="112" y="484" text-anchor="middle">Pick the model</text>
+          <text class="s" x="112" y="499" text-anchor="middle">finest run covering</text>
+          <text class="s" x="112" y="512" text-anchor="middle">the whole day</text>
+          <path class="arr" d="M200 490 H 232" />
+          <rect class="b" x="232" y="464" width="176" height="52" />
+          <text class="t" x="320" y="484" text-anchor="middle">Fetch the forecast</text>
+          <text class="s" x="320" y="499" text-anchor="middle">each stop × each hour</text>
+          <text class="s" x="320" y="512" text-anchor="middle">+ ensemble spread</text>
+          <path class="arr" d="M408 490 H 440" />
+          <rect class="b" x="440" y="464" width="176" height="52" />
+          <text class="t" x="528" y="484" text-anchor="middle">Warnings</text>
+          <text class="s" x="528" y="499" text-anchor="middle">opt-in, unofficial;</text>
+          <text class="s" x="528" y="512" text-anchor="middle">otherwise a gap</text>
+
+          <rect class="io" x="626" y="464" width="94" height="52" />
+          <text class="t" x="673" y="484" text-anchor="middle">Disk cache</text>
+          <text class="s" x="673" y="499" text-anchor="middle">by model run</text>
+          <text class="s" x="673" y="512" text-anchor="middle">30 min</text>
+          <path class="arr-d" d="M616 490 H 626" />
+
+          <path class="arr-plum" d="M320 518 V 544" />
+          <rect class="pure" x="150" y="546" width="340" height="60" />
+          <text class="t" x="320" y="570" text-anchor="middle">The hazard engine (figure 4)</text>
+          <text class="s" x="320" y="588" text-anchor="middle">gate → seven rules per stop per hour → warning floor → intervals</text>
+
+          <rect class="io" x="510" y="546" width="210" height="60" />
+          <text class="t" x="615" y="570" text-anchor="middle">Nothing to assess?</text>
+          <text class="s" x="615" y="588" text-anchor="middle">no hazards, no reassurance, official links</text>
+          <path class="arr-d" d="M490 576 H 510" />
+
+          <path class="arr-plum" d="M320 608 V 634" />
+          <rect class="pure" x="110" y="636" width="420" height="42" />
+          <text class="t" x="320" y="655" text-anchor="middle">Hazards · gaps · alternatives · conditions · outcome</text>
+          <text class="s" x="320" y="670" text-anchor="middle">assessed, partial, or not assessable — cached unless it is the last</text>
+
+          <!-- browser lane -->
+          <path class="arr-plum" d="M320 680 V 708" />
+          <rect class="pure" x="150" y="710" width="340" height="44" />
+          <text class="t" x="320" y="730" text-anchor="middle">Resolve at your arrival time</text>
+          <text class="s" x="320" y="745" text-anchor="middle">stop and leg severity, what is flagged — no request</text>
+
+          <rect class="ai-b" x="520" y="710" width="200" height="44" />
+          <text class="t" x="620" y="730" text-anchor="middle">Narration · citations</text>
+          <text class="s" x="620" y="745" text-anchor="middle">separate request, never blocking</text>
+          <path class="arr-d" d="M490 732 H 520" />
+
+          <path class="arr-plum" d="M320 756 V 782" />
+          <rect class="b" x="24" y="784" width="128" height="44" />
+          <text class="t" x="88" y="804" text-anchor="middle">1 · The route</text>
+          <text class="s" x="88" y="818" text-anchor="middle">drawn on the map</text>
+          <rect class="b" x="160" y="784" width="128" height="44" />
+          <text class="t" x="224" y="804" text-anchor="middle">2 · Timing</text>
+          <text class="s" x="224" y="818" text-anchor="middle">your pace</text>
+          <rect class="b" x="296" y="784" width="128" height="44" />
+          <text class="t" x="360" y="804" text-anchor="middle">3 · Weather</text>
+          <text class="s" x="360" y="818" text-anchor="middle">hour by hour</text>
+          <rect class="b" x="432" y="784" width="128" height="44" />
+          <text class="t" x="496" y="804" text-anchor="middle">4 · Hazards</text>
+          <text class="s" x="496" y="818" text-anchor="middle">every rule shown</text>
+          <rect class="b" x="568" y="784" width="152" height="44" />
+          <text class="t" x="644" y="804" text-anchor="middle">5 · Your plan</text>
+          <text class="s" x="644" y="818" text-anchor="middle">the turnaround rule</text>
+          <line class="arr" x1="152" y1="806" x2="160" y2="806" />
+          <line class="arr" x1="288" y1="806" x2="296" y2="806" />
+          <line class="arr" x1="424" y1="806" x2="432" y2="806" />
+          <line class="arr" x1="560" y1="806" x2="568" y2="806" />
+
+          <path class="arr-plum" d="M644 830 V 856 H 470" />
+          <rect class="b" x="290" y="858" width="180" height="44" />
+          <text class="t" x="380" y="878" text-anchor="middle">Start hike</text>
+          <text class="s" x="380" y="892" text-anchor="middle">the plan is frozen</text>
+          <path class="arr-plum" d="M290 880 H 250" />
+          <rect class="b" x="60" y="858" width="190" height="44" />
+          <text class="t" x="155" y="878" text-anchor="middle">Field mode</text>
+          <text class="s" x="155" y="892" text-anchor="middle">position, ETA, turnaround, SOS</text>
+
+          <rect class="ai-b" x="500" y="858" width="220" height="44" />
+          <text class="t" x="610" y="878" text-anchor="middle">Ask, at any point</text>
+          <text class="s" x="610" y="892" text-anchor="middle">answers from this briefing only</text>
+          <path class="arr-d" d="M470 880 H 500" />
+
+          <text class="s" x="0" y="930">Dashed arrows are the paths taken when something is missing, degraded or optional. Purple is the main line through the app.</text>
+                  </g>
+        </svg>
+        <figcaption>
+          <b>Figure 8.</b> Two requests do the work — one to build the route, one to assess a day — and everything after
+          them happens in the browser, which is what makes changing your start time instant and field mode usable when the
+          server is not reachable.
+        </figcaption>
+      </figure>
+    </section>
+
+    <!-- ============================ 7. AI LAYER ============================ -->
+    <section class="page">
+      <p class="eyebrow">The AI layer</p>
+      <h2>A model that may explain, but may not decide</h2>
+      <p class="lede" style="font-size: 10.5pt">
+        Nemotron, on a vLLM server beside the app, does three jobs. Each is wrapped so that the worst case is plainer
+        language, never a different verdict.
+      </p>
+
+      <figure>
+        <svg viewBox="0 0 720 272" role="img" aria-label="The AI layer: retrieval, narration under a guard, and questions answered from a placeholder briefing">
+          <rect class="pure" x="0" y="34" width="150" height="58" />
+          <text class="t" x="75" y="58" text-anchor="middle">The engine</text>
+          <text class="s" x="75" y="74" text-anchor="middle">decided already:</text>
+          <text class="s" x="75" y="87" text-anchor="middle">kind, severity, hours</text>
+
+          <path class="arr-plum" d="M150 63 H 190" />
+          <rect class="b" x="190" y="34" width="160" height="58" />
+          <text class="t" x="270" y="54" text-anchor="middle">Retrieve guidance</text>
+          <text class="s" x="270" y="70" text-anchor="middle">18 passages, BM25,</text>
+          <text class="s" x="270" y="83" text-anchor="middle">no model, no key</text>
+
+          <path class="arr-plum" d="M350 63 H 390" />
+          <rect class="ai-b" x="390" y="34" width="150" height="58" />
+          <text class="t" x="465" y="54" text-anchor="middle">Nemotron</text>
+          <text class="s" x="465" y="70" text-anchor="middle">writes 1–2 sentences,</text>
+          <text class="s" x="465" y="83" text-anchor="middle">figures as {placeholders}</text>
+
+          <path class="arr-plum" d="M540 63 H 580" />
+          <rect class="b" x="580" y="34" width="140" height="58" />
+          <text class="t" x="650" y="54" text-anchor="middle">Guard</text>
+          <text class="s" x="650" y="70" text-anchor="middle">a digit, a verdict,</text>
+          <text class="s" x="650" y="83" text-anchor="middle">a bad placeholder → drop</text>
+
+          <path class="arr-d" d="M650 94 V 122 H 270 V 100" />
+          <text class="lab" x="300" y="116">rejected once, with its reasons, then the template stands</text>
+
+          <g transform="translate(0,-26)">
+          <line x1="0" y1="150" x2="720" y2="150" stroke="var(--divider)" />
+
+          <rect class="pure" x="0" y="176" width="180" height="76" />
+          <text class="t" x="90" y="200" text-anchor="middle">The briefing</text>
+          <text class="s" x="90" y="218" text-anchor="middle">the whole hike as prose,</text>
+          <text class="s" x="90" y="232" text-anchor="middle">every figure written</text>
+          <text class="s" x="90" y="245" text-anchor="middle">{wx.summit.gust} = 26 km/h</text>
+
+          <path class="arr-plum" d="M180 214 H 220" />
+          <rect class="ai-b" x="220" y="176" width="170" height="76" />
+          <text class="t" x="305" y="200" text-anchor="middle">Question answered</text>
+          <text class="s" x="305" y="218" text-anchor="middle">from that briefing,</text>
+          <text class="s" x="305" y="232" text-anchor="middle">where you are,</text>
+          <text class="s" x="305" y="245" text-anchor="middle">and the passages</text>
+
+          <path class="arr-plum" d="M390 214 H 430" />
+          <rect class="b" x="430" y="176" width="150" height="76" />
+          <text class="t" x="505" y="200" text-anchor="middle">Guard</text>
+          <text class="s" x="505" y="220" text-anchor="middle">any number not in</text>
+          <text class="s" x="505" y="234" text-anchor="middle">the briefing → rejected</text>
+
+          <path class="arr-plum" d="M580 214 H 620" />
+          <rect class="b" x="620" y="176" width="100" height="76" />
+          <text class="t" x="670" y="207" text-anchor="middle">Server</text>
+          <text class="t" x="670" y="222" text-anchor="middle">fills in</text>
+          <text class="s" x="670" y="240" text-anchor="middle">its own values</text>
+
+          <text class="s" x="0" y="286">So no number the hiker reads was produced by the model — it was produced by the engine and substituted after the fact.</text>
+          </g>
+        </svg>
+        <figcaption>
+          <b>Figure 9.</b> Top: narration. Bottom: questions. Both end at a guard, and both fail towards the app's own
+          words. A timeout, a bad key or a rejected body costs the phrasing only — never the hazard, the figure or the plan.
+        </figcaption>
+      </figure>
+
+      <div class="cols">
+        <div style="flex: 1.5">
+          <h3 style="margin-top: 0">The three jobs</h3>
+          <p>
+            <strong>Grounding, with no model at all.</strong> Eighteen short passages — the SAC hiking scale, SAC and Suisse
+            Rando safety advice, MeteoSwiss on wind chill and thunderstorms — are retrieved by BM25, boosted by each
+            passage's hazard-kind and grade tags. The best match is appended to the hazard's provenance, and all of them
+            come back as links: this is what makes a card say <em>MeteoSwiss, Wind chill</em>.
+          </p>
+          <p>
+            <strong>Narration.</strong> One request covers every hazard, per language. The model may quote a figure only as
+            a named placeholder, which the client fills from the engine's numbers — so a narrated sentence may contain no
+            digit at all until the app puts one there.
+          </p>
+          <p>
+            <strong>Questions.</strong> The server writes the hike out as prose in which every figure is a placeholder with
+            its value and unit, adds where you are if you are walking, and asks the question against that. A number not in
+            the briefing is rejected; an emergency is answered with the app's own sentence, starting with 1414 (Rega).
+          </p>
+          <div class="note ai" style="margin-top: 3mm">
+            <p style="margin: 0">
+              <strong>Anything a model wrote wears a Nemotron badge</strong>, in its own colour — which is neither a
+              severity colour nor the action colour. The hiker can always see which words are the app's and which are the
+              model's.
+            </p>
+          </div>
+          <h3>The same engine, as tools</h3>
+          <p>
+            An MCP server exposes seven tools — <code>search_places</code>, <code>create_route</code>,
+            <code>forecast_at</code>, <code>assess_route</code>, <code>ask_about_route</code> and two more — over stdio or
+            HTTP. They call the same functions in the same process, so an agent gets the same shapes, the same caches and
+            the same refusal to call a route safe.
+          </p>
+        </div>
+        <div style="flex: 0.9">
+          <img class="card" src="shots/09-ask.png" alt="A question answered by Nemotron in the briefing" />
+          <p style="font-size: 7.8pt; color: var(--muted); margin-top: 1.5mm">
+            A real exchange from the live app. Every time and every severity in the answer came from the briefing the server
+            wrote; the model chose the sentences, and the guard checked them before this was shown.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================ 8. LIMITS ============================ -->
+    <section class="page">
+      <p class="eyebrow">Failure and limits</p>
+      <h2>What it does when it cannot tell</h2>
+      <p class="lede" style="font-size: 10.5pt">
+        A safety tool is judged on its bad days. Every source can fail on its own, and each failure costs detail rather than
+        correctness — with one rule throughout: silence is never an all-clear.
+      </p>
+
+      <table>
+        <thead>
+          <tr><th style="width: 26%">When this fails</th><th style="width: 36%">The hiker sees</th><th>What still works</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><strong>One stop's forecast</strong></td><td>Outcome <em>partial</em>; those legs drawn as <em>not evaluated</em></td><td>Every other stop is assessed as normal</td></tr>
+          <tr><td><strong>The whole forecast</strong></td><td>The story stops after the weather step: no hazards, no plan built on nothing, links to MeteoSwiss and natural-hazards.ch, and a retry</td><td>The route, its grades, distances and timings</td></tr>
+          <tr><td><strong>Warnings</strong></td><td>A stated gap: "warnings could not be checked"</td><td>All seven rules; only the floor they would raise is missing</td></tr>
+          <tr><td><strong>OpenStreetMap</strong></td><td>The leg's grade marked <em>estimated</em></td><td>The official swisstopo class still floors it</td></tr>
+          <tr><td><strong>The language model</strong></td><td>Template wording, no badge; for a question, one honest sentence saying it could not answer</td><td>Every hazard, figure, citation and plan</td></tr>
+          <tr><td><strong>The network, mid-hike</strong></td><td>Field mode keeps the map, the plan and the turnaround rule</td><td>Position, ETA and the turnaround check are computed on the device</td></tr>
+        </tbody>
+      </table>
+
+      <div class="cols" style="margin-top: 4mm">
+        <div>
+          <h3 style="margin-top: 0">Honest limits</h3>
+          <ul>
+            <li><strong>One region.</strong> The trail graph is imported for the Bernese Oberland, roughly Kandersteg to Grindelwald. Elsewhere the answer is "no marked trail nearby", which is the correct answer rather than a guess.</li>
+            <li><strong>Thresholds are a calibration.</strong> They follow SAC and MeteoSwiss guidance, but where to put the line between moderate and high is a judgement. It is versioned and in one file so it can be argued with.</li>
+            <li><strong>The warnings source is unofficial.</strong> MeteoSwiss publishes no warnings as open data; the app endpoint is used only when switched on, and is always labelled.</li>
+            <li><strong>Known model limit.</strong> In testing, an answer could occasionally attach a real figure to the wrong stop or hour. Every number is the engine's, but its placement is the model's.</li>
+            <li><strong>It is decision support.</strong> The app never says a route is safe: it says what it checked, what it found, and what it could not check.</li>
+          </ul>
+        </div>
+        <div>
+          <h3 style="margin-top: 0">What we would build next</h3>
+          <ul>
+            <li>Widen the imported graph to the whole country — a configuration change and an import, not a code change.</li>
+            <li>Snow and avalanche conditions from the SLF, which matter from October and are a different kind of source: observations, not a forecast grid.</li>
+          </ul>
+          <h3>Where to look in the code</h3>
+          <table>
+            <tr><td style="width: 46%">The rules and their thresholds</td><td><code>backend/app/hazards/rules.py</code></td></tr>
+            <tr><td>The engine and its gate</td><td><code>backend/app/hazards/engine.py</code></td></tr>
+            <tr><td>Severity at your arrival</td><td><code>frontend/src/domain/assessment.ts</code></td></tr>
+          </table>
+
+          <div class="note" style="margin-top: 3mm">
+            <p style="margin: 0; font-size: 9pt">
+              <strong>Try it:</strong> <a href="https://hiking-safety.tail685478.ts.net">hiking-safety.tail685478.ts.net</a>.
+              Type <em>Mürren</em> and <em>Schilthorn</em>, pick the results in the region, then <em>Find route</em>. Push the
+              start time to late afternoon to see the hazard check change.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="shots crop" style="margin-top: 4mm">
+        <figure><img src="shots/02-plan.png" alt="The plan screen" /><figcaption>The plan: route, date, start.</figcaption></figure>
+        <figure><img src="shots/04-brief-time.png" alt="The timing step" /><figcaption>Timing, at your own pace.</figcaption></figure>
+        <figure><img src="shots/11-map.png" alt="The route map" /><figcaption>The map, coloured by severity.</figcaption></figure>
+        <figure><img src="shots/10-field.png" alt="Field mode" /><figcaption>Field mode, dark and map-first.</figcaption></figure>
+      </div>
+    </section>
+  </body>
+</html>

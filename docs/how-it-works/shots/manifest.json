@@ -1,0 +1,1142 @@
+{
+  "capturedAt": "2026-09-20T12:32:39.051Z",
+  "base": "https://hiking-safety.tail685478.ts.net",
+  "date": "2026-09-21",
+  "start": 930,
+  "flaggedKinds": [
+    "daylight",
+    "cold"
+  ],
+  "flaggedRows": 2,
+  "earlyStart": {
+    "start": 450,
+    "flaggedRows": 0
+  },
+  "arrivals": {
+    "ort-murren-be-lauterbrunnen": 930,
+    "2-417-m": 1099,
+    "chlys-schilthoren": 1180,
+    "hauptgipfel-schilthorn-be-lauterbrunnen": 1202,
+    "chlys-schilthoren-return": 1269,
+    "2-417-m-return": 1350,
+    "ort-murren-be-lauterbrunnen-return": 1519
+  },
+  "route": {
+    "id": "r23b7f97de12954ee",
+    "fromName": "Ort Mürren (BE) - Lauterbrunnen",
+    "toName": "Hauptgipfel Schilthorn (BE) - Lauterbrunnen",
+    "grade": "T2",
+    "distanceKm": 14.8,
+    "ascentM": 1350,
+    "descentM": 1350,
+    "cruxStopId": "2-417-m",
+    "bailoutName": "Ort Mürren (BE) - Lauterbrunnen",
+    "turnaroundDefault": 690,
+    "stops": [
+      {
+        "id": "ort-murren-be-lauterbrunnen",
+        "waypointId": "ort-murren-be-lauterbrunnen",
+        "label": {
+          "place": "Ort Mürren (BE) - Lauterbrunnen"
+        },
+        "name": "Ort Mürren (BE) - Lauterbrunnen",
+        "latLng": [
+          46.55933,
+          7.891731
+        ],
+        "elevationM": 1645,
+        "legMinutes": 0
+      },
+      {
+        "id": "2-417-m",
+        "waypointId": "2-417-m",
+        "label": {
+          "place": "2 417 m"
+        },
+        "name": "2 417 m",
+        "latLng": [
+          46.557357,
+          7.848981
+        ],
+        "elevationM": 2417,
+        "legMinutes": 169
+      },
+      {
+        "id": "chlys-schilthoren",
+        "waypointId": "chlys-schilthoren",
+        "label": {
+          "place": "Chlys Schilthoren"
+        },
+        "name": "Chlys Schilthoren",
+        "latLng": [
+          46.556175,
+          7.840066
+        ],
+        "elevationM": 2857,
+        "legMinutes": 81
+      },
+      {
+        "id": "hauptgipfel-schilthorn-be-lauterbrunnen",
+        "waypointId": "hauptgipfel-schilthorn-be-lauterbrunnen",
+        "label": {
+          "place": "Hauptgipfel Schilthorn (BE) - Lauterbrunnen"
+        },
+        "name": "Hauptgipfel Schilthorn (BE) - Lauterbrunnen",
+        "latLng": [
+          46.557282,
+          7.835296
+        ],
+        "elevationM": 2963,
+        "legMinutes": 22,
+        "breakMinutes": 45
+      },
+      {
+        "id": "chlys-schilthoren-return",
+        "waypointId": "chlys-schilthoren",
+        "label": {
+          "place": "Chlys Schilthoren"
+        },
+        "name": "Chlys Schilthoren",
+        "latLng": [
+          46.556175,
+          7.840066
+        ],
+        "elevationM": 2857,
+        "legMinutes": 22
+      },
+      {
+        "id": "2-417-m-return",
+        "waypointId": "2-417-m",
+        "label": {
+          "place": "2 417 m"
+        },
+        "name": "2 417 m",
+        "latLng": [
+          46.557357,
+          7.848981
+        ],
+        "elevationM": 2417,
+        "legMinutes": 81
+      },
+      {
+        "id": "ort-murren-be-lauterbrunnen-return",
+        "waypointId": "ort-murren-be-lauterbrunnen",
+        "label": {
+          "place": "Ort Mürren (BE) - Lauterbrunnen"
+        },
+        "name": "Ort Mürren (BE) - Lauterbrunnen",
+        "latLng": [
+          46.55933,
+          7.891731
+        ],
+        "elevationM": 1645,
+        "legMinutes": 169
+      }
+    ],
+    "legs": [
+      {
+        "id": "ort-murren-be-lauterbrunnen-2-417-m",
+        "fromStop": "ort-murren-be-lauterbrunnen",
+        "toStop": "2-417-m",
+        "grade": "T2",
+        "distanceKm": 5.15,
+        "ascentM": 792
+      },
+      {
+        "id": "2-417-m-chlys-schilthoren",
+        "fromStop": "2-417-m",
+        "toStop": "chlys-schilthoren",
+        "grade": "T2",
+        "distanceKm": 1.83,
+        "ascentM": 442
+      },
+      {
+        "id": "chlys-schilthoren-hauptgipfel-schilthorn-be-lauterbrunnen",
+        "fromStop": "chlys-schilthoren",
+        "toStop": "hauptgipfel-schilthorn-be-lauterbrunnen",
+        "grade": "T2",
+        "distanceKm": 0.43,
+        "ascentM": 117
+      }
+    ]
+  },
+  "assessment": {
+    "outcome": "assessed",
+    "stale": false,
+    "forecast": {
+      "model": "ICON-CH2",
+      "issuedAt": 480,
+      "unavailableSince": 871,
+      "checkedAt": 871,
+      "staleHours": 6
+    },
+    "hazards": [
+      {
+        "id": "cold-hauptgipfel-schilthorn-be-lauterbrunnen",
+        "kind": "cold",
+        "window": {
+          "from": 1200,
+          "to": 1260
+        },
+        "stops": {
+          "hauptgipfel-schilthorn-be-lauterbrunnen": [
+            {
+              "from": 1200,
+              "to": 1260,
+              "severity": "mod"
+            }
+          ]
+        },
+        "place": "Hauptgipfel Schilthorn (BE) - Lauterbrunnen",
+        "hasLiftsIf": true,
+        "facts": {
+          "feelsLikeC": 0,
+          "elevationM": 2963
+        },
+        "provenance": "Rule COLD-CHILL v1 · ICON-CH2 2026-09-20T06:00Z · MeteoSwiss, Wind chill"
+      },
+      {
+        "id": "daylight-ort-murren-be-lauterbrunnen",
+        "kind": "daylight",
+        "window": {
+          "from": 1169,
+          "to": 1440
+        },
+        "stops": {
+          "ort-murren-be-lauterbrunnen": [
+            {
+              "from": 0,
+              "to": 433,
+              "severity": "mod"
+            },
+            {
+              "from": 1124,
+              "to": 1169,
+              "severity": "mod"
+            },
+            {
+              "from": 1169,
+              "to": 1440,
+              "severity": "high"
+            }
+          ],
+          "2-417-m": [
+            {
+              "from": 0,
+              "to": 433,
+              "severity": "mod"
+            },
+            {
+              "from": 1124,
+              "to": 1169,
+              "severity": "mod"
+            },
+            {
+              "from": 1169,
+              "to": 1440,
+              "severity": "high"
+            }
+          ],
+          "chlys-schilthoren": [
+            {
+              "from": 0,
+              "to": 433,
+              "severity": "mod"
+            },
+            {
+              "from": 1124,
+              "to": 1169,
+              "severity": "mod"
+            },
+            {
+              "from": 1169,
+              "to": 1440,
+              "severity": "high"
+            }
+          ],
+          "hauptgipfel-schilthorn-be-lauterbrunnen": [
+            {
+              "from": 0,
+              "to": 433,
+              "severity": "mod"
+            },
+            {
+              "from": 1124,
+              "to": 1169,
+              "severity": "mod"
+            },
+            {
+              "from": 1169,
+              "to": 1440,
+              "severity": "high"
+            }
+          ],
+          "chlys-schilthoren-return": [
+            {
+              "from": 0,
+              "to": 433,
+              "severity": "mod"
+            },
+            {
+              "from": 1124,
+              "to": 1169,
+              "severity": "mod"
+            },
+            {
+              "from": 1169,
+              "to": 1440,
+              "severity": "high"
+            }
+          ],
+          "2-417-m-return": [
+            {
+              "from": 0,
+              "to": 433,
+              "severity": "mod"
+            },
+            {
+              "from": 1124,
+              "to": 1169,
+              "severity": "mod"
+            },
+            {
+              "from": 1169,
+              "to": 1440,
+              "severity": "high"
+            }
+          ],
+          "ort-murren-be-lauterbrunnen-return": [
+            {
+              "from": 0,
+              "to": 433,
+              "severity": "mod"
+            },
+            {
+              "from": 1124,
+              "to": 1169,
+              "severity": "mod"
+            },
+            {
+              "from": 1169,
+              "to": 1440,
+              "severity": "high"
+            }
+          ]
+        },
+        "place": "Ort Mürren (BE) - Lauterbrunnen",
+        "hasLiftsIf": false,
+        "facts": {
+          "sunset": 1169
+        },
+        "provenance": "Rule DAYLIGHT v1 · NOAA sun position · SAC, Safety when hiking"
+      }
+    ],
+    "gaps": [
+      "pace"
+    ],
+    "alternatives": [],
+    "notEvaluated": [],
+    "conditions": {
+      "ort-murren-be-lauterbrunnen": [
+        {
+          "from": 300,
+          "to": 360,
+          "gustKmh": 4,
+          "feelsLikeC": 5,
+          "precipMm": 0
+        },
+        {
+          "from": 360,
+          "to": 420,
+          "gustKmh": 4,
+          "feelsLikeC": 6,
+          "precipMm": 0
+        },
+        {
+          "from": 420,
+          "to": 480,
+          "gustKmh": 4,
+          "feelsLikeC": 6,
+          "precipMm": 0
+        },
+        {
+          "from": 480,
+          "to": 540,
+          "gustKmh": 4,
+          "feelsLikeC": 6,
+          "precipMm": 0
+        },
+        {
+          "from": 540,
+          "to": 600,
+          "gustKmh": 6,
+          "feelsLikeC": 8,
+          "precipMm": 0
+        },
+        {
+          "from": 600,
+          "to": 660,
+          "gustKmh": 12,
+          "feelsLikeC": 9,
+          "precipMm": 0
+        },
+        {
+          "from": 660,
+          "to": 720,
+          "gustKmh": 14,
+          "feelsLikeC": 12,
+          "precipMm": 0
+        },
+        {
+          "from": 720,
+          "to": 780,
+          "gustKmh": 19,
+          "feelsLikeC": 13,
+          "precipMm": 0
+        },
+        {
+          "from": 780,
+          "to": 840,
+          "gustKmh": 19,
+          "feelsLikeC": 14,
+          "precipMm": 0
+        },
+        {
+          "from": 840,
+          "to": 900,
+          "gustKmh": 19,
+          "feelsLikeC": 14,
+          "precipMm": 0
+        },
+        {
+          "from": 900,
+          "to": 960,
+          "gustKmh": 17,
+          "feelsLikeC": 14,
+          "precipMm": 0
+        },
+        {
+          "from": 960,
+          "to": 1020,
+          "gustKmh": 17,
+          "feelsLikeC": 13,
+          "precipMm": 0
+        },
+        {
+          "from": 1020,
+          "to": 1080,
+          "gustKmh": 17,
+          "feelsLikeC": 12,
+          "precipMm": 0
+        },
+        {
+          "from": 1080,
+          "to": 1140,
+          "gustKmh": 16,
+          "feelsLikeC": 10,
+          "precipMm": 0
+        },
+        {
+          "from": 1140,
+          "to": 1200,
+          "gustKmh": 11,
+          "feelsLikeC": 6,
+          "precipMm": 0
+        },
+        {
+          "from": 1200,
+          "to": 1260,
+          "gustKmh": 5,
+          "feelsLikeC": 6,
+          "precipMm": 0
+        }
+      ],
+      "2-417-m": [
+        {
+          "from": 300,
+          "to": 360,
+          "gustKmh": 23,
+          "feelsLikeC": 2,
+          "precipMm": 0
+        },
+        {
+          "from": 360,
+          "to": 420,
+          "gustKmh": 23,
+          "feelsLikeC": 3,
+          "precipMm": 0
+        },
+        {
+          "from": 420,
+          "to": 480,
+          "gustKmh": 23,
+          "feelsLikeC": 3,
+          "precipMm": 0
+        },
+        {
+          "from": 480,
+          "to": 540,
+          "gustKmh": 22,
+          "feelsLikeC": 3,
+          "precipMm": 0
+        },
+        {
+          "from": 540,
+          "to": 600,
+          "gustKmh": 20,
+          "feelsLikeC": 5,
+          "precipMm": 0
+        },
+        {
+          "from": 600,
+          "to": 660,
+          "gustKmh": 18,
+          "feelsLikeC": 9,
+          "precipMm": 0
+        },
+        {
+          "from": 660,
+          "to": 720,
+          "gustKmh": 12,
+          "feelsLikeC": 10,
+          "precipMm": 0
+        },
+        {
+          "from": 720,
+          "to": 780,
+          "gustKmh": 8,
+          "feelsLikeC": 10,
+          "precipMm": 0
+        },
+        {
+          "from": 780,
+          "to": 840,
+          "gustKmh": 8,
+          "feelsLikeC": 10,
+          "precipMm": 0
+        },
+        {
+          "from": 840,
+          "to": 900,
+          "gustKmh": 9,
+          "feelsLikeC": 10,
+          "precipMm": 0
+        },
+        {
+          "from": 900,
+          "to": 960,
+          "gustKmh": 9,
+          "feelsLikeC": 10,
+          "precipMm": 0
+        },
+        {
+          "from": 960,
+          "to": 1020,
+          "gustKmh": 10,
+          "feelsLikeC": 9,
+          "precipMm": 0
+        },
+        {
+          "from": 1020,
+          "to": 1080,
+          "gustKmh": 11,
+          "feelsLikeC": 8,
+          "precipMm": 0
+        },
+        {
+          "from": 1080,
+          "to": 1140,
+          "gustKmh": 12,
+          "feelsLikeC": 7,
+          "precipMm": 0
+        },
+        {
+          "from": 1140,
+          "to": 1200,
+          "gustKmh": 19,
+          "feelsLikeC": 5,
+          "precipMm": 0
+        },
+        {
+          "from": 1200,
+          "to": 1260,
+          "gustKmh": 22,
+          "feelsLikeC": 3,
+          "precipMm": 0
+        }
+      ],
+      "chlys-schilthoren": [
+        {
+          "from": 300,
+          "to": 360,
+          "gustKmh": 21,
+          "feelsLikeC": 2,
+          "precipMm": 0
+        },
+        {
+          "from": 360,
+          "to": 420,
+          "gustKmh": 20,
+          "feelsLikeC": 2,
+          "precipMm": 0
+        },
+        {
+          "from": 420,
+          "to": 480,
+          "gustKmh": 21,
+          "feelsLikeC": 2,
+          "precipMm": 0
+        },
+        {
+          "from": 480,
+          "to": 540,
+          "gustKmh": 21,
+          "feelsLikeC": 3,
+          "precipMm": 0
+        },
+        {
+          "from": 540,
+          "to": 600,
+          "gustKmh": 21,
+          "feelsLikeC": 5,
+          "precipMm": 0
+        },
+        {
+          "from": 600,
+          "to": 660,
+          "gustKmh": 21,
+          "feelsLikeC": 6,
+          "precipMm": 0
+        },
+        {
+          "from": 660,
+          "to": 720,
+          "gustKmh": 20,
+          "feelsLikeC": 7,
+          "precipMm": 0
+        },
+        {
+          "from": 720,
+          "to": 780,
+          "gustKmh": 20,
+          "feelsLikeC": 7,
+          "precipMm": 0
+        },
+        {
+          "from": 780,
+          "to": 840,
+          "gustKmh": 20,
+          "feelsLikeC": 7,
+          "precipMm": 0
+        },
+        {
+          "from": 840,
+          "to": 900,
+          "gustKmh": 16,
+          "feelsLikeC": 7,
+          "precipMm": 0
+        },
+        {
+          "from": 900,
+          "to": 960,
+          "gustKmh": 17,
+          "feelsLikeC": 7,
+          "precipMm": 0
+        },
+        {
+          "from": 960,
+          "to": 1020,
+          "gustKmh": 18,
+          "feelsLikeC": 6,
+          "precipMm": 0
+        },
+        {
+          "from": 1020,
+          "to": 1080,
+          "gustKmh": 20,
+          "feelsLikeC": 5,
+          "precipMm": 0
+        },
+        {
+          "from": 1080,
+          "to": 1140,
+          "gustKmh": 21,
+          "feelsLikeC": 4,
+          "precipMm": 0
+        },
+        {
+          "from": 1140,
+          "to": 1200,
+          "gustKmh": 22,
+          "feelsLikeC": 2,
+          "precipMm": 0
+        },
+        {
+          "from": 1200,
+          "to": 1260,
+          "gustKmh": 26,
+          "feelsLikeC": 0,
+          "precipMm": 0
+        }
+      ],
+      "hauptgipfel-schilthorn-be-lauterbrunnen": [
+        {
+          "from": 300,
+          "to": 360,
+          "gustKmh": 21,
+          "feelsLikeC": 2,
+          "precipMm": 0
+        },
+        {
+          "from": 360,
+          "to": 420,
+          "gustKmh": 20,
+          "feelsLikeC": 2,
+          "precipMm": 0
+        },
+        {
+          "from": 420,
+          "to": 480,
+          "gustKmh": 21,
+          "feelsLikeC": 2,
+          "precipMm": 0
+        },
+        {
+          "from": 480,
+          "to": 540,
+          "gustKmh": 21,
+          "feelsLikeC": 2,
+          "precipMm": 0
+        },
+        {
+          "from": 540,
+          "to": 600,
+          "gustKmh": 21,
+          "feelsLikeC": 4,
+          "precipMm": 0
+        },
+        {
+          "from": 600,
+          "to": 660,
+          "gustKmh": 21,
+          "feelsLikeC": 5,
+          "precipMm": 0
+        },
+        {
+          "from": 660,
+          "to": 720,
+          "gustKmh": 20,
+          "feelsLikeC": 6,
+          "precipMm": 0
+        },
+        {
+          "from": 720,
+          "to": 780,
+          "gustKmh": 20,
+          "feelsLikeC": 7,
+          "precipMm": 0
+        },
+        {
+          "from": 780,
+          "to": 840,
+          "gustKmh": 20,
+          "feelsLikeC": 7,
+          "precipMm": 0
+        },
+        {
+          "from": 840,
+          "to": 900,
+          "gustKmh": 16,
+          "feelsLikeC": 6,
+          "precipMm": 0
+        },
+        {
+          "from": 900,
+          "to": 960,
+          "gustKmh": 17,
+          "feelsLikeC": 6,
+          "precipMm": 0
+        },
+        {
+          "from": 960,
+          "to": 1020,
+          "gustKmh": 18,
+          "feelsLikeC": 5,
+          "precipMm": 0
+        },
+        {
+          "from": 1020,
+          "to": 1080,
+          "gustKmh": 20,
+          "feelsLikeC": 4,
+          "precipMm": 0
+        },
+        {
+          "from": 1080,
+          "to": 1140,
+          "gustKmh": 21,
+          "feelsLikeC": 3,
+          "precipMm": 0
+        },
+        {
+          "from": 1140,
+          "to": 1200,
+          "gustKmh": 22,
+          "feelsLikeC": 1,
+          "precipMm": 0
+        },
+        {
+          "from": 1200,
+          "to": 1260,
+          "gustKmh": 26,
+          "feelsLikeC": 0,
+          "precipMm": 0
+        }
+      ],
+      "chlys-schilthoren-return": [
+        {
+          "from": 300,
+          "to": 360,
+          "gustKmh": 21,
+          "feelsLikeC": 2,
+          "precipMm": 0
+        },
+        {
+          "from": 360,
+          "to": 420,
+          "gustKmh": 20,
+          "feelsLikeC": 2,
+          "precipMm": 0
+        },
+        {
+          "from": 420,
+          "to": 480,
+          "gustKmh": 21,
+          "feelsLikeC": 2,
+          "precipMm": 0
+        },
+        {
+          "from": 480,
+          "to": 540,
+          "gustKmh": 21,
+          "feelsLikeC": 3,
+          "precipMm": 0
+        },
+        {
+          "from": 540,
+          "to": 600,
+          "gustKmh": 21,
+          "feelsLikeC": 5,
+          "precipMm": 0
+        },
+        {
+          "from": 600,
+          "to": 660,
+          "gustKmh": 21,
+          "feelsLikeC": 6,
+          "precipMm": 0
+        },
+        {
+          "from": 660,
+          "to": 720,
+          "gustKmh": 20,
+          "feelsLikeC": 7,
+          "precipMm": 0
+        },
+        {
+          "from": 720,
+          "to": 780,
+          "gustKmh": 20,
+          "feelsLikeC": 7,
+          "precipMm": 0
+        },
+        {
+          "from": 780,
+          "to": 840,
+          "gustKmh": 20,
+          "feelsLikeC": 7,
+          "precipMm": 0
+        },
+        {
+          "from": 840,
+          "to": 900,
+          "gustKmh": 16,
+          "feelsLikeC": 7,
+          "precipMm": 0
+        },
+        {
+          "from": 900,
+          "to": 960,
+          "gustKmh": 17,
+          "feelsLikeC": 7,
+          "precipMm": 0
+        },
+        {
+          "from": 960,
+          "to": 1020,
+          "gustKmh": 18,
+          "feelsLikeC": 6,
+          "precipMm": 0
+        },
+        {
+          "from": 1020,
+          "to": 1080,
+          "gustKmh": 20,
+          "feelsLikeC": 5,
+          "precipMm": 0
+        },
+        {
+          "from": 1080,
+          "to": 1140,
+          "gustKmh": 21,
+          "feelsLikeC": 4,
+          "precipMm": 0
+        },
+        {
+          "from": 1140,
+          "to": 1200,
+          "gustKmh": 22,
+          "feelsLikeC": 2,
+          "precipMm": 0
+        },
+        {
+          "from": 1200,
+          "to": 1260,
+          "gustKmh": 26,
+          "feelsLikeC": 0,
+          "precipMm": 0
+        }
+      ],
+      "2-417-m-return": [
+        {
+          "from": 300,
+          "to": 360,
+          "gustKmh": 23,
+          "feelsLikeC": 2,
+          "precipMm": 0
+        },
+        {
+          "from": 360,
+          "to": 420,
+          "gustKmh": 23,
+          "feelsLikeC": 3,
+          "precipMm": 0
+        },
+        {
+          "from": 420,
+          "to": 480,
+          "gustKmh": 23,
+          "feelsLikeC": 3,
+          "precipMm": 0
+        },
+        {
+          "from": 480,
+          "to": 540,
+          "gustKmh": 22,
+          "feelsLikeC": 3,
+          "precipMm": 0
+        },
+        {
+          "from": 540,
+          "to": 600,
+          "gustKmh": 20,
+          "feelsLikeC": 5,
+          "precipMm": 0
+        },
+        {
+          "from": 600,
+          "to": 660,
+          "gustKmh": 18,
+          "feelsLikeC": 9,
+          "precipMm": 0
+        },
+        {
+          "from": 660,
+          "to": 720,
+          "gustKmh": 12,
+          "feelsLikeC": 10,
+          "precipMm": 0
+        },
+        {
+          "from": 720,
+          "to": 780,
+          "gustKmh": 8,
+          "feelsLikeC": 10,
+          "precipMm": 0
+        },
+        {
+          "from": 780,
+          "to": 840,
+          "gustKmh": 8,
+          "feelsLikeC": 10,
+          "precipMm": 0
+        },
+        {
+          "from": 840,
+          "to": 900,
+          "gustKmh": 9,
+          "feelsLikeC": 10,
+          "precipMm": 0
+        },
+        {
+          "from": 900,
+          "to": 960,
+          "gustKmh": 9,
+          "feelsLikeC": 10,
+          "precipMm": 0
+        },
+        {
+          "from": 960,
+          "to": 1020,
+          "gustKmh": 10,
+          "feelsLikeC": 9,
+          "precipMm": 0
+        },
+        {
+          "from": 1020,
+          "to": 1080,
+          "gustKmh": 11,
+          "feelsLikeC": 8,
+          "precipMm": 0
+        },
+        {
+          "from": 1080,
+          "to": 1140,
+          "gustKmh": 12,
+          "feelsLikeC": 7,
+          "precipMm": 0
+        },
+        {
+          "from": 1140,
+          "to": 1200,
+          "gustKmh": 19,
+          "feelsLikeC": 5,
+          "precipMm": 0
+        },
+        {
+          "from": 1200,
+          "to": 1260,
+          "gustKmh": 22,
+          "feelsLikeC": 3,
+          "precipMm": 0
+        }
+      ],
+      "ort-murren-be-lauterbrunnen-return": [
+        {
+          "from": 300,
+          "to": 360,
+          "gustKmh": 4,
+          "feelsLikeC": 5,
+          "precipMm": 0
+        },
+        {
+          "from": 360,
+          "to": 420,
+          "gustKmh": 4,
+          "feelsLikeC": 6,
+          "precipMm": 0
+        },
+        {
+          "from": 420,
+          "to": 480,
+          "gustKmh": 4,
+          "feelsLikeC": 6,
+          "precipMm": 0
+        },
+        {
+          "from": 480,
+          "to": 540,
+          "gustKmh": 4,
+          "feelsLikeC": 6,
+          "precipMm": 0
+        },
+        {
+          "from": 540,
+          "to": 600,
+          "gustKmh": 6,
+          "feelsLikeC": 8,
+          "precipMm": 0
+        },
+        {
+          "from": 600,
+          "to": 660,
+          "gustKmh": 12,
+          "feelsLikeC": 9,
+          "precipMm": 0
+        },
+        {
+          "from": 660,
+          "to": 720,
+          "gustKmh": 14,
+          "feelsLikeC": 12,
+          "precipMm": 0
+        },
+        {
+          "from": 720,
+          "to": 780,
+          "gustKmh": 19,
+          "feelsLikeC": 13,
+          "precipMm": 0
+        },
+        {
+          "from": 780,
+          "to": 840,
+          "gustKmh": 19,
+          "feelsLikeC": 14,
+          "precipMm": 0
+        },
+        {
+          "from": 840,
+          "to": 900,
+          "gustKmh": 19,
+          "feelsLikeC": 14,
+          "precipMm": 0
+        },
+        {
+          "from": 900,
+          "to": 960,
+          "gustKmh": 17,
+          "feelsLikeC": 14,
+          "precipMm": 0
+        },
+        {
+          "from": 960,
+          "to": 1020,
+          "gustKmh": 17,
+          "feelsLikeC": 13,
+          "precipMm": 0
+        },
+        {
+          "from": 1020,
+          "to": 1080,
+          "gustKmh": 17,
+          "feelsLikeC": 12,
+          "precipMm": 0
+        },
+        {
+          "from": 1080,
+          "to": 1140,
+          "gustKmh": 16,
+          "feelsLikeC": 10,
+          "precipMm": 0
+        },
+        {
+          "from": 1140,
+          "to": 1200,
+          "gustKmh": 11,
+          "feelsLikeC": 6,
+          "precipMm": 0
+        },
+        {
+          "from": 1200,
+          "to": 1260,
+          "gustKmh": 5,
+          "feelsLikeC": 6,
+          "precipMm": 0
+        }
+      ]
+    }
+  },
+  "cardText": "moderate Wind chill below freezing at Hauptgipfel Schilthorn (BE) - Lauterbrunnen, 20:00–21:00 Nemotron Wind chill below freezing makes exposed skin feel as cold as 0° at 2 963 m on Hauptgipfel Schilthorn (BE) - Lauterbrunnen. Cold fingers grip rock and cables less well, especially on open ridges and during a long stop. Lifts if a later forecast has the wind chill at Hauptgipfel Schilthorn (BE) - Lauterbrunnen above freezing. Rule COLD-CHILL v1 · ICON-CH2 2026-09-20T06:00Z · MeteoSwiss, Wind chill Guidance: Wind chill · Safety when hiking — careful planning",
+  "askText": "Ask Nemotron What changes if I start later? Nemotron If you start later, every arrival moves by the same amount. Starting at 16:00, you reach the crux at 18:49 after your turnaround time and finish at 01:49 after sunset. Starting at 16:30, you reach the crux at 19:19 and finish at 02:19 after sunset; wind chill below freezing at Hauptgipfel Schilthorn changes from moderate to nothing flagged. Starting at 17:00, you reach the crux at 19:49 and finish at 02:49 after sunset; wind chill below freezing changes from moderate to nothing flagged. Nothing else flagged changes. Clear conversation"
+}
